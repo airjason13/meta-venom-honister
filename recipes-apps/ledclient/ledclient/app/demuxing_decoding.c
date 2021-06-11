@@ -66,7 +66,9 @@ void printTime();
 void SignHandler(int iSignNo){
     //printTime();
     if(iSignNo == SIGUSR1){
-        printf("Capture sign No.=SIGUSR1\n");
+        //printf("Capture sign No.=SIGUSR1\n");
+        printf("fps : %d\n", fps_count);
+        fps_count = 0;
     }else{
         printf("Capture sign No.=%d\n",iSignNo);
     }
@@ -116,10 +118,12 @@ static int output_video_frame(AVFrame *frame)
                 av_get_pix_fmt_name(frame->format));
         return -1;
     }
-    double time_in_mill = (tv.tv_sec) * 1000 + (tv.tv_usec) / 1000 ;
+    /*double time_in_mill = (tv.tv_sec) * 1000 + (tv.tv_usec) / 1000 ;
     printf("%lf \n", time_in_mill);
     printf("video_frame n:%d coded_n:%d\n",
-           video_frame_count++, frame->coded_picture_number);
+           video_frame_count++, frame->coded_picture_number);*/
+    video_frame_count ++;
+    fps_count ++;       
 
 
     /* copy decoded frame to destination buffer:
