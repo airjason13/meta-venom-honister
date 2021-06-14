@@ -6,6 +6,7 @@ FILESEXTRAPATHS_append := "${THISDIR}/${PN}:"
 SRC_URI += "file://app/ \
             file://compat/ \
             file://libs/ \
+            file://ext/ \
             file://include/ \
             file://Makefile \
             file://config.h \
@@ -20,9 +21,11 @@ do_compile() {
 do_install() {
     install -d ${D}/${bindir}
     install -m 755 prog/ledclient ${D}/${bindir}
+    install -m 755 ext/* ${D}/${bindir}
 }
 
 DEPENDS += "ffmpeg libsdl2"
+RDEPENDS_${PN} = "libubootenv"
 INSANE_SKIP_${PN} = "ldflags"
 
 INSANE_SKIP_${PN}-dev = "ldflags"
