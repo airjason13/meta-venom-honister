@@ -20,12 +20,26 @@ do_compile() {
 
 do_install() {
     install -d ${D}/${bindir}
+    install -d ${D}/${sysconfdir}
+    install -d ${D}/${sysconfdir}/xdg/autostart/
+    install -d ${D}/home/root/led_machine_option/
+    install -d ${D}/home/root/led_machine_option/templates/
     install -m 755 prog/ledclient ${D}/${bindir}
-    install -m 755 ext/* ${D}/${bindir}
+    install -m 755 ext/hwrevision ${D}/${sysconfdir}/
+    install -m 755 ext/launch_led_role_option.sh ${D}/${bindir}
+    install -m 755 ext/set_led_env.sh ${D}/${bindir}
+    cp -r ext/pyflask_machine_option/* ${D}/home/root/led_machine_option/
+    install -m 755 ext/led_role.conf ${D}/home/root/
+    install -m 755 ext/led_role_option.desktop ${D}${sysconfdir}/xdg/autostart/led_role_option.desktop
+    install -m 755 ext/set_led_env.desktop ${D}${sysconfdir}/xdg/autostart/set_led_env.desktop
 }
 
 DEPENDS += "ffmpeg libsdl2"
 RDEPENDS_${PN} = "libubootenv"
 INSANE_SKIP_${PN} = "ldflags"
 
+
 INSANE_SKIP_${PN}-dev = "ldflags"
+FILES_${PN} += " \
+                /home/root/* \
+                "
