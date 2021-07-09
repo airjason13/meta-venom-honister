@@ -28,10 +28,17 @@ do_install() {
     install -m 755 ext/hwrevision ${D}/${sysconfdir}/
     install -m 755 ext/launch_led_role_option.sh ${D}/${bindir}
     install -m 755 ext/set_led_env.sh ${D}/${bindir}
+    install -m 755 ext/launch_led_player.sh ${D}/${bindir}
+    install -m 755 ext/set_always_display_on.sh ${D}/${bindir}
+    install -m 755 ext/set_automount.sh ${D}/${bindir}
+    install -m 755 ext/set_panel_autohide.sh ${D}/${bindir}
     cp -r ext/pyflask_machine_option/* ${D}/home/root/led_machine_option/
     install -m 755 ext/led_role.conf ${D}/home/root/
     install -m 755 ext/led_role_option.desktop ${D}${sysconfdir}/xdg/autostart/led_role_option.desktop
     install -m 755 ext/set_led_env.desktop ${D}${sysconfdir}/xdg/autostart/set_led_env.desktop
+    install -m 755 ext/set_panel_autohide.desktop ${D}${sysconfdir}/xdg/autostart/set_panel_autohide.desktop
+    install -m 755 ext/set_automount.desktop ${D}${sysconfdir}/xdg/autostart/set_panel_automount.desktop
+    install -m 755 ext/set_always_display_on.desktop ${D}${sysconfdir}/xdg/autostart/set_always_display_on.desktop
 }
 
 DEPENDS += "ffmpeg libsdl2"

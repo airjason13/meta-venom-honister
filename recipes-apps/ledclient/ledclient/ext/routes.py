@@ -54,7 +54,7 @@ def select_role():
         option = request.form['role_switcher']
         log.debug(option)
         config_file = open(config_file_uri, "w")
-        config_file.write(f"{option}\n")
+        config_file.write(f"{option}\n\n")
         config_file.close()
         if "Server" in option:
             LED_Role = "Server"
