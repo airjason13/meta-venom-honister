@@ -47,7 +47,7 @@
 #include "libavutil/opt.h"
 #include "libavcodec/avfft.h"
 #include "libswresample/swresample.h"
-
+#include "libavutil/pixfmt.h"
 #if CONFIG_AVFILTER
 # include "libavfilter/avfilter.h"
 # include "libavfilter/buffersink.h"
@@ -913,10 +913,15 @@ static int upload_texture(SDL_Texture **tex, AVFrame *frame, struct SwsContext *
     Uint32 sdl_pix_fmt;
     SDL_BlendMode sdl_blendmode;
     get_sdl_pix_fmt_and_blendmode(frame->format, &sdl_pix_fmt, &sdl_blendmode);
-    if (realloc_texture(tex, sdl_pix_fmt == SDL_PIXELFORMAT_UNKNOWN ? SDL_PIXELFORMAT_ARGB8888 : sdl_pix_fmt, frame->width, frame->height, sdl_blendmode, 0) < 0)
+    printf("\r\nsdl_pix_fmt : 0x%x\r\n", sdl_pix_fmt);
+    printf("\r\nSDL_PIXELFORMAT_RGB888 : 0x%x\r\n", SDL_PIXELFORMAT_RGB888);
+    if (realloc_texture(tex, sdl_pix_fmt == SDL_PIXELFORMAT_UNKNOWN ? SDL_PIXELFORMAT_ARGB8888 : sdl_pix_fmt, frame->width, frame->height, sdl_blendmode, 0) < 0){
+        printf("\r\nreturn sdl_pix_fmt : %d\r\n", sdl_pix_fmt);
         return -1;
+    }
     switch (sdl_pix_fmt) {
         case SDL_PIXELFORMAT_UNKNOWN:
+            printf("SDL_PIXELFORMAT_UNKNOWN!\n");
             /* This should only happen if we are not using avfilter... */
             *img_convert_ctx = sws_getCachedContext(*img_convert_ctx,
                 frame->width, frame->height, frame->format, frame->width, frame->height,
@@ -935,6 +940,7 @@ static int upload_texture(SDL_Texture **tex, AVFrame *frame, struct SwsContext *
             }
             break;
         case SDL_PIXELFORMAT_IYUV:
+            printf("SDL_PIXELFORMAT_IYUV\n");
             if (frame->linesize[0] > 0 && frame->linesize[1] > 0 && frame->linesize[2] > 0) {
                 ret = SDL_UpdateYUVTexture(*tex, NULL, frame->data[0], frame->linesize[0],
                                                        frame->data[1], frame->linesize[1],
@@ -949,6 +955,7 @@ static int upload_texture(SDL_Texture **tex, AVFrame *frame, struct SwsContext *
             }
             break;
         default:
+            printf("Default\n");
             if (frame->linesize[0] < 0) {
                 ret = SDL_UpdateTexture(*tex, NULL, frame->data[0] + frame->linesize[0] * (frame->height - 1), -frame->linesize[0]);
             } else {
@@ -2133,15 +2140,22 @@ static int decoder_start(Decoder *d, int (*fn)(void *), const char *thread_name,
     return 0;
 }
 
+struct SwsContext *sws_ctx = NULL;
+
+
 static int video_thread(void *arg)
 {
     VideoState *is = arg;
     AVFrame *frame = av_frame_alloc();
+    AVFrame *frameRGB = NULL;
+    unsigned char *buffer = NULL;
+    int numBytes;
     double pts;
     double duration;
     int ret;
     AVRational tb = is->video_st->time_base;
     AVRational frame_rate = av_guess_frame_rate(is->ic, is->video_st, NULL);
+    struct SwsContext *sws_ctx = NULL;
 
 #if CONFIG_AVFILTER
     AVFilterGraph *graph = NULL;
@@ -2156,14 +2170,43 @@ static int video_thread(void *arg)
     if (!frame)
         return AVERROR(ENOMEM);
 
+    frameRGB = av_frame_alloc();
+    if(!frameRGB){
+        printf("frameRGB alloc failed!\n");
+        return AVERROR(ENOMEM);
+    }
+
+    //printf("is->viddec.avctx->width = %d\n", is->viddec.avctx->width);
+    //printf("is->viddec.avctx->height = %d\n", is->viddec.avctx->height);
+    //for initial frameRGB
+    numBytes = avpicture_get_size(AV_PIX_FMT_RGB24, is->viddec.avctx->width, is->viddec.avctx->height);
+    buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
+    avpicture_fill((AVPicture *)frameRGB, buffer, AV_PIX_FMT_RGB24, is->viddec.avctx->width, is->viddec.avctx->height);
+    
+
     for (;;) {
         ret = get_video_frame(is, frame);
+        
         if (ret < 0)
             goto the_end;
         if (!ret)
             continue;
 
+        
+
+        if(sws_ctx == NULL){
+            printf("is->viddec.avctx->width = %d\n", is->viddec.avctx->width);
+            printf("is->viddec.avctx->height = %d\n", is->viddec.avctx->height);
+            sws_ctx = sws_getContext(is->viddec.avctx->width, is->viddec.avctx->height, is->viddec.avctx->pix_fmt, 
+                                        1920, 1080, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
+        }else{
+            printf("sws_ctx = 0x%x\n", sws_ctx);
+            //Convert the image from its native format to RGB
+			sws_scale(sws_ctx, (uint8_t const *)frame->data, frame->linesize, 0, is->viddec.avctx->height, frameRGB->data, frameRGB->linesize);    
+        }
+        
 #if CONFIG_AVFILTER
+        printf("CONFIG_AVFILTER!\n");
         if (   last_w != frame->width
             || last_h != frame->height
             || last_format != frame->format
