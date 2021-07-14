@@ -2141,6 +2141,33 @@ static int decoder_start(Decoder *d, int (*fn)(void *), const char *thread_name,
 }
 
 struct SwsContext *sws_ctx = NULL;
+/********************************************************
+* Test Write RGB to File
+*
+*
+*
+**********************************************************/
+void SaveFrame(AVFrame *pFrame, int width, int height, int iFrame){
+    FILE *pFile;
+    char szFilename[32];
+    int y;
+
+    //Open file
+    sprintf(szFilename, "frame%d.ppm", iFrame);
+    pFile = fopen(szFilename, "wb");
+    if(pFile == NULL)
+        return;
+
+    //Wirte header
+    fprintf(pFile, "P6\n%d %d\n255\n", width, height);
+
+    //Write piexl data
+    for(y = 0; y < height; y++)
+        fwrite(pFrame->data[0] + y*pFrame->linesize[0], 1, width*3, pFile);
+
+    //Close file
+    fclose(pFile);
+}
 
 
 static int video_thread(void *arg)
@@ -2156,7 +2183,7 @@ static int video_thread(void *arg)
     AVRational tb = is->video_st->time_base;
     AVRational frame_rate = av_guess_frame_rate(is->ic, is->video_st, NULL);
     struct SwsContext *sws_ctx = NULL;
-
+    int i = 0;//write frame rgb count
 #if CONFIG_AVFILTER
     AVFilterGraph *graph = NULL;
     AVFilterContext *filt_out = NULL, *filt_in = NULL;
@@ -2203,6 +2230,10 @@ static int video_thread(void *arg)
             printf("sws_ctx = 0x%x\n", sws_ctx);
             //Convert the image from its native format to RGB
 			sws_scale(sws_ctx, (uint8_t const *)frame->data, frame->linesize, 0, is->viddec.avctx->height, frameRGB->data, frameRGB->linesize);    
+            // Save the frame to disk
+			if(++i <= 5){
+			    SaveFrame(frameRGB, 1920,1080, i);
+            }
         }
         
 #if CONFIG_AVFILTER
