@@ -1,6 +1,8 @@
 #ifndef _LEDLAYOUT_H_
 #define _LEDLAYOUT_H_
 
+#include "picousb.h"
+
 /*******************************************************************
 * LED layout configuration
 * 0 :
@@ -45,6 +47,20 @@ typedef enum{
 #define LED_WIDTH		40
 #define LED_HEIGHT		24
 #define LED_CHANNELS	3
+
+typedef struct ledparams{
+	struct libusb_device_handle *pico_handle;
+	int i_ledpanelsi;// = 8;
+	int i_pixelsperpanel;// = 960;
+	int i_widthperpanel;// = 40;
+	int i_heightperpanel;// = 24;
+	int i_widthtotal;// = 80;
+	int i_heighttotal;// = 96;
+	int i_startx;// = 0;
+	int i_start_y;
+	int i_ledchannels;// = 3;
+	int i_ledic;// = 0;
+};
 
 char led_layout[LED_PANELS] = {	1, 1, 1, 1,	3, 3, 3, 3};
 

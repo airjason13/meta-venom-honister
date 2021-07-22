@@ -58,8 +58,9 @@
 #include <SDL_thread.h>
 
 #include "cmdutils.h"
-#include "picousb.h"
+//#include "picousb.h"  //move to ledlayout.h
 #include "ledlayout.h"
+#include "udpmr.h"
 #include <assert.h>
 
 struct libusb_device_handle *handle_pico0 = NULL;
@@ -428,6 +429,13 @@ int64_t get_valid_channel_layout(int64_t channel_layout, int channels)
     else
         return 0;
 }
+
+
+int get_version(char *data){
+	printf("data = %s\n", data);
+	return 0;
+}
+
 
 static int packet_queue_put_private(PacketQueue *q, AVPacket *pkt)
 {
@@ -2202,7 +2210,7 @@ int write_framergb_to_pico(AVFrame *pFrame, int channel_count, int start_x, int 
 		return -1;//ENOMEM		
 	}
 	sprintf(buf, "id%d:", id_num);
-	printf("id_num = %d, layout_config = %d\n", id_num, layout_config);
+	//printf("id_num = %d, layout_config = %d\n", id_num, layout_config);
 	//printf("start_x = %d\n", start_x);
 	//printf("start_y = %d\n", start_y);
 	//printf("pFrame->linesize[0] = %d\n", pFrame->linesize[0]);
@@ -2246,7 +2254,7 @@ int write_framergb_to_pico(AVFrame *pFrame, int channel_count, int start_x, int 
 		free(buf);
 	}
 #endif	
-	printf("id_num : %d, offset = %d\n", id_num, offset);
+	//printf("id_num : %d, offset = %d\n", id_num, offset);
 	return offset;
 }
 /********************************************************
@@ -3879,10 +3887,24 @@ int main(int argc, char **argv)
     VideoState *is;
     printf("Jason show ledcliend!\n");
     init_dynload();
+
+	/* initial pico*/
 	printf("Jason test pico usb!\n");
 	handle_pico0 = picousb_init();
 	picousb_out_transfer(handle_pico0, "Hello", 5);
-    av_log_set_flags(AV_LOG_SKIP_REPEATED);
+    
+	/*initial udpmr test*/
+	udpmr_init("239.11.11.11", 9898);
+
+	/*initial callback test*/
+	int ret = register_udpmr_callback(CALLBACK_GET_VERSION, &get_version);
+	if(ret != 0){
+		printf("callback register failed!\n");
+	}else{
+		printf("callback register ok!\n");
+	}
+		
+	av_log_set_flags(AV_LOG_SKIP_REPEATED);
     parse_loglevel(argc, argv, options);
 
     /* register all codecs, demux and protocols */
