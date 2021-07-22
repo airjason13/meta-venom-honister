@@ -7,6 +7,7 @@ SRC_URI += "file://app/ \
             file://compat/ \
             file://libs/ \
             file://ext/ \
+            file://picousblib \
             file://include/ \
             file://Makefile \
             file://config.h \
@@ -41,7 +42,7 @@ do_install() {
     install -m 755 ext/set_always_display_on.desktop ${D}${sysconfdir}/xdg/autostart/set_always_display_on.desktop
 }
 
-DEPENDS += "ffmpeg libsdl2"
+DEPENDS += "ffmpeg libsdl2 libusb1"
 RDEPENDS_${PN} = "libubootenv"
 INSANE_SKIP_${PN} = "ldflags"
 

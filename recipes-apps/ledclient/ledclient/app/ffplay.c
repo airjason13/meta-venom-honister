@@ -58,11 +58,15 @@
 #include <SDL_thread.h>
 
 #include "cmdutils.h"
-
+#include "picousb.h"
+#include "ledlayout.h"
 #include <assert.h>
 
-const char program_name[] = "ffplay";
-const int program_birth_year = 2003;
+struct libusb_device_handle *handle_pico0 = NULL;
+struct libusb_device_handle *handle_pico1 = NULL;
+
+const char program_name[] = "ledclient";
+const int program_birth_year = 2021;
 
 #define MAX_QUEUE_SIZE (15 * 1024 * 1024)
 #define MIN_FRAMES 25
@@ -913,15 +917,15 @@ static int upload_texture(SDL_Texture **tex, AVFrame *frame, struct SwsContext *
     Uint32 sdl_pix_fmt;
     SDL_BlendMode sdl_blendmode;
     get_sdl_pix_fmt_and_blendmode(frame->format, &sdl_pix_fmt, &sdl_blendmode);
-    printf("\r\nsdl_pix_fmt : 0x%x\r\n", sdl_pix_fmt);
-    printf("\r\nSDL_PIXELFORMAT_RGB888 : 0x%x\r\n", SDL_PIXELFORMAT_RGB888);
+    //printf("\r\nsdl_pix_fmt : 0x%x\r\n", sdl_pix_fmt);
+    //printf("\r\nSDL_PIXELFORMAT_RGB888 : 0x%x\r\n", SDL_PIXELFORMAT_RGB888);
     if (realloc_texture(tex, sdl_pix_fmt == SDL_PIXELFORMAT_UNKNOWN ? SDL_PIXELFORMAT_ARGB8888 : sdl_pix_fmt, frame->width, frame->height, sdl_blendmode, 0) < 0){
-        printf("\r\nreturn sdl_pix_fmt : %d\r\n", sdl_pix_fmt);
+        //printf("\r\nreturn sdl_pix_fmt : %d\r\n", sdl_pix_fmt);
         return -1;
     }
     switch (sdl_pix_fmt) {
         case SDL_PIXELFORMAT_UNKNOWN:
-            printf("SDL_PIXELFORMAT_UNKNOWN!\n");
+            //printf("SDL_PIXELFORMAT_UNKNOWN!\n");
             /* This should only happen if we are not using avfilter... */
             *img_convert_ctx = sws_getCachedContext(*img_convert_ctx,
                 frame->width, frame->height, frame->format, frame->width, frame->height,
@@ -940,7 +944,7 @@ static int upload_texture(SDL_Texture **tex, AVFrame *frame, struct SwsContext *
             }
             break;
         case SDL_PIXELFORMAT_IYUV:
-            printf("SDL_PIXELFORMAT_IYUV\n");
+            //printf("SDL_PIXELFORMAT_IYUV\n");
             if (frame->linesize[0] > 0 && frame->linesize[1] > 0 && frame->linesize[2] > 0) {
                 ret = SDL_UpdateYUVTexture(*tex, NULL, frame->data[0], frame->linesize[0],
                                                        frame->data[1], frame->linesize[1],
@@ -955,7 +959,7 @@ static int upload_texture(SDL_Texture **tex, AVFrame *frame, struct SwsContext *
             }
             break;
         default:
-            printf("Default\n");
+            //printf("Default\n");
             if (frame->linesize[0] < 0) {
                 ret = SDL_UpdateTexture(*tex, NULL, frame->data[0] + frame->linesize[0] * (frame->height - 1), -frame->linesize[0]);
             } else {
@@ -1727,7 +1731,7 @@ display:
                 av_diff = get_master_clock(is) - get_clock(&is->audclk);
 
             av_bprint_init(&buf, 0, AV_BPRINT_SIZE_AUTOMATIC);
-            av_bprintf(&buf,
+            /*av_bprintf(&buf,
                       "%7.2f %s:%7.3f fd=%4d aq=%5dKB vq=%5dKB sq=%5dB f=%"PRId64"/%"PRId64"   \r",
                       get_master_clock(is),
                       (is->audio_st && is->video_st) ? "A-V" : (is->video_st ? "M-V" : (is->audio_st ? "M-A" : "   ")),
@@ -1737,7 +1741,7 @@ display:
                       vqsize / 1024,
                       sqsize,
                       is->video_st ? is->viddec.avctx->pts_correction_num_faulty_dts : 0,
-                      is->video_st ? is->viddec.avctx->pts_correction_num_faulty_pts : 0);
+                      is->video_st ? is->viddec.avctx->pts_correction_num_faulty_pts : 0);*/
 
             if (show_status == 1 && AV_LOG_INFO > av_log_get_level())
                 fprintf(stderr, "%s", buf.str);
@@ -2141,11 +2145,112 @@ static int decoder_start(Decoder *d, int (*fn)(void *), const char *thread_name,
 }
 
 struct SwsContext *sws_ctx = NULL;
+
+/********************************************************
+* Write RGB Red to Pico TEST
+**********************************************************/
+int write_framergb_to_pico_test_red(AVFrame *pFrame, int channel_count, int start_x, int start_y,int width, int height ,int id_num, int layout_config){
+	
+	unsigned int buf_size = (width*height*channel_count) + 4;
+	unsigned char *buf = malloc(buf_size);
+	int write_len = 0;
+	char color = 0x00;
+	sprintf(buf, "id%d:", id_num);
+	for(int i = 0; i < 2880; i++){
+		if((i%3) == 0){
+			color = 0x80;
+		}else{
+			color = 0x00;
+		}
+		memset(buf + 4 + i, color, 1);
+	}
+
+	write_len = picousb_out_transfer(handle_pico0, buf, buf_size);
+	printf("write_len = %d\n", write_len);
+	return 0;
+
+}
+/********************************************************
+* Write RGB to Pico TEST
+**********************************************************/
+int write_framergb_to_pico_test_gray(AVFrame *pFrame, int channel_count, int start_x, int start_y,int width, int height ,int id_num, int layout_config){
+	
+	unsigned int buf_size = (width*height*channel_count) + 4;
+	unsigned char *buf = malloc(buf_size);
+	int write_len = 0;
+	sprintf(buf, "id%d:", id_num);
+	memset(buf + 4, 0x80, 2880);
+
+	write_len = picousb_out_transfer(handle_pico0, buf, buf_size);
+	printf("write_len = %d\n", write_len);
+	return 0;
+
+}
+
+
+/********************************************************
+* Write RGB to Pico
+**********************************************************/
+int write_framergb_to_pico(AVFrame *pFrame, int channel_count, int start_x, int start_y,int width, int height ,int id_num, int layout_config){
+    int y;
+	int offset = 0;
+	int write_len = 0;
+	//int channel = 3; //rgb channels
+	unsigned int buf_size = (width*height*channel_count) + 4;
+	unsigned char *buf = malloc(buf_size);
+	if(buf == NULL){
+		return -1;//ENOMEM		
+	}
+	sprintf(buf, "id%d:", id_num);
+	printf("id_num = %d, layout_config = %d\n", id_num, layout_config);
+	//printf("start_x = %d\n", start_x);
+	//printf("start_y = %d\n", start_y);
+	//printf("pFrame->linesize[0] = %d\n", pFrame->linesize[0]);
+	offset += 4;
+    //Write piexl data
+#if 0	
+    for(y = 0; y < height; y++){
+		memcpy(buf + offset, pFrame->data[0] + y*pFrame->linesize[0], width*3);
+		offset += width*3;
+        //fwrite(pFrame->data[0] + y*pFrame->linesize[0], 1, width*3, pFile);
+	}
+#else
+    for(y = start_y; y < (start_y + height); y++){
+		if(layout_config == 1){
+			if((y - start_y) % 2 == 0){
+				memcpy(buf + offset, pFrame->data[0] + y*pFrame->linesize[0] + start_x*channel_count, width*channel_count);
+			}else{
+				for(int i = start_x ; i < (start_x + width) ; i++){
+					memcpy(buf + offset + ((i-start_x)*channel_count), pFrame->data[0] + y*pFrame->linesize[0] + (width - i - 1)*channel_count, channel_count);
+				}
+			}
+		}else if(layout_config == 3){
+			if((y - start_y) % 2 == 0){
+				memcpy(buf + offset, pFrame->data[0] + y*pFrame->linesize[0] + start_x*channel_count, width*channel_count);
+			}else{
+				for(int i = start_x ; i < (start_x + width) ; i++){
+				//for(int i = 0 ; i < width ; i++){
+					memcpy(buf + offset + ((i-start_x)*channel_count), pFrame->data[0] + y*pFrame->linesize[0] + (width - i - 1)*channel_count, channel_count);
+				}
+			}
+		}
+		offset += width*3;
+	}
+	/*wrtie buf to pico	*/
+	
+	if( offset != picousb_out_transfer(handle_pico0, buf, buf_size)){
+		printf("error id_num : %d, offset = %d, buf_size = %d\n", id_num, offset, buf_size);
+		free(buf);
+		return -1;
+	}else{
+		free(buf);
+	}
+#endif	
+	printf("id_num : %d, offset = %d\n", id_num, offset);
+	return offset;
+}
 /********************************************************
 * Test Write RGB to File
-*
-*
-*
 **********************************************************/
 void SaveFrame(AVFrame *pFrame, int width, int height, int iFrame){
     FILE *pFile;
@@ -2213,31 +2318,39 @@ static int video_thread(void *arg)
 
     for (;;) {
         ret = get_video_frame(is, frame);
-        
         if (ret < 0)
             goto the_end;
         if (!ret)
             continue;
 
-        
-
         if(sws_ctx == NULL){
-            printf("is->viddec.avctx->width = %d\n", is->viddec.avctx->width);
-            printf("is->viddec.avctx->height = %d\n", is->viddec.avctx->height);
             sws_ctx = sws_getContext(is->viddec.avctx->width, is->viddec.avctx->height, is->viddec.avctx->pix_fmt, 
                                         1920, 1080, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
         }else{
-            printf("sws_ctx = 0x%x\n", sws_ctx);
+            //printf("sws_ctx = 0x%x\n", sws_ctx);
             //Convert the image from its native format to RGB
 			sws_scale(sws_ctx, (uint8_t const *)frame->data, frame->linesize, 0, is->viddec.avctx->height, frameRGB->data, frameRGB->linesize);    
             // Save the frame to disk
-			if(++i <= 5){
-			    SaveFrame(frameRGB, 1920,1080, i);
+			if(++i <= 60){
+			    //SaveFrame(frameRGB, 1920, 1080, i);
+			    SaveFrame(frameRGB, 640, 480, i);
             }
+			//write_framergb_to_pico(frameRGB, 3, 80, 96, i);
+			int id_num = -1;
+			for(int x = 0; x < 2; x ++){
+				for(int y = 0; y < 4; y++){
+					if(x < 1){
+						id_num++;
+					}else{
+						id_num = LED_PANELS - y - 1;
+					}
+					write_framergb_to_pico(frameRGB, 3, x*LED_WIDTH, y*LED_HEIGHT, LED_WIDTH, LED_HEIGHT, id_num, led_layout[id_num]);
+				}
+			}
         }
         
 #if CONFIG_AVFILTER
-        printf("CONFIG_AVFILTER!\n");
+        //printf("CONFIG_AVFILTER!\n");
         if (   last_w != frame->width
             || last_h != frame->height
             || last_format != frame->format
@@ -2310,7 +2423,10 @@ static int video_thread(void *arg)
 #if CONFIG_AVFILTER
     avfilter_graph_free(&graph);
 #endif
+
     av_frame_free(&frame);
+    av_frame_free(&frameRGB);
+
     return 0;
 }
 
@@ -3131,7 +3247,7 @@ static int read_thread(void *arg)
             //printf("\npacket_queue_put C!\n");
             packet_queue_put(&is->subtitleq, pkt);
         } else {
-            printf("\nav_packet_unref!\n");
+            //printf("\nav_packet_unref!\n");
             av_packet_unref(pkt);
         }
     }
@@ -3763,7 +3879,9 @@ int main(int argc, char **argv)
     VideoState *is;
     printf("Jason show ledcliend!\n");
     init_dynload();
-
+	printf("Jason test pico usb!\n");
+	handle_pico0 = picousb_init();
+	picousb_out_transfer(handle_pico0, "Hello", 5);
     av_log_set_flags(AV_LOG_SKIP_REPEATED);
     parse_loglevel(argc, argv, options);
 
