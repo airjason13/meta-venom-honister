@@ -61,6 +61,7 @@
 //#include "picousb.h"  //move to ledlayout.h
 #include "ledlayout.h"
 #include "udpmr.h"
+#include "utildbg.h"
 #include <assert.h>
 
 struct libusb_device_handle *handle_pico0 = NULL;
@@ -2210,7 +2211,7 @@ int write_framergb_to_pico(AVFrame *pFrame, int channel_count, int start_x, int 
 		return -1;//ENOMEM		
 	}
 	sprintf(buf, "id%d:", id_num);
-	//printf("id_num = %d, layout_config = %d\n", id_num, layout_config);
+	log_info("id_num = %d, layout_config = %d\n", id_num, layout_config);
 	//printf("start_x = %d\n", start_x);
 	//printf("start_y = %d\n", start_y);
 	//printf("pFrame->linesize[0] = %d\n", pFrame->linesize[0]);
@@ -2338,11 +2339,13 @@ static int video_thread(void *arg)
             //printf("sws_ctx = 0x%x\n", sws_ctx);
             //Convert the image from its native format to RGB
 			sws_scale(sws_ctx, (uint8_t const *)frame->data, frame->linesize, 0, is->viddec.avctx->height, frameRGB->data, frameRGB->linesize);    
-            // Save the frame to disk
+#if 0       // Save the frame to disk
+
 			if(++i <= 60){
 			    //SaveFrame(frameRGB, 1920, 1080, i);
 			    SaveFrame(frameRGB, 640, 480, i);
             }
+#endif			
 			//write_framergb_to_pico(frameRGB, 3, 80, 96, i);
 			int id_num = -1;
 			for(int x = 0; x < 2; x ++){
@@ -3886,6 +3889,16 @@ int main(int argc, char **argv)
     int flags;
     VideoState *is;
     printf("Jason show ledcliend!\n");
+	int enable_log_file = log_init(true);
+	if(enable_log_file != 0){
+		log_fatal("ERROR!Can't enable log file\n");
+	}
+	log_trace("Jason start debug trace!\n");
+	log_debug("Jason start debug debug!\n");
+	log_info("Jason start debug info!\n");
+	log_warn("Jason start debug warn!\n");
+	log_error("Jason start debug error!\n");
+	log_fatal("Jason start debug fatal!\n");
     init_dynload();
 
 	/* initial pico*/

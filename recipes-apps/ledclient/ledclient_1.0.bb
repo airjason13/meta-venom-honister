@@ -9,6 +9,7 @@ SRC_URI += "file://app/ \
             file://ext/ \
             file://picousblib \
             file://udpmrlib \
+            file://utildbglib \
             file://include/ \
             file://Makefile \
             file://config.h \
