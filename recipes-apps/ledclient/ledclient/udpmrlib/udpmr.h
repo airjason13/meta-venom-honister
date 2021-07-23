@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <utildbg.h>
 
 #define MSGBUFSIZE 				256
 #define MULTICAST_GROUP_STRLEN 	64

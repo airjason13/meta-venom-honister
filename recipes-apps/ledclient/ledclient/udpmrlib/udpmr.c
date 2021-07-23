@@ -61,6 +61,7 @@ void *udpmr_thread(void *data){
         return 1;
 	}
 	while (1) {
+#if 0
         char msgbuf[MSGBUFSIZE];
         int addrlen = sizeof(addr);
         int nbytes = recvfrom(fd, msgbuf, MSGBUFSIZE, 0, (struct sockaddr *) &addr, &addrlen);
@@ -71,6 +72,10 @@ void *udpmr_thread(void *data){
         msgbuf[nbytes] = '\0';
         printf("recv %d bytes : %s" , nbytes, msgbuf);
 		callbacks[CALLBACK_GET_VERSION](msgbuf);
+#else
+		log_info("test from udpmr!\n");
+		usleep(30);
+#endif
      }
 }
 

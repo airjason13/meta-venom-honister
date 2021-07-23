@@ -13,6 +13,7 @@ static struct
     int level;
     int quiet;
 	char fname[256];
+	int log_file_prefix_type;
 	pthread_t tid;
 	pthread_mutex_t mutex_lock;
 } L;
@@ -38,11 +39,14 @@ void check_log_file(void){
 		stat(L.fname, &st);
 		long size = st.st_size;
 		printf("size = %ld\n", size);
+		
 		if(size > LOG_FILE_MAX_SIZE){
-			renew_log_file();
+			renew_log_file(L.log_file_prefix_type);
+			printf("fname = %s\n", L.fname);
+			printf("fp = %x\n", L.fp);
 		}
 		pthread_mutex_unlock(&L.mutex_lock);
-		usleep(3);
+		usleep(3000);
 	}
 }
 
@@ -328,7 +332,7 @@ void lock_callback(void *udata, int lock){
 	}
 }
 
-int renew_log_file(void){
+int renew_log_file(int type){
 	FILE *tmpfp = NULL;
 	time_t rawtime;
     struct tm 		*tm;
@@ -336,22 +340,76 @@ int renew_log_file(void){
 	char buf[64];
 	int err;
 
-	(void) time(&rawtime);
-	tm = localtime(&rawtime);
-    buf[strftime(buf, sizeof(buf), "%Y%m%d_%H%M%S", tm)] = '\0';
-	sprintf(filename, "%s%s.log", LOG_FILE_PATH, buf);
+	//close original log_file handler first
+	fclose(L.fp);
+	L.fp = NULL;
 
+	if(type == LOG_PREFIX_TIME){	
+		(void) time(&rawtime);
+		tm = localtime(&rawtime);
+    	buf[strftime(buf, sizeof(buf), "%Y%m%d_%H%M%S", tm)] = '\0';
+		sprintf(filename, "%sledclient_%s.log", LOG_FILE_PATH, buf);
+	}else if(type == LOG_PREFIX_ID){
+		char config_fname[256] = {0};
+		sprintf(config_fname, "%s%s", LOG_FILE_PATH, LOG_CONFIG_FILE);
+		FILE* config_file = fopen(config_fname, "r");
+		unsigned int tmp_id = 0;
+		if(config_file == NULL){
+			return -1;
+		}
+		fscanf(config_file, "log_file_id:%d\n", &tmp_id);
+		printf("tmp_id : %d\n", tmp_id);
+		sprintf(filename, "%sledclient_%04d.log", LOG_FILE_PATH, tmp_id);
+		printf("log filename : %s\n", filename);
+		//remove first
+		remove(filename);
+		//re-write new id to config
+		fclose(config_file);
+		remove(config_fname);
+		config_file = fopen(config_fname, "w+");
+		if(config_file == NULL){
+			printf("config file re-write error!\n");
+			return -1;
+		}else{
+			if(tmp_id >= 6){
+				tmp_id = 1;
+			}else{
+				tmp_id ++;
+			}
+			printf("re-write log config file to %d id!\n", tmp_id);
+			fprintf(config_file, "log_file_id:%d\n", tmp_id);
+			fsync(config_file);
+			fclose(config_file);
+		}
+	}else{
+		printf("Log TYPE ERROR!\n");
+	}
+	
 	tmpfp = fopen(filename, "w");
 	if(tmpfp != NULL){
 		L.fp = tmpfp;
 		strcpy(L.fname, filename);
+
 		return 0;
-	}	
+	}else{
+		while(1){
+			printf("filename = %s\n", filename);
+			printf("shit!\n");
+			usleep(30000);
+		}
+	}
+		
 	return -1;
 }
 
-
-int log_init(bool enable){
+/*****************************************
+* function 	: int log_init(bool enable, int type)
+* param		: bool enable => enable log to file or not
+*			  int type => file name prefix type  
+* return 	: 0  => success
+*			  -1 => fail
+******************************************/
+int log_init(bool enable, int type){
 	FILE *tmpfp = NULL;
 	time_t rawtime;
     struct tm 		*tm;
@@ -370,11 +428,56 @@ int log_init(bool enable){
 	if(enable == false){
 		return 0;
 	}
+
+	if(access(LOG_FILE_PATH, 0)==-1){
+        if (mkdir(LOG_FILE_PATH, 0777)){
+            printf("creat file bag failed!!!");
+        }
+    }
 	
-	(void) time(&rawtime);
-	tm = localtime(&rawtime);
-    buf[strftime(buf, sizeof(buf), "%Y%m%d_%H%M%S", tm)] = '\0';
-	sprintf(filename, "%s%s.log", LOG_FILE_PATH, buf);
+	if(type == LOG_PREFIX_TIME){	
+		(void) time(&rawtime);
+		tm = localtime(&rawtime);
+    	buf[strftime(buf, sizeof(buf), "%Y%m%d_%H%M%S", tm)] = '\0';
+		sprintf(filename, "%sledclient_%s.log", LOG_FILE_PATH, buf);
+	}else if(type == LOG_PREFIX_ID){
+		char config_fname[256] = {0};
+		sprintf(config_fname, "%s%s", LOG_FILE_PATH, LOG_CONFIG_FILE);
+		FILE* config_file = fopen(config_fname, "r");
+		int tmp_id = 0;
+		if(config_file == NULL){
+			return -1;
+		}
+		fscanf(config_file, "log_file_id:%d\n", &tmp_id);
+		printf("tmp_id : %d\n", tmp_id);
+		sprintf(filename, "%sledclient_%04d.log", LOG_FILE_PATH, tmp_id);
+		printf("log filename : %s\n", filename);
+		//re-write new id to config
+		fclose(config_file);
+		remove(config_fname);
+		printf("remove ok!\n");
+		config_file = fopen(config_fname, "w+");
+		if(config_file == NULL){
+			printf("config file re-write error!\n");
+			return -1;
+		}else{
+			if(tmp_id >= 6){
+				tmp_id = 1;
+			}else{
+				tmp_id ++;
+			}
+			printf("re-write log config file!\n");
+			fprintf(config_file, "log_file_id:%d\n", tmp_id);
+			printf("re-write ok!\n");
+			fsync(config_file);
+			fclose(config_file);
+		}
+
+	}else{
+		printf("Log TYPE ERROR!\n");
+	}
+	
+	L.log_file_prefix_type = type;
 
 	tmpfp = fopen(filename, "w");
 	if(tmpfp != NULL){

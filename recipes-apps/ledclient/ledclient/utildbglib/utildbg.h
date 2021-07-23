@@ -23,7 +23,14 @@ extern "C" {
 #endif*/
 /*-----------------------ori temp debug marco----------------------*/
 
-#define LOG_FILE_PATH 		"/home/root/"
+#define LOG_FILE_PATH 		"/home/root/.ledclient_log/"
+#define LOG_CONFIG_FILE		".log_config"
+//for log file prefix
+//LOG_PREFIX_TIME : ex. 20210723_141516.log
+//LOG_PREFIX_ID   : ex. 0001.log 
+#define LOG_PREFIX_TIME		0
+#define LOG_PREFIX_ID		1
+
 #define LOG_FILE_MAX_SIZE	65535
 #define LOG_USE_COLOR
 /*static const char *level_names[] = {
@@ -33,6 +40,8 @@ extern "C" {
 #define MAX_TAG_NUM     64
 #define LEVEL_STRLENGTH 32
 #define stringiz(arg)   #arg
+
+
 
 typedef enum
 {
@@ -73,7 +82,8 @@ void log_set_lock(log_LockFn fn);
 void log_set_fp(FILE *fp);
 void log_set_level(int level);
 void log_set_quiet(int enable);
-int log_init(bool enable);
+int renew_log_file(int type);
+int log_init(bool log_file_enable, int type);
 void dump_memory_data(unsigned char *buf, int size);
 
 //void jlog(int level, const char *file, int line, const char *fmt, ...);

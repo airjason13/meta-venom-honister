@@ -3889,7 +3889,7 @@ int main(int argc, char **argv)
     int flags;
     VideoState *is;
     printf("Jason show ledcliend!\n");
-	int enable_log_file = log_init(true);
+	int enable_log_file = log_init(true, LOG_PREFIX_ID);
 	if(enable_log_file != 0){
 		log_fatal("ERROR!Can't enable log file\n");
 	}
