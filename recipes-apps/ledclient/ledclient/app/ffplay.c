@@ -62,6 +62,8 @@
 #include "ledlayout.h"
 #include "udpmr.h"
 #include "utildbg.h"
+#include "lcdcli.h"
+#include "version.h"
 #include <assert.h>
 
 struct libusb_device_handle *handle_pico0 = NULL;
@@ -2211,19 +2213,12 @@ int write_framergb_to_pico(AVFrame *pFrame, int channel_count, int start_x, int 
 		return -1;//ENOMEM		
 	}
 	sprintf(buf, "id%d:", id_num);
-	log_info("id_num = %d, layout_config = %d\n", id_num, layout_config);
+	//log_info("id_num = %d, layout_config = %d\n", id_num, layout_config);
 	//printf("start_x = %d\n", start_x);
 	//printf("start_y = %d\n", start_y);
 	//printf("pFrame->linesize[0] = %d\n", pFrame->linesize[0]);
 	offset += 4;
     //Write piexl data
-#if 0	
-    for(y = 0; y < height; y++){
-		memcpy(buf + offset, pFrame->data[0] + y*pFrame->linesize[0], width*3);
-		offset += width*3;
-        //fwrite(pFrame->data[0] + y*pFrame->linesize[0], 1, width*3, pFile);
-	}
-#else
     for(y = start_y; y < (start_y + height); y++){
 		if(layout_config == 1){
 			if((y - start_y) % 2 == 0){
@@ -2246,7 +2241,6 @@ int write_framergb_to_pico(AVFrame *pFrame, int channel_count, int start_x, int 
 		offset += width*3;
 	}
 	/*wrtie buf to pico	*/
-	
 	if( offset != picousb_out_transfer(handle_pico0, buf, buf_size)){
 		printf("error id_num : %d, offset = %d, buf_size = %d\n", id_num, offset, buf_size);
 		free(buf);
@@ -2254,7 +2248,7 @@ int write_framergb_to_pico(AVFrame *pFrame, int channel_count, int start_x, int 
 	}else{
 		free(buf);
 	}
-#endif	
+
 	//printf("id_num : %d, offset = %d\n", id_num, offset);
 	return offset;
 }
@@ -3916,6 +3910,9 @@ int main(int argc, char **argv)
 	}else{
 		printf("callback register ok!\n");
 	}
+
+	/*set 1602 lcd*/
+	lcd_send_command(0, 0, LEDCLIENT_VERSION);
 		
 	av_log_set_flags(AV_LOG_SKIP_REPEATED);
     parse_loglevel(argc, argv, options);

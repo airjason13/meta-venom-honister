@@ -10,6 +10,7 @@ SRC_URI += "file://app/ \
             file://picousblib \
             file://udpmrlib \
             file://utildbglib \
+            file://lcdclilib \
             file://include/ \
             file://Makefile \
             file://config.h \
@@ -25,6 +26,7 @@ do_install() {
     install -d ${D}/${bindir}
     install -d ${D}/${sysconfdir}
     install -d ${D}/${sysconfdir}/xdg/autostart/
+    install -d ${D}/home/root/i2c_lcd_server/
     install -d ${D}/home/root/led_machine_option/
     install -d ${D}/home/root/led_machine_option/templates/
     install -m 755 prog/ledclient ${D}/${bindir}
@@ -32,12 +34,17 @@ do_install() {
     install -m 755 ext/launch_led_role_option.sh ${D}/${bindir}
     install -m 755 ext/set_led_env.sh ${D}/${bindir}
     install -m 755 ext/launch_led_player.sh ${D}/${bindir}
+    install -m 755 ext/launch_i2c_lcd_server.sh ${D}/${bindir}
+    install -m 755 ext/launch_led_client.sh ${D}/${bindir}
     install -m 755 ext/set_always_display_on.sh ${D}/${bindir}
+    install -m 755 ext/set_br.sh ${D}/${bindir}
     install -m 755 ext/set_automount.sh ${D}/${bindir}
     install -m 755 ext/set_panel_autohide.sh ${D}/${bindir}
     cp -r ext/pyflask_machine_option/* ${D}/home/root/led_machine_option/
+    cp -r ext/py1602_server/* ${D}/home/root/i2c_lcd_server/
     install -m 755 ext/led_role.conf ${D}/home/root/
     install -m 755 ext/led_role_option.desktop ${D}${sysconfdir}/xdg/autostart/led_role_option.desktop
+    install -m 755 ext/i2c_lcd.desktop ${D}${sysconfdir}/xdg/autostart/i2c_lcd.desktop
     install -m 755 ext/set_led_env.desktop ${D}${sysconfdir}/xdg/autostart/set_led_env.desktop
     install -m 755 ext/set_panel_autohide.desktop ${D}${sysconfdir}/xdg/autostart/set_panel_autohide.desktop
     install -m 755 ext/set_automount.desktop ${D}${sysconfdir}/xdg/autostart/set_panel_automount.desktop

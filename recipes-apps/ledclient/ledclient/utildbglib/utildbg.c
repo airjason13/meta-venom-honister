@@ -38,12 +38,12 @@ void check_log_file(void){
 		pthread_mutex_lock(&L.mutex_lock);
 		stat(L.fname, &st);
 		long size = st.st_size;
-		printf("size = %ld\n", size);
+		//printf("size = %ld\n", size);
 		
 		if(size > LOG_FILE_MAX_SIZE){
 			renew_log_file(L.log_file_prefix_type);
-			printf("fname = %s\n", L.fname);
-			printf("fp = %x\n", L.fp);
+			//printf("fname = %s\n", L.fname);
+			//printf("fp = %x\n", L.fp);
 		}
 		pthread_mutex_unlock(&L.mutex_lock);
 		usleep(3000);
@@ -355,7 +355,13 @@ int renew_log_file(int type){
 		FILE* config_file = fopen(config_fname, "r");
 		unsigned int tmp_id = 0;
 		if(config_file == NULL){
-			return -1;
+			//new a config_file
+			config_file = fopen(config_fname, "w+");
+			fprintf(config_file, "log_file_id:1\n");
+			fsync(config_file);
+			fclose(config_file);
+			config_file = fopen(config_fname, "r");
+
 		}
 		fscanf(config_file, "log_file_id:%d\n", &tmp_id);
 		printf("tmp_id : %d\n", tmp_id);
@@ -389,14 +395,7 @@ int renew_log_file(int type){
 	if(tmpfp != NULL){
 		L.fp = tmpfp;
 		strcpy(L.fname, filename);
-
 		return 0;
-	}else{
-		while(1){
-			printf("filename = %s\n", filename);
-			printf("shit!\n");
-			usleep(30000);
-		}
 	}
 		
 	return -1;

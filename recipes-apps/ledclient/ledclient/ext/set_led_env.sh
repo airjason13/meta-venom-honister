@@ -40,6 +40,8 @@ if [[ $CLIENT_TAG == $ROLE ]];then
     echo "Let's set client env"
     echo "1. set_br"
     set_br.sh
+	echo "2. check ip and launch ledclient"
+	launch_led_client.sh
 elif [[ $PLAYER_TAG == $ROLE ]];then
     touch /home/root/player_now
     echo "Just a simple player"
