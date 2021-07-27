@@ -132,7 +132,7 @@ struct libusb_device_handle *picousb_init(void)
             break;
         }
 
-        printf("\nDevice Descriptors: ");
+        /*printf("\nDevice Descriptors: ");
         printf("\n\tVendor ID: %x", desc.idVendor);
         printf("\n\tProduct ID: %x", desc.idProduct);
         printf("\n\tSerial Number: %x", desc.iSerialNumber);
@@ -144,7 +144,7 @@ struct libusb_device_handle *picousb_init(void)
         printf("\n\tDevice Sub-Class: %d", desc.bDeviceSubClass);
         printf("\n\tDevice Protocol: %d", desc.bDeviceProtocol);
         printf("\n\tMax. Packet Size: %d", desc.bMaxPacketSize0);
-        printf("\n\tNumber of Configurations: %d\n", desc.bNumConfigurations);
+        printf("\n\tNumber of Configurations: %d\n", desc.bNumConfigurations);*/
 
         e = libusb_get_string_descriptor_ascii(handle, desc.iManufacturer, (unsigned char*) str1, sizeof(str1));
         if (e < 0)

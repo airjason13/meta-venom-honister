@@ -11,6 +11,7 @@ SRC_URI += "file://app/ \
             file://udpmrlib \
             file://utildbglib \
             file://lcdclilib \
+            file://jtimerlib \
             file://include/ \
             file://Makefile \
             file://config.h \
@@ -37,7 +38,6 @@ do_install() {
     install -m 755 ext/launch_i2c_lcd_server.sh ${D}/${bindir}
     install -m 755 ext/launch_led_client.sh ${D}/${bindir}
     install -m 755 ext/set_always_display_on.sh ${D}/${bindir}
-    install -m 755 ext/set_br.sh ${D}/${bindir}
     install -m 755 ext/set_automount.sh ${D}/${bindir}
     install -m 755 ext/set_panel_autohide.sh ${D}/${bindir}
     cp -r ext/pyflask_machine_option/* ${D}/home/root/led_machine_option/

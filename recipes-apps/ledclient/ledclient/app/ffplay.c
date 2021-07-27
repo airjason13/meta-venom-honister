@@ -62,9 +62,12 @@
 #include "ledlayout.h"
 #include "udpmr.h"
 #include "utildbg.h"
+#include "ledclient_version.h"
+#include "jtimer.h"
 #include "lcdcli.h"
-#include "version.h"
 #include <assert.h>
+
+int led_fps = 0;
 
 struct libusb_device_handle *handle_pico0 = NULL;
 struct libusb_device_handle *handle_pico1 = NULL;
@@ -106,6 +109,9 @@ const int program_birth_year = 2021;
 #define AUDIO_DIFF_AVG_NB   20
 
 /* polls for possible required screen refresh at least this often, should be less than 1/fps */
+#define REFRESH_RATE 0.01
+
+/* NOTE: the size must be big enough to compensate the hardware audio buffersize size */
 #define REFRESH_RATE 0.01
 
 /* NOTE: the size must be big enough to compensate the hardware audio buffersize size */
@@ -2157,6 +2163,17 @@ static int decoder_start(Decoder *d, int (*fn)(void *), const char *thread_name,
 
 struct SwsContext *sws_ctx = NULL;
 
+/****************************************************************
+*
+*****************************************************************/
+void fps_counter(void){
+	char buf[16] = {0};
+	log_info("led fps = %d\n", led_fps);
+	sprintf(buf, "led fps=%d", led_fps);
+	lcd_send_command(0, 1, buf);
+	led_fps = 0;
+}
+
 /********************************************************
 * Write RGB Red to Pico TEST
 **********************************************************/
@@ -2328,7 +2345,7 @@ static int video_thread(void *arg)
 
         if(sws_ctx == NULL){
             sws_ctx = sws_getContext(is->viddec.avctx->width, is->viddec.avctx->height, is->viddec.avctx->pix_fmt, 
-                                        1920, 1080, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
+                                        is->viddec.avctx->width, is->viddec.avctx->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
         }else{
             //printf("sws_ctx = 0x%x\n", sws_ctx);
             //Convert the image from its native format to RGB
@@ -2352,6 +2369,7 @@ static int video_thread(void *arg)
 					write_framergb_to_pico(frameRGB, 3, x*LED_WIDTH, y*LED_HEIGHT, LED_WIDTH, LED_HEIGHT, id_num, led_layout[id_num]);
 				}
 			}
+			led_fps ++;
         }
         
 #if CONFIG_AVFILTER
@@ -3903,6 +3921,7 @@ int main(int argc, char **argv)
 	/*initial udpmr test*/
 	udpmr_init("239.11.11.11", 9898);
 
+
 	/*initial callback test*/
 	int ret = register_udpmr_callback(CALLBACK_GET_VERSION, &get_version);
 	if(ret != 0){
@@ -3913,6 +3932,10 @@ int main(int argc, char **argv)
 
 	/*set 1602 lcd*/
 	lcd_send_command(0, 0, LEDCLIENT_VERSION);
+	
+	/*start fps counter timer*/
+	timer_t fps_counter_tid = jset_timer(1, 0, 1, 0, &(fps_counter), 99);
+	log_info("fps_counter_tid = %d\n", fps_counter_tid);
 		
 	av_log_set_flags(AV_LOG_SKIP_REPEATED);
     parse_loglevel(argc, argv, options);

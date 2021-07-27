@@ -48,6 +48,9 @@ typedef enum{
 #define LED_HEIGHT		24
 #define LED_CHANNELS	3
 
+
+//int led_fps = 0;
+
 typedef struct ledparams{
 	struct libusb_device_handle *pico_handle;
 	int i_ledpanelsi;// = 8;
