@@ -445,7 +445,13 @@ int log_init(bool enable, int type){
 		FILE* config_file = fopen(config_fname, "r");
 		int tmp_id = 0;
 		if(config_file == NULL){
-			return -1;
+			//new a config_file
+			config_file = fopen(config_fname, "w+");
+			fprintf(config_file, "log_file_id:1\n");
+			fsync(config_file);
+			fclose(config_file);
+			config_file = fopen(config_fname, "r");
+			//return -1;
 		}
 		fscanf(config_file, "log_file_id:%d\n", &tmp_id);
 		printf("tmp_id : %d\n", tmp_id);

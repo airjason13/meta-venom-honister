@@ -1,6 +1,7 @@
 #!/bin/sh
 if [ -e /sys/class/net/enp1s0u1u2u4 ];then
 	echo "enp1s0u1u1u4 exists"
+	pkill dnsmasq #for sure that all client request ip from server
 	brctl addbr br0
 	#brctl stp br0 off
 	brctl addif br0 eth0 
