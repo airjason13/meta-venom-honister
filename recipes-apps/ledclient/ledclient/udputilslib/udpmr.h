@@ -18,7 +18,7 @@ typedef void (*callback_t)(char *);
 #define CALLBACK_GET_VERSION 		0
 #define CALLBACK_GET_TEST			1
 
-#define CALLBACK_MAX				10
+#define CALLBACK_MAX				CALLBACK_GET_TEST
 
 
 

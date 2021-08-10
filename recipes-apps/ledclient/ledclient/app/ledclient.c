@@ -61,6 +61,8 @@
 //#include "picousb.h"  //move to ledlayout.h
 #include "ledlayout.h"
 #include "udpmr.h"
+#include "udpbr.h"
+#include "udp_utils.h"
 #include "utildbg.h"
 #include "ledclient_version.h"
 #include "jtimer.h"
@@ -2169,7 +2171,7 @@ struct SwsContext *sws_ctx = NULL;
 *****************************************************************/
 void fps_counter(void){
 	char buf[16] = {0};
-	log_info("led fps = %d\n", led_fps);
+	//log_info("led fps = %d\n", led_fps);
 	sprintf(buf, "led fps=%d", led_fps);
 	lcd_send_command(0, 1, buf);
 	led_fps = 0;
@@ -2331,11 +2333,17 @@ static int video_thread(void *arg)
 
     //printf("is->viddec.avctx->width = %d\n", is->viddec.avctx->width);
     //printf("is->viddec.avctx->height = %d\n", is->viddec.avctx->height);
-    //for initial frameRGB
+    //for initial frameRGB, initial with max widthxheight : 1920x1080
+#if 0
     numBytes = avpicture_get_size(AV_PIX_FMT_RGB24, is->viddec.avctx->width, is->viddec.avctx->height);
     buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
     avpicture_fill((AVPicture *)frameRGB, buffer, AV_PIX_FMT_RGB24, is->viddec.avctx->width, is->viddec.avctx->height);
-    
+#else
+    numBytes = avpicture_get_size(AV_PIX_FMT_RGB24, 1920, 1080);
+    buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
+    avpicture_fill((AVPicture *)frameRGB, buffer, AV_PIX_FMT_RGB24, 1920, 1080);
+
+#endif
 
     for (;;) {
         ret = get_video_frame(is, frame);
@@ -2347,10 +2355,38 @@ static int video_thread(void *arg)
         if(sws_ctx == NULL){
             sws_ctx = sws_getContext(is->viddec.avctx->width, is->viddec.avctx->height, is->viddec.avctx->pix_fmt, 
                                         is->viddec.avctx->width, is->viddec.avctx->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
+			if(sws_ctx == NULL){
+				log_error("sws_ctx initial failed!\n");
+			}
         }else{
-            //printf("sws_ctx = 0x%x\n", sws_ctx);
+
             //Convert the image from its native format to RGB
-			sws_scale(sws_ctx, (uint8_t const *)frame->data, frame->linesize, 0, is->viddec.avctx->height, frameRGB->data, frameRGB->linesize);    
+			int scale_ret = sws_scale(sws_ctx, (uint8_t const *)frame->data, frame->linesize, 0, is->viddec.avctx->height, frameRGB->data, frameRGB->linesize);    
+			/*int scale_ret = sws_scale(sws_ctx, (uint8_t const *)frame->data, frame->linesize, 0, 1080, frameRGB->data, frameRGB->linesize); */   
+			if(scale_ret < 0){
+				log_error("scale_ret = %d\n", scale_ret);
+    			/*av_frame_free(&frameRGB);
+				log_debug("re-initial frameRGB");
+    			frameRGB = av_frame_alloc();
+    			if(!frameRGB){
+        			printf("frameRGB alloc failed!\n");
+        			return AVERROR(ENOMEM);
+    			}
+    			numBytes = avpicture_get_size(AV_PIX_FMT_RGB24, is->viddec.avctx->width, is->viddec.avctx->height);
+    			buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
+    			avpicture_fill((AVPicture *)frameRGB, buffer, AV_PIX_FMT_RGB24, is->viddec.avctx->width, is->viddec.avctx->height);
+				log_debug("re-initial frameRGB ok!\n");*/
+				/*re-initial sws_ctx*/
+				sws_freeContext(sws_ctx);
+				sws_ctx = NULL;
+            	sws_ctx = sws_getContext(is->viddec.avctx->width, is->viddec.avctx->height, is->viddec.avctx->pix_fmt, 
+                                        is->viddec.avctx->width, is->viddec.avctx->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
+				if(sws_ctx == NULL){
+					log_error("sws_ctx re-initial failed!\n");
+				}else{
+					log_info("sws_ctx re-initial ok!\n");
+				}
+			}
 #if 0       // Save the frame to disk
 
 			if(++i <= 60){
@@ -3897,6 +3933,13 @@ void show_help_default(const char *opt, const char *arg)
            );
 }
 
+void alive_report_test(char *server_ip, char *buf){
+	//log_info("buf = %s\n", buf);
+	char send_buf[512] = {0};
+	sprintf(buf, "version:%s", LEDCLIENT_VERSION);
+	send_alive_report(server_ip, CLIENT_ALIVEREPORT_PORT, send_buf);
+}
+
 /* Called from the main */
 int main(int argc, char **argv)
 {
@@ -3921,9 +3964,6 @@ int main(int argc, char **argv)
 	picousb_out_transfer(handle_pico0, "Hello", 5);
     
 	/*initial udpmr test*/
-	udpmr_init("239.11.11.11", 9898);
-
-
 	/*initial callback test*/
 	int ret = register_udpmr_callback(CALLBACK_GET_VERSION, &get_version);
 	if(ret != 0){
@@ -3931,6 +3971,14 @@ int main(int argc, char **argv)
 	}else{
 		printf("callback register ok!\n");
 	}
+	/*initial udpmr test*/
+	udpmr_init("239.11.11.11", 9898);
+
+	/*initial udpbr test*/
+	register_udpbr_callback(UDPBR_CALLBACK_SERVER_ALIVE_REPORT, alive_report_test);
+	udpbr_init(11334);
+	
+
 
 	/*set 1602 lcd*/
 	lcd_send_command(0, 0, LEDCLIENT_VERSION);

@@ -2,7 +2,7 @@ MAKE_DIR = $(PWD)
 
 APP = app
 PICOUSBLIB = picousblib
-UDPMRLIB = udpmrlib
+UDPMRLIB = udputilslib
 LCDCLILIB = lcdclilib
 UTILDBGLIB = utildbglib
 JTIMERLIB = jtimerlib
@@ -59,7 +59,7 @@ CFLAGS += -D_GNU_SOURCE
 
 LDFLAGS :=
 LDFLAGS += -lpicousb
-LDFLAGS += -ludpmr
+LDFLAGS += -ludputils
 LDFLAGS += -llcdcli
 LDFLAGS += -ljtimer
 #LDFLAGS += -lgpio 

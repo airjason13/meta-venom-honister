@@ -1,4 +1,4 @@
-MODULE = libudpmr
+MODULE = libudputils
 LIB = $(MAKE_DIR)/libs/$(MODULE).a
 
 SRCS = $(wildcard *.c)

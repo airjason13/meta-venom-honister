@@ -8,7 +8,7 @@ SRC_URI += "file://app/ \
             file://libs/ \
             file://ext/ \
             file://picousblib \
-            file://udpmrlib \
+            file://udputilslib \
             file://utildbglib \
             file://lcdclilib \
             file://jtimerlib \

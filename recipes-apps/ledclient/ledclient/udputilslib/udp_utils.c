@@ -1,0 +1,40 @@
+#include "udp_utils.h"	
+
+int send_udp_packet(char *ip, int port, char *data){
+	int udp_socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if(udp_socket_fd == -1){
+		log_error("socket failed!\n");
+		return -1;
+	}
+	// allow multiple sockets to use the same PORT number
+    //
+    unsigned int yes = 1;
+    if (setsockopt(udp_socket_fd, SOL_SOCKET, SO_REUSEADDR, (char*) &yes, sizeof(yes))< 0     ){
+       log_error("Reusing ADDR failed");
+       return 1;
+     }
+
+	struct sockaddr_in dest_addr = {0};
+    dest_addr.sin_family = AF_INET;//使用IPv4協議
+    dest_addr.sin_port = htons(port);//設置接收方端口號
+    dest_addr.sin_addr.s_addr = inet_addr(ip); //設置接收方IP 
+	
+	int send_len = sendto(udp_socket_fd, data, strlen(data), 0, (struct sockaddr *)&dest_addr,sizeof(dest_addr));
+	if (send_len != strlen(data)){
+		log_error("send len does not match!\n");
+		return -1;
+	}
+	return 0;
+}
+
+int send_alive_report(char *ip, int port, char *append_data){
+	char send_buf[SEND_DATA_MAX_LEN] = {0};
+	if(strlen(append_data) > SEND_DATA_MAX_LEN){
+		log_error("data length > SEND_DATA_MAX_LEN");
+		return -1;
+	}else{
+		sprintf(send_buf, "alive;%s", append_data);
+		send_udp_packet(ip, port, send_buf);
+	}
+	return 0;
+}
