@@ -22,8 +22,10 @@ int send_udp_packet(char *ip, int port, char *data){
 	int send_len = sendto(udp_socket_fd, data, strlen(data), 0, (struct sockaddr *)&dest_addr,sizeof(dest_addr));
 	if (send_len != strlen(data)){
 		log_error("send len does not match!\n");
+		close(udp_socket_fd);
 		return -1;
 	}
+	close(udp_socket_fd);
 	return 0;
 }
 

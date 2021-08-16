@@ -72,6 +72,7 @@ void *udpbr_thread(void *data){
 #endif
 		usleep(30);
      }
+	 close(fd);
 }
 
 
