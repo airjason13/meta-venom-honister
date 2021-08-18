@@ -63,7 +63,10 @@ typedef struct ledparams{
 	int i_start_y;
 	int i_ledchannels;// = 3;
 	int i_ledic;// = 0;
-};
+	pthread_t udp_cmd_tid;
+	pthread_t udpbr_tid;
+	pthread_t udpmr_tid;
+}ledparams_t;
 
 char led_layout[LED_PANELS] = {	1, 1, 1, 1,	3, 3, 3, 3};
 

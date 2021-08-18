@@ -62,8 +62,10 @@
 #include "ledlayout.h"
 #include "udpmr.h"
 #include "udpbr.h"
+#include "udp_cmd.h"
 #include "udp_utils.h"
 #include "utildbg.h"
+#include "led_cmd_set.h"
 #include "ledclient_version.h"
 #include "jtimer.h"
 #include "lcdcli.h"
@@ -412,6 +414,10 @@ static const struct TextureFormatEntry {
     { AV_PIX_FMT_NONE,           SDL_PIXELFORMAT_UNKNOWN },
 };
 
+
+ledparams_t led_params;
+
+
 #if CONFIG_AVFILTER
 static int opt_add_vfilter(void *optctx, const char *opt, const char *arg)
 {
@@ -442,10 +448,6 @@ int64_t get_valid_channel_layout(int64_t channel_layout, int channels)
 }
 
 
-int get_version(char *data){
-	printf("data = %s\n", data);
-	return 0;
-}
 
 
 static int packet_queue_put_private(PacketQueue *q, AVPacket *pkt)
@@ -2195,9 +2197,12 @@ int write_framergb_to_pico_test_red(AVFrame *pFrame, int channel_count, int star
 		}
 		memset(buf + 4 + i, color, 1);
 	}
-
-	write_len = picousb_out_transfer(handle_pico0, buf, buf_size);
-	printf("write_len = %d\n", write_len);
+	if(led_params.pico_handle != NULL){
+		write_len = picousb_out_transfer(led_params.pico_handle, buf, buf_size);
+		log_debug("write_len = %d\n", write_len);
+	}else{
+		log_error("no pico");
+	}
 	return 0;
 
 }
@@ -2212,8 +2217,12 @@ int write_framergb_to_pico_test_gray(AVFrame *pFrame, int channel_count, int sta
 	sprintf(buf, "id%d:", id_num);
 	memset(buf + 4, 0x80, 2880);
 
-	write_len = picousb_out_transfer(handle_pico0, buf, buf_size);
-	printf("write_len = %d\n", write_len);
+	if(led_params.pico_handle != NULL){
+		write_len = picousb_out_transfer(led_params.pico_handle, buf, buf_size);
+		log_debug("write_len = %d\n", write_len);
+	}else{
+		log_error("no pico");
+	}
 	return 0;
 
 }
@@ -2261,12 +2270,17 @@ int write_framergb_to_pico(AVFrame *pFrame, int channel_count, int start_x, int 
 		offset += width*3;
 	}
 	/*wrtie buf to pico	*/
-	if( offset != picousb_out_transfer(handle_pico0, buf, buf_size)){
-		printf("error id_num : %d, offset = %d, buf_size = %d\n", id_num, offset, buf_size);
-		free(buf);
-		return -1;
+	if(led_params.pico_handle != NULL){
+		if( offset != picousb_out_transfer(led_params.pico_handle, buf, buf_size)){
+			printf("error id_num : %d, offset = %d, buf_size = %d\n", id_num, offset, buf_size);
+			free(buf);
+			return -1;
+		}else{
+			free(buf);
+		}
 	}else{
 		free(buf);
+		log_error("No Pico!\n");
 	}
 
 	//printf("id_num : %d, offset = %d\n", id_num, offset);
@@ -3933,10 +3947,12 @@ void show_help_default(const char *opt, const char *arg)
            );
 }
 
+
+
 void alive_report_test(char *server_ip, char *buf){
 	//log_info("buf = %s\n", buf);
 	char send_buf[512] = {0};
-	sprintf(buf, "version:%s", LEDCLIENT_VERSION);
+	sprintf(send_buf, "version:%s", LEDCLIENT_VERSION);
 	send_alive_report(server_ip, CLIENT_ALIVEREPORT_PORT, send_buf);
 }
 
@@ -3945,40 +3961,55 @@ int main(int argc, char **argv)
 {
     int flags;
     VideoState *is;
-    printf("Jason show ledcliend!\n");
+    log_info("Jason show ledcliend!\n");
 	int enable_log_file = log_init(true, LOG_PREFIX_ID);
 	if(enable_log_file != 0){
 		log_fatal("ERROR!Can't enable log file\n");
 	}
-	log_trace("Jason start debug trace!\n");
-	log_debug("Jason start debug debug!\n");
-	log_info("Jason start debug info!\n");
-	log_warn("Jason start debug warn!\n");
-	log_error("Jason start debug error!\n");
-	log_fatal("Jason start debug fatal!\n");
     init_dynload();
 
 	/* initial pico*/
-	printf("Jason test pico usb!\n");
-	handle_pico0 = picousb_init();
-	picousb_out_transfer(handle_pico0, "Hello", 5);
+	log_info("Jason test pico usb!\n");
+	//handle_pico0 = picousb_init();
+	led_params.pico_handle = picousb_init();
+	if(led_params.pico_handle == NULL){
+		log_fatal("No Pico Found!\n");
+		lcd_send_command(0, 1, "NoPicoFound!");
+		usleep(1000);
+        exit(1);
+	}
+	picousb_out_transfer(led_params.pico_handle, "Hello", 5);
     
 	/*initial udpmr test*/
 	/*initial callback test*/
 	int ret = register_udpmr_callback(CALLBACK_GET_VERSION, &get_version);
 	if(ret != 0){
-		printf("callback register failed!\n");
+		log_error("callback register failed!\n");
 	}else{
-		printf("callback register ok!\n");
+		log_info("callback register ok!\n");
 	}
 	/*initial udpmr test*/
-	udpmr_init("239.11.11.11", 9898);
+	led_params.udpmr_tid = udpmr_init("239.11.11.11", 9898);
+	
+	/*initial udp cmd callback test*/
+	/*ret = register_udp_cmd_callback(CMD_CALLBACK_GET_VERSION, &get_version);
+	if(ret != 0){
+		log_error("callback register failed!\n");
+	}else{
+		log_info("callback register ok!\n");
+	}*/
+	ret = set_udp_cmd_callbacks();
+	if(ret < 0){
+		log_fatal("cmd callbacks setup failed!\n");
+		exit(0);
+	}
+	/*initial udp cmd test*/
+	led_params.udp_cmd_tid = udp_cmd_init(11335);
 
 	/*initial udpbr test*/
 	register_udpbr_callback(UDPBR_CALLBACK_SERVER_ALIVE_REPORT, alive_report_test);
-	udpbr_init(11334);
+	led_params.udpbr_tid = udpbr_init(11334);
 	
-
 
 	/*set 1602 lcd*/
 	lcd_send_command(0, 0, LEDCLIENT_VERSION);

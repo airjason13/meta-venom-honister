@@ -1,4 +1,11 @@
-pyqt5
-opencv-python
+PyQt5~=5.15.4
 numpy
-flask
+pyqtgraph
+qdarkstyle
+requests
+netifaces
+colorlog
+pyudev
+psutil
+ffmpy
+requests

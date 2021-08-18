@@ -51,7 +51,6 @@ void *udpbr_thread(void *data){
     }
 
 	while (1) {
-#if 1
         char msgbuf[MSGBUFSIZE];
         int addrlen = sizeof(addr);
         int nbytes = recvfrom(fd, msgbuf, MSGBUFSIZE, 0, (struct sockaddr *) &addr, &addrlen);
@@ -61,15 +60,12 @@ void *udpbr_thread(void *data){
         }
         msgbuf[nbytes] = '\0';
 
-        log_debug("recv %d bytes from %s : %s" , nbytes, inet_ntoa(addr.sin_addr) ,msgbuf);
+        //log_debug("recv %d bytes from %s : %s" , nbytes, inet_ntoa(addr.sin_addr) ,msgbuf);
 		if(strstr(msgbuf, msgbuf) != NULL){
-			log_debug("run callback server alive report!\n");
+			//log_debug("run callback server alive report!\n");
 			if(udpbr_callbacks[UDPBR_CALLBACK_SERVER_ALIVE_REPORT] != NULL)
 				udpbr_callbacks[UDPBR_CALLBACK_SERVER_ALIVE_REPORT](inet_ntoa(addr.sin_addr) , msgbuf);
 		}
-#else
-		log_info("test from udpbr!\n");
-#endif
 		usleep(30);
      }
 	 close(fd);

@@ -11,7 +11,7 @@ int send_udp_packet(char *ip, int port, char *data){
     unsigned int yes = 1;
     if (setsockopt(udp_socket_fd, SOL_SOCKET, SO_REUSEADDR, (char*) &yes, sizeof(yes))< 0     ){
        log_error("Reusing ADDR failed");
-       return 1;
+       return -1;
      }
 
 	struct sockaddr_in dest_addr = {0};
@@ -30,13 +30,14 @@ int send_udp_packet(char *ip, int port, char *data){
 }
 
 int send_alive_report(char *ip, int port, char *append_data){
+	int ret = -1;
 	char send_buf[SEND_DATA_MAX_LEN] = {0};
 	if(strlen(append_data) > SEND_DATA_MAX_LEN){
 		log_error("data length > SEND_DATA_MAX_LEN");
-		return -1;
+		return ret;
 	}else{
 		sprintf(send_buf, "alive;%s", append_data);
-		send_udp_packet(ip, port, send_buf);
+		ret = send_udp_packet(ip, port, send_buf);
 	}
-	return 0;
+	return ret;
 }

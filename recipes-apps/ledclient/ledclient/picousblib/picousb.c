@@ -178,7 +178,7 @@ struct libusb_device_handle *picousb_init(void)
         printf("\nDevice NOT found\n");
         libusb_free_device_list(devs, 1);
         libusb_close(handle);
-        return 1;
+        return NULL;
     }
     else
     {
@@ -193,7 +193,7 @@ struct libusb_device_handle *picousb_init(void)
         printf("\n***Error in libusb_get_configuration\n");
         libusb_free_device_list(devs, 1);
         libusb_close(handle);
-        return -1;
+        return NULL;
     }
     printf("\nConfigured value: %d", config2);
 
@@ -205,7 +205,7 @@ struct libusb_device_handle *picousb_init(void)
             printf("Error in libusb_set_configuration\n");
             libusb_free_device_list(devs, 1);
             libusb_close(handle);
-            return -1;
+            return NULL;
         }
         else
             printf("\nDevice is in configured state!");
@@ -223,7 +223,7 @@ struct libusb_device_handle *picousb_init(void)
             printf("\nCouldn't detach kernel driver!\n");
             libusb_free_device_list(devs, 1);
             libusb_close(handle);
-            return -1;
+            return NULL;
         }
     }
 
@@ -233,7 +233,7 @@ struct libusb_device_handle *picousb_init(void)
         printf("\nCannot Claim Interface");
         libusb_free_device_list(devs, 1);
         libusb_close(handle);
-        return -1;
+        return NULL;
     }
     else
         printf("\nClaimed Interface\n");
