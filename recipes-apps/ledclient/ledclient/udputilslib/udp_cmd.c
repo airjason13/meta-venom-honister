@@ -7,8 +7,10 @@ struct udp_cmd_params ucps;
 char CMD_NAME_TAG[CMD_CALLBACK_MAX][MAX_CMD_NAME] = {
      CMD_TAG_GET_VERSION,
      CMD_TAG_GET_PICO_NUM,
+	 CMD_TAG_GET_CABINET_PARAMS,
 	 CMD_TAG_SET_LED_SIZE,
 	 CMD_TAG_SET_CABINET_SIZE,
+	 CMD_TAG_SET_CABINET_PARAMS,
 	 CMD_TAG_SPEC_TEST,
 };
 
@@ -20,19 +22,11 @@ int register_udp_cmd_callback(unsigned int func_num, cmd_callback_t callback){
 		log_error("callback functions full");
 		return -EINVAL;
 	}
-#if 1
 	if(ucps.udp_cmd_handle[func_num].cmd_callback != NULL){	
 		return -EINVAL;			
 	}
 	ucps.udp_cmd_handle[func_num].cmd_callback = callback;
-#else
 		
-	if(cmd_callbacks[func_num] != NULL){
-		printf("callback function is already assigned!\n");
-		return -1;
-	}
-	cmd_callbacks[func_num] = callback;
-#endif	
 	return 0;
 }
 
@@ -70,10 +64,10 @@ void *udp_cmd_thread(void *data){
 	while (1) {
         char msgbuf[MSGBUFSIZE];
         int addrlen = sizeof(addr);
-        int nbytes = recvfrom(fd, msgbuf, MSGBUFSIZE, 0, (struct sockaddr *) &addr, &addrlen);
 		char reply_buf[1024] = {0};
 		int cmd_id = -1;
 		int cb_ret = -1;
+        int nbytes = recvfrom(fd, msgbuf, MSGBUFSIZE, 0, (struct sockaddr *) &addr, &addrlen);
         if (nbytes < 0) {
             perror("recvfrom");
             return;
@@ -81,7 +75,6 @@ void *udp_cmd_thread(void *data){
         msgbuf[nbytes] = '\0';
         log_debug("recv %d bytes : %s\n" , nbytes, msgbuf);
 		/*Check cmd id*/
-#if 1
 		for(int i = CMD_CALLBACK_START; i<CMD_CALLBACK_MAX; i ++){
 			if(strstr(msgbuf, ucps->udp_cmd_handle[i].cmd_name)){
 				log_debug("got cmd %s\n", ucps->udp_cmd_handle[i].cmd_name);
@@ -94,18 +87,11 @@ void *udp_cmd_thread(void *data){
 		}else{
 			continue;
 		}
-#else				
-
-		cb_ret = cmd_callbacks[CMD_CALLBACK_GET_VERSION](msgbuf, reply_buf);
-		if(cb_ret < 0){
-			log_error("cb_ret < 0 !\n");
-			break;
-		}
-#endif
 		log_debug("reply_buf = %s\n", reply_buf);
+		//marked for test error handle
 		if(sendto(fd, reply_buf, strlen(reply_buf), 0, (struct sockaddr *)     &addr, addrlen) < 0){
 			log_error("Could not send datagram!\n");
-			break;
+			continue;
 		}
 		usleep(30);
      }

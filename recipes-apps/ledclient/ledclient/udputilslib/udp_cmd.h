@@ -20,10 +20,13 @@ typedef int (*cmd_callback_t)(char *, char *);
 #define CMD_CALLBACK_START				0
 #define CMD_CALLBACK_GET_VERSION 		0
 #define CMD_CALLBACK_GET_PICO_NUM 		1
+#define CMD_CALLBACK_GET_CABINET_PARAMS	2
 
-#define CMD_CALLBACK_SET_LED_SIZE		2
-#define CMD_CALLBACK_SET_CABINET_SIZE	3
-#define CMD_CALLBACK_SPEC_TEST			4
+
+#define CMD_CALLBACK_SET_LED_SIZE		3
+#define CMD_CALLBACK_SET_CABINET_SIZE	4
+#define CMD_CALLBACK_SET_CABINET_PARAMS	5
+#define CMD_CALLBACK_SPEC_TEST			6
 
 #define CMD_CALLBACK_MAX				CMD_CALLBACK_SPEC_TEST
 #define CMD_CALLBACK_SIZE				CMD_CALLBACK_MAX + 1
@@ -31,9 +34,13 @@ typedef int (*cmd_callback_t)(char *, char *);
 //CMD_NAME_TAG
 #define CMD_TAG_GET_VERSION				"get_version"
 #define CMD_TAG_GET_PICO_NUM			"get_pico_num"
+#define CMD_TAG_GET_CABINET_PARAMS		"get_cabinet_params"
+
 
 #define CMD_TAG_SET_LED_SIZE			"set_led_size"
 #define CMD_TAG_SET_CABINET_SIZE		"set_cabinet_size"
+#define CMD_TAG_SET_CABINET_PARAMS		"set_cabinet_params"
+
 #define CMD_TAG_SPEC_TEST				"spec_test"
 
 

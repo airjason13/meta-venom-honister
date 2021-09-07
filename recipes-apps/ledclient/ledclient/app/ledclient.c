@@ -416,6 +416,8 @@ static const struct TextureFormatEntry {
 
 
 ledparams_t led_params;
+char led_layout[LED_PANELS] = { 1, 1, 1, 1, 3, 3, 3, 3};
+
 
 
 #if CONFIG_AVFILTER
@@ -3972,6 +3974,7 @@ int main(int argc, char **argv)
 	log_info("Jason test pico usb!\n");
 	//handle_pico0 = picousb_init();
 	led_params.pico_handle = picousb_init();
+
 	if(led_params.pico_handle == NULL){
 		log_fatal("No Pico Found!\n");
 		lcd_send_command(0, 1, "NoPicoFound!");
@@ -3980,6 +3983,27 @@ int main(int argc, char **argv)
 	}
 	picousb_out_transfer(led_params.pico_handle, "Hello", 5);
     
+	/*initial cabinet params*/
+	for(int i = 0; i < LED_PANELS; i ++){
+		int ret = cabinet_params_init(i, &led_params.cab_params[i]);
+		if( ret < 0){
+			continue;
+		}
+		log_debug("A led_params.cab_params : 0x%x\n", led_params.cab_params[i]);
+		log_debug("led_params.cab_params[%d].cabinet_width = %d", i,
+					led_params.cab_params[i].cabinet_width);
+		log_debug("led_params.cab_params[%d].cabinet_height = %d", i,
+					led_params.cab_params[i].cabinet_height);
+		log_debug("led_params.cab_params[%d].start_x = %d", i,
+					led_params.cab_params[i].start_x);
+		log_debug("led_params.cab_params[%d].start_y = %d", i,
+					led_params.cab_params[i].start_y);
+		log_debug("led_params.cab_params[%d].layout_type = %d", i,
+					led_params.cab_params[i].layout_type);
+		log_debug("B\n");
+	}
+
+
 	/*initial udpmr test*/
 	/*initial callback test*/
 	int ret = register_udpmr_callback(CALLBACK_GET_VERSION, &get_version);

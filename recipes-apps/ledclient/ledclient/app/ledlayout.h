@@ -2,7 +2,7 @@
 #define _LEDLAYOUT_H_
 
 #include "picousb.h"
-
+#include "cabinetutils.h"
 /*******************************************************************
 * LED layout configuration
 * 0 :
@@ -51,8 +51,10 @@ typedef enum{
 
 //int led_fps = 0;
 
+
 typedef struct ledparams{
 	struct libusb_device_handle *pico_handle;
+	struct cabinet_params cab_params[LED_PANELS];
 	int i_ledpanelsi;// = 8;
 	int i_pixelsperpanel;// = 960;
 	int i_widthperpanel;// = 40;
@@ -68,6 +70,5 @@ typedef struct ledparams{
 	pthread_t udpmr_tid;
 }ledparams_t;
 
-char led_layout[LED_PANELS] = {	1, 1, 1, 1,	3, 3, 3, 3};
 
 #endif
