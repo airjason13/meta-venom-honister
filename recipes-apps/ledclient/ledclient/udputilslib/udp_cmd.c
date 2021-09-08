@@ -34,6 +34,7 @@ void *udp_cmd_thread(void *data){
 	struct udp_cmd_params *ucps = (struct udp_cmd_params*)data;
 	printf("in %s, ups->port = %d\n", __func__, ucps->port);
 
+	char reply_buf[1024] = {0};
 	int fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd < 0) {
         perror("error socket:");
@@ -64,7 +65,7 @@ void *udp_cmd_thread(void *data){
 	while (1) {
         char msgbuf[MSGBUFSIZE];
         int addrlen = sizeof(addr);
-		char reply_buf[1024] = {0};
+		//char reply_buf[1024] = {0};
 		int cmd_id = -1;
 		int cb_ret = -1;
         int nbytes = recvfrom(fd, msgbuf, MSGBUFSIZE, 0, (struct sockaddr *) &addr, &addrlen);
@@ -83,7 +84,9 @@ void *udp_cmd_thread(void *data){
 			}
 		}
 		if(cmd_id != -1){
+			memset(reply_buf, 0, 1024);
 			cb_ret = ucps->udp_cmd_handle[cmd_id].cmd_callback(msgbuf, reply_buf);
+			log_debug("cb_ret = %d\n", cb_ret);
 		}else{
 			continue;
 		}

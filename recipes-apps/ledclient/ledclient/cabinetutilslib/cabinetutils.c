@@ -1,5 +1,6 @@
 #include "cabinetutils.h"
 
+
 void gen_cabinet_params_config_file(int port_id){
 	char config_file_uri[256];
 	FILE *config_file;
@@ -18,6 +19,23 @@ void gen_cabinet_params_config_file(int port_id){
 	system("sync");
 }
 
+void write_cabinet_params_config_file(int port_id, struct cabinet_params *params){
+	char config_file_uri[256];
+	FILE *config_file;
+	char cmd[256];
+	sprintf(cmd, "mkdir -p %s", cabinet_params_config_folder);
+	system(cmd);
+	sprintf(config_file_uri, "%s%d", cabinet_params_config_file_prefix, port_id);
+	config_file = fopen(config_file_uri, "w");
+	fprintf(config_file, "cabinet_width %d\n", params->cabinet_width);
+	fprintf(config_file, "cabinet_height %d\n", params->cabinet_height);
+	fprintf(config_file, "start_x %d\n", params->start_x);
+	fprintf(config_file, "start_y %d\n", params->start_y);
+	fprintf(config_file, "layout_type %d\n", params->layout_type);
+	log_debug("file close!\n");
+	fclose(config_file);		
+	system("sync");
+}
 
 int cabinet_params_init(unsigned int port_id, struct cabinet_params *cab_params){
 	char config_file_uri[256];

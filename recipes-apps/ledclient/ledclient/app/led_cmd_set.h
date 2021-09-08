@@ -6,7 +6,9 @@
 #include "udp_cmd.h"
 #include "ledclient_version.h"
 #include "ledlayout.h"
+#include "cabinetutils.h"
 #include "errno.h"
+
 
 #define REPLY_OK_TAG			"ok"
 #define REPLY_NG_TAG			"ng"

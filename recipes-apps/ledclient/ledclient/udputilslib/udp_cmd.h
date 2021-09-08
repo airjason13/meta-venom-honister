@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <utildbg.h>
 #include <errno.h>
-#define MSGBUFSIZE 				256
+#define MSGBUFSIZE 				1024
 #define IP_BUF_SIZE				64
 
 typedef int (*cmd_callback_t)(char *, char *);

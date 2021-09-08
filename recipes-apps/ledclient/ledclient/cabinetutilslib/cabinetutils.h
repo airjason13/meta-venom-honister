@@ -21,6 +21,8 @@ typedef struct cabinet_params{
     struct libusb_device_handle *pico_handle;
 }cabinet_params_t;
 
+void write_cabinet_params_config_file(int port_id, struct cabinet_params *params);
+
 int cabinet_params_init(unsigned int port_id, struct cabinet_params * cab_params);
 
 
