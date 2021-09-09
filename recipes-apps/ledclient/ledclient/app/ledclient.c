@@ -70,7 +70,7 @@
 #include "jtimer.h"
 #include "lcdcli.h"
 #include <assert.h>
-
+#include "frame_transfer.h"
 int led_fps = 0;
 
 struct libusb_device_handle *handle_pico0 = NULL;
@@ -2337,7 +2337,7 @@ static int video_thread(void *arg)
     int last_serial = -1;
     int last_vfilter_idx = 0;
 #endif
-
+	int iret = 0;
     if (!frame)
         return AVERROR(ENOMEM);
 
@@ -2403,13 +2403,29 @@ static int video_thread(void *arg)
 					log_info("sws_ctx re-initial ok!\n");
 				}
 			}
-#if 0       // Save the frame to disk
+#ifdef WRITE_FRAME_TO_DISK       // Save the frame to disk
 
 			if(++i <= 60){
 			    //SaveFrame(frameRGB, 1920, 1080, i);
 			    SaveFrame(frameRGB, 640, 480, i);
             }
 #endif			
+#if 1
+			for(i = 0; i < 8; i++){
+				log_debug("transfer frame to pico!\n");
+				log_debug("led_params.pico_handle = 0x%x\n", led_params.pico_handle);
+				log_debug("&led_params.pico_handle = 0x%x\n", &(led_params.pico_handle));
+
+				iret = transfer_framergb_to_pico(frameRGB, &(led_params.cab_params[i]), 3, led_params.pico_handle);
+				//iret = transfer_framergb_to_pico(frameRGB, &led_params, 3);
+				if(iret != 0){
+					log_debug("transfer_framergb_to_pico error : %d\n", iret);	
+				}
+			}
+			led_fps ++;
+		}
+#endif
+#if 0
 			//write_framergb_to_pico(frameRGB, 3, 80, 96, i);
 			int id_num = -1;
 			for(int x = 0; x < 2; x ++){
@@ -2424,6 +2440,7 @@ static int video_thread(void *arg)
 			}
 			led_fps ++;
         }
+#endif
         
 #if CONFIG_AVFILTER
         //printf("CONFIG_AVFILTER!\n");
