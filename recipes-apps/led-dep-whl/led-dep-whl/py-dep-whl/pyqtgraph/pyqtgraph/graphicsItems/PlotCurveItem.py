@@ -6,8 +6,7 @@ import warnings
 import numpy as np
 from .GraphicsObject import GraphicsObject
 from .. import functions as fn
-from ..Point import Point
-import struct, sys
+import sys
 from .. import getConfigOption
 from .. import debug
 
@@ -20,9 +19,9 @@ class PlotCurveItem(GraphicsObject):
 
     Features:
 
-    - Fast data update
-    - Fill under curve
-    - Mouse interaction
+      - Fast data update
+      - Fill under curve
+      - Mouse interaction
 
     =====================  ===============================================
     **Signals:**
@@ -568,6 +567,19 @@ class PlotCurveItem(GraphicsObject):
         p.beginNativePainting()
         import OpenGL.GL as gl
 
+        if sys.platform == 'win32':
+            # If Qt is built to dynamically load OpenGL, then the projection and
+            # modelview matrices are not setup.
+            # https://doc.qt.io/qt-6/windows-graphics.html
+            # https://code.woboq.org/qt6/qtbase/src/opengl/qopenglpaintengine.cpp.html
+            # Technically, we could enable it for all platforms, but for now, just
+            # enable it where it is required, i.e. Windows
+            gl.glMatrixMode(gl.GL_PROJECTION)
+            gl.glLoadIdentity()
+            gl.glOrtho(0, widget.width(), widget.height(), 0, -999999, 999999)
+            gl.glMatrixMode(gl.GL_MODELVIEW)
+            gl.glLoadMatrixf(QtGui.QMatrix4x4(self.sceneTransform()).data())
+
         ## set clipping viewport
         view = self.getViewBox()
         if view is not None:
@@ -608,17 +620,26 @@ class PlotCurveItem(GraphicsObject):
             try:
                 gl.glVertexPointerf(pos)
                 pen = fn.mkPen(self.opts['pen'])
-                color = pen.color()
-                gl.glColor4f(color.red()/255., color.green()/255., color.blue()/255., color.alpha()/255.)
+                gl.glColor4f(*pen.color().getRgbF())
                 width = pen.width()
                 if pen.isCosmetic() and width < 1:
                     width = 1
                 gl.glPointSize(width)
                 gl.glLineWidth(width)
-                gl.glEnable(gl.GL_LINE_SMOOTH)
-                gl.glEnable(gl.GL_BLEND)
-                gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-                gl.glHint(gl.GL_LINE_SMOOTH_HINT, gl.GL_NICEST)
+
+                # enable antialiasing if requested
+                if self._exportOpts is not False:
+                    aa = self._exportOpts.get('antialias', True)
+                else:
+                    aa = self.opts['antialias']
+                if aa:
+                    gl.glEnable(gl.GL_LINE_SMOOTH)
+                    gl.glEnable(gl.GL_BLEND)
+                    gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+                    gl.glHint(gl.GL_LINE_SMOOTH_HINT, gl.GL_NICEST)
+                else:
+                    gl.glDisable(gl.GL_LINE_SMOOTH)
+
                 gl.glDrawArrays(gl.GL_LINE_STRIP, 0, int(pos.size / pos.shape[-1]))
             finally:
                 gl.glDisableClientState(gl.GL_VERTEX_ARRAY)

@@ -35,7 +35,7 @@ from ..support import lock
 
 
 def decode_string(bs):
-    return bs.decode('latin1')
+    return bs.decode('ascii')
 
 if PY3:
     def encode_array(a):
@@ -1058,7 +1058,7 @@ class Struct(object):
                         pack_items.append(field_args[f.name])
 
                 # Multivalue field.  Handled like single valuefield,
-                # but the value are tuple unpacked into separate arguments
+                # but the value are tuple unpacked into seperate arguments
                 # which are appended to pack_items
                 else:
                     if f.check_value is not None:
@@ -1221,7 +1221,7 @@ class TextElements8(ValueField):
 
         for v in value:
             # Let values be simple strings, meaning a delta of 0
-            if type(v) in (str, bytes):
+            if type(v) is bytes:
                 v = (0, v)
 
             # A tuple, it should be (delta, string)
@@ -1230,19 +1230,19 @@ class TextElements8(ValueField):
             if isinstance(v, (tuple, dict, DictWrapper)):
 
                 if isinstance(v, tuple):
-                    delta, m_str = v
+                    delta, str = v
                 else:
                     delta = v['delta']
-                    m_str = v['string']
+                    str = v['string']
 
-                while delta or m_str:
+                while delta or str:
                     args['delta'] = delta
-                    args['string'] = m_str[:254]
+                    args['string'] = str[:254]
 
                     data = data + self.string_textitem.to_binary(*(), **args)
 
                     delta = 0
-                    m_str = m_str[254:]
+                    str = str[254:]
 
             # Else an integer, i.e. a font change
             else:
@@ -1320,7 +1320,7 @@ class DictWrapper(GetAttrData):
         return str(self._data)
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__, repr(self._data))
+        return '%s(%s)' % (self.__class__, repr(self._data))
 
     def __lt__(self, other):
         if isinstance(other, DictWrapper):
@@ -1400,7 +1400,7 @@ class ReplyRequest(GetAttrData):
         return 1
 
     def __repr__(self):
-        return '<%s serial = %s, data = %s, error = %s>' % (self.__class__.__name__, self._serial, self._data, self._error)
+        return '<%s serial = %s, data = %s, error = %s>' % (self.__class__, self._serial, self._data, self._error)
 
 
 class Event(GetAttrData):
@@ -1434,7 +1434,7 @@ class Event(GetAttrData):
             kwlist.append('%s = %s' % (kw, repr(val)))
 
         kws = ', '.join(kwlist)
-        return '%s(%s)' % (self.__class__.__name__, kws)
+        return '%s(%s)' % (self.__class__, kws)
 
     def __lt__(self, other):
         if isinstance(other, Event):

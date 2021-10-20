@@ -5,6 +5,9 @@ CLIENT_TAG='Client'
 SERVER_TAG='Server'
 PLAYER_TAG='Player'
 
+#for auto-mount test
+udiskie &
+
 if [ -e /home/root/server_now ];then
     rm /home/root/server_now
 fi
@@ -40,14 +43,20 @@ if [[ $CLIENT_TAG == $ROLE ]];then
     echo "Let's set client env"
     echo "1. set_br"
     set_br.sh
+	#turn the wifi off
+	nmcli radio wifi off 
 	echo "2. check ip and launch ledclient"
 	launch_led_client.sh
 elif [[ $PLAYER_TAG == $ROLE ]];then
     touch /home/root/player_now
     echo "Just a simple player"
+    setup_hotspot.sh &
+	run-filemanager.sh &
     launch_led_player.sh
 elif [[ $SERVER_TAG == $ROLE ]];then
     touch /home/root/server_now
     echo "Server Now"
-    launch_pyLedServer.sh 
+    setup_hotspot.sh &
+	run-filemanager.sh &
+	launch_pyLedServer.sh 
 fi  

@@ -11,7 +11,7 @@ DEPENDS = "gtk+ gtk+3 ibus"
 
 S = "${WORKDIR}/git"
 
-do_configure_prepend() {
+do_configure:prepend() {
     touch ${S}/ABOUT-NLS
 }
 

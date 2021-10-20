@@ -6,7 +6,7 @@ do
 
 	if [[ $br0_ip == 192.168.0.* ]];then
 		echo "Abr0 ip:"$br0_ip >> /home/root/.ledclient_network.log
-		ledclient udp://239.11.11.11:15000
+		ledclient -fflags nobuffer udp://239.11.11.11:15000
 	else
 		echo "no ip obtain!"
 		sleep 3	

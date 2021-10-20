@@ -19,14 +19,14 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
 	}
 	sprintf(buf, "id%d:", params->port_id);
 	offset +=4;
-	log_debug("port_id = %d\n", params->port_id);
+	/*log_debug("port_id = %d\n", params->port_id);
 	log_debug("width = %d\n", width);
 	log_debug("height = %d\n", height);
 	log_debug("start_x = %d\n", start_x);
 	log_debug("start_y = %d\n", start_y);
 	log_debug("params->layout_type = %d\n", params->layout_type);
 	log_debug("led_params.pico_handle = 0x%x\n", led_params.pico_handle);
-	log_debug("pico = 0x%x\n", pico);
+	log_debug("pico = 0x%x\n", pico);*/
 	switch(params->layout_type){
 		case 0:
 			for(y = 0; y < height; y ++){
@@ -91,5 +91,6 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
     }else{
         log_error("no pico");
     }
+	free(buf);
 	return 0;
 }

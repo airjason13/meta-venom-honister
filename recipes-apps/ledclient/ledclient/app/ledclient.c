@@ -2347,8 +2347,8 @@ static int video_thread(void *arg)
         return AVERROR(ENOMEM);
     }
 
-    //printf("is->viddec.avctx->width = %d\n", is->viddec.avctx->width);
-    //printf("is->viddec.avctx->height = %d\n", is->viddec.avctx->height);
+    log_debug("is->viddec.avctx->width = %d\n", is->viddec.avctx->width);
+    log_debug("is->viddec.avctx->height = %d\n", is->viddec.avctx->height);
     //for initial frameRGB, initial with max widthxheight : 1920x1080
 #if 0
     numBytes = avpicture_get_size(AV_PIX_FMT_RGB24, is->viddec.avctx->width, is->viddec.avctx->height);
@@ -2368,6 +2368,8 @@ static int video_thread(void *arg)
         if (!ret)
             continue;
 
+    	log_debug("is->viddec.avctx->width = %d\n", is->viddec.avctx->width);
+    	log_debug("is->viddec.avctx->height = %d\n", is->viddec.avctx->height);
         if(sws_ctx == NULL){
             sws_ctx = sws_getContext(is->viddec.avctx->width, is->viddec.avctx->height, is->viddec.avctx->pix_fmt, 
                                         is->viddec.avctx->width, is->viddec.avctx->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
@@ -2411,11 +2413,8 @@ static int video_thread(void *arg)
             }
 #endif			
 #if 1
+			//transfer RGB frame to pico
 			for(i = 0; i < 8; i++){
-				log_debug("transfer frame to pico!\n");
-				log_debug("led_params.pico_handle = 0x%x\n", led_params.pico_handle);
-				log_debug("&led_params.pico_handle = 0x%x\n", &(led_params.pico_handle));
-
 				iret = transfer_framergb_to_pico(frameRGB, &(led_params.cab_params[i]), 3, led_params.pico_handle);
 				//iret = transfer_framergb_to_pico(frameRGB, &led_params, 3);
 				if(iret != 0){
@@ -2423,9 +2422,8 @@ static int video_thread(void *arg)
 				}
 			}
 			led_fps ++;
-		}
 #endif
-#if 0
+#if 0//old method
 			//write_framergb_to_pico(frameRGB, 3, 80, 96, i);
 			int id_num = -1;
 			for(int x = 0; x < 2; x ++){
@@ -2439,9 +2437,8 @@ static int video_thread(void *arg)
 				}
 			}
 			led_fps ++;
-        }
 #endif
-        
+        } 
 #if CONFIG_AVFILTER
         //printf("CONFIG_AVFILTER!\n");
         if (   last_w != frame->width

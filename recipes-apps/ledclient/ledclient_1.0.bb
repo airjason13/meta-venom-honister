@@ -2,7 +2,7 @@ SUMMARY = "bitbake-layers recipe"
 DESCRIPTION = "Recipe created by bitbake-layers"
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://${WORKDIR}/LICENSE;md5=e4ac654ba9b61686c2dc854a1128a323"
-FILESEXTRAPATHS_append := "${THISDIR}/${PN}:"
+FILESEXTRAPATHS:append := "${THISDIR}/${PN}:"
 SRC_URI += "file://app/ \
             file://compat/ \
             file://libs/ \
@@ -41,6 +41,7 @@ do_install() {
     install -m 755 ext/set_always_display_on.sh ${D}/${bindir}
     install -m 755 ext/set_automount.sh ${D}/${bindir}
     install -m 755 ext/set_panel_autohide.sh ${D}/${bindir}
+    install -m 755 ext/setup_hotspot.sh ${D}/${bindir}
     cp -r ext/pyflask_machine_option/* ${D}/home/root/led_machine_option/
     cp -r ext/py1602_server/* ${D}/home/root/i2c_lcd_server/
     install -m 755 ext/led_role.conf ${D}/home/root/
@@ -53,11 +54,11 @@ do_install() {
 }
 
 DEPENDS += "ffmpeg libsdl2 libusb1"
-RDEPENDS_${PN} = "libubootenv"
-INSANE_SKIP_${PN} = "ldflags"
+RDEPENDS:${PN} = "libubootenv"
+INSANE_SKIP:${PN} = "ldflags"
 
 
-INSANE_SKIP_${PN}-dev = "ldflags"
-FILES_${PN} += " \
+INSANE_SKIP:${PN}-dev = "ldflags"
+FILES:${PN} += " \
                 /home/root/* \
                 "

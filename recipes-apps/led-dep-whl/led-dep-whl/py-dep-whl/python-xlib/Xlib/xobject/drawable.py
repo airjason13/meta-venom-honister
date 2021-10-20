@@ -249,7 +249,7 @@ class Drawable(resource.Resource):
             else:
                 subimage = image
             w, h = subimage.size
-            data = subimage.tobytes("raw", rawmode, stride, 0)
+            data = subimage.tostring("raw", rawmode, stride, 0)
             self.put_image(gc, x, y, w, h, format, depth, 0, data)
             y1 = y1 + h
             y = y + h
@@ -779,7 +779,7 @@ class Window(Drawable):
     def _get_struct_prop(self, pname, ptype, pstruct):
         r = self.get_property(pname, ptype, 0, pstruct.static_size // 4)
         if r and r.format == 32:
-            value = rq.encode_array(r.value)
+            value = r.value.tostring()
             if len(value) == pstruct.static_size:
                 return pstruct.parse_binary(value, self.display)[0]
 

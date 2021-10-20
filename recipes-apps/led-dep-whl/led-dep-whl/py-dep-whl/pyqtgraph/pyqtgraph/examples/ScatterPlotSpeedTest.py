@@ -12,9 +12,9 @@ import initExample
 import numpy as np
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtGui, QtCore, QtWidgets
-from pyqtgraph.ptime import time
 import pyqtgraph.parametertree as ptree
 import pyqtgraph.graphicsItems.ScatterPlotItem
+from time import perf_counter
 
 translate = QtCore.QCoreApplication.translate
 
@@ -26,7 +26,7 @@ param = ptree.Parameter.create(name=translate('ScatterPlot', 'Parameters'), type
     dict(name='randomize', title=translate('ScatterPlot', 'Randomize:    '), type='bool', value=False),
     dict(name='pxMode', title='pxMode:    ', type='bool', value=True),
     dict(name='useCache', title='useCache:    ', type='bool', value=True),
-    dict(name='mode', title=translate('ScatterPlot', 'Mode:    '), type='list', values={translate('ScatterPlot', 'New Item'): 'newItem', translate('ScatterPlot', 'Reuse Item'): 'reuseItem', translate('ScatterPlot', 'Simulate Pan/Zoom'): 'panZoom', translate('ScatterPlot', 'Simulate Hover'): 'hover'}, value='reuseItem'),
+    dict(name='mode', title=translate('ScatterPlot', 'Mode:    '), type='list', limits={translate('ScatterPlot', 'New Item'): 'newItem', translate('ScatterPlot', 'Reuse Item'): 'reuseItem', translate('ScatterPlot', 'Simulate Pan/Zoom'): 'panZoom', translate('ScatterPlot', 'Simulate Hover'): 'hover'}, value='reuseItem'),
 ])
 for c in param.children():
     c.setDefault(c.value())
@@ -43,7 +43,7 @@ data = {}
 item = pg.ScatterPlotItem()
 hoverBrush = pg.mkBrush('y')
 ptr = 0
-lastTime = time()
+lastTime = perf_counter()
 fps = None
 timer = QtCore.QTimer()
 
@@ -104,7 +104,7 @@ def update():
         new.setBrush(hoverBrush)
 
     ptr += 1
-    now = time()
+    now = perf_counter()
     dt = now - lastTime
     lastTime = now
     if fps is None:
