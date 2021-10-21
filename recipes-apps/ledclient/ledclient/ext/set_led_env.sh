@@ -37,6 +37,8 @@ else
     echo "gen a default config file as Client"
 fi     
 
+insmod /home/root/rtl8812au_module/88XXau.ko
+
 echo "ROLE:"$ROLE
 if [[ $CLIENT_TAG == $ROLE ]];then
     touch /home/root/client_now
@@ -50,12 +52,14 @@ if [[ $CLIENT_TAG == $ROLE ]];then
 elif [[ $PLAYER_TAG == $ROLE ]];then
     touch /home/root/player_now
     echo "Just a simple player"
+	nmcli radio wifi on 
     setup_hotspot.sh &
 	run-filemanager.sh &
     launch_led_player.sh
 elif [[ $SERVER_TAG == $ROLE ]];then
     touch /home/root/server_now
     echo "Server Now"
+	nmcli radio wifi on 
     setup_hotspot.sh &
 	run-filemanager.sh &
 	launch_pyLedServer.sh 
