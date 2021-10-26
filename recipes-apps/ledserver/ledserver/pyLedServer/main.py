@@ -8,6 +8,13 @@ import sys
 from PyQt5.QtWidgets import QApplication
 import jqlocalserver
 import utils.log_utils
+import signal, traceback
+import logging
+
+
+def sighandler(signum, frame):
+    log.fatal("Caough signal %d", signum)
+    traceback.print_stack(frame)
 
 
 
@@ -16,6 +23,23 @@ import utils.log_utils
 if __name__ == '__main__':
     log = utils.log_utils.logging_init(__file__)
     log.info('Main')
+
+
+    global_debug_level = logging.FATAL
+    utils.log_utils.set_logging_level(global_debug_level)
+
+    '''Insert signal handler'''
+    log.info("Insert signal")
+    '''for sig in dir(signal):
+        if sig.startswith("SIG"):
+            try:
+                signum = getattr(signal, sig)
+                signal.signal(signum, sighandler)
+            except: 
+                log.info("Skip %s", sig)'''
+    signal.signal(signal.SIGSEGV, sighandler)
+
+    log.info("Insert signal down")
 
     app = QApplication(sys.argv)
     gui = MainUi()

@@ -29,16 +29,16 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
 	log_debug("pico = 0x%x\n", pico);*/
 	switch(params->layout_type){
 		case 0:
-			for(y = 0; y < height; y ++){
+			for(y = 0; y < height; y++){
 	            if(y % 2 == 0){ //first line
 					memcpy(buf + offset, 
-							pFrame->data[0] + ((start_y +y)*pFrame->linesize[0]) + start_x*channel_count, 
+							pFrame->data[0] + ((start_y + y)*pFrame->linesize[0]) + start_x*channel_count, 
 							width*channel_count);
 					offset += width*channel_count;
 				}else{ //second line
 					for(i = 0 ; i < width; i ++){
 						memcpy(buf + offset, 
-								pFrame->data[0] + ((start_y +y)*pFrame->linesize[0]) + (start_x + width - i -1)*channel_count, 
+								pFrame->data[0] + ((start_y + y)*pFrame->linesize[0]) + (start_x + width - i -1)*channel_count, 
 								channel_count);
 						offset += channel_count;
 					}
@@ -50,7 +50,7 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
 		case 2:
 			break;
 		case 3:
-			for(y = 0; y < height; y ++){
+			for(y = 0; y < height; y++){
 				if(y % 2 == 0){ // first line
 					for(i = 0; i < width; i++){
 						memcpy(buf + offset,
@@ -65,24 +65,86 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
 					offset += width*channel_count;
 				}
 			}
-#if 0
-			for(y = start_y; y <(start_y - height); y --){
-	            if((start_y - y) % 2 == 0){ //first line
-	                for(int i = (start_x) ; i > (start_x - width + 1) ; i--){
-	                    memcpy(buf + offset + ((start_x - i)*channel_count), 
-								pFrame->data[0] + (y*pFrame->linesize[0]) + ((start_x - i)*channel_count), 
-								channel_count);
-	                }
-	            }else{ //second line
-	                memcpy(buf + offset, pFrame->data[0] + y*pFrame->linesize[0] + start_x*channel_count, width*channel_count);
-	                /*for(int i = start_x ; i < (start_x + width) ; i++){
-	                    memcpy(buf + offset + ((i-start_x)*channel_count), pFrame->data[0] + y*pFrame->linesize[0] + (width - i - 1)*channel_count, channel_count);
-	                }*/
-	            }
-				
-			}	
-#endif			
 			break;
+        case 4:
+            for(x = 0; x < width; x++){
+                if(x % 2 == 0){
+                    for(y = 0; y < height; y++){
+                        memcpy(buf + offset,
+                                pFrame->data[0] + (start_y + y)*pFrame->linesize[0] + (start_x + x)*channel_count),
+                                channel_count);
+                        offset += channel_count;
+                    }
+                }else{
+                    for(y = height; y > 0; y--){
+                        memcpy(buf + offset,
+                                pFrame->data[0] + (start_y + height - y)*pFrame->linesize[0] + (start_x + x)*channel_count),
+                                channel_count);
+                        offset += channel_count;
+                    } 
+                }
+            }
+            break;
+        case 5: 
+            for(x = width; x > 0; x--){
+                if(x % 2 == 0){
+                    for(y = 0; y < height; y++){
+                        memcpy(buf + offset,
+                                pFrame->data[0] + (start_y + y)*pFrame->linesize[0] + (start_x + width -x)*channel_count),
+                                channel_count);
+                        offset += channel_count;
+                    }
+                }else{
+                    for(y = height; y > 0; y--){
+                        memcpy(buf + offset,
+                                pFrame->data[0] + (start_y + height - y)*pFrame->linesize[0] + (start_x + width - x)*channel_count),
+                                channel_count);
+                        offset += channel_count;
+                    } 
+                }
+            }
+            break;
+        case 6:
+            for(x = width; x > 0; x--){
+                if(x % 2 == 1){
+                    for(y = 0; y < height; y++){
+                        memcpy(buf + offset,
+                                pFrame->data[0] + (start_y + y)*pFrame->linesize[0] + (start_x + width -x)*channel_count),
+                                channel_count);
+                        offset += channel_count;
+                    }
+                }else{
+                    for(y = height; y > 0; y--){
+                        memcpy(buf + offset,
+                                pFrame->data[0] + (start_y + height - y)*pFrame->linesize[0] + (start_x + width - x)*channel_count),
+                                channel_count);
+                        offset += channel_count;
+                    } 
+                }
+            }
+            
+            break;
+        case 7:
+            for(x = 0; x < width; x++){
+                if(x % 2 == 1){
+                    for(y = 0; y < height; y++){
+                        memcpy(buf + offset,
+                                pFrame->data[0] + (start_y + y)*pFrame->linesize[0] + (start_x + x)*channel_count),
+                                channel_count);
+                        offset += channel_count;
+                    }
+                }else{
+                    for(y = height; y > 0; y--){
+                        memcpy(buf + offset,
+                                pFrame->data[0] + (start_y + height - y)*pFrame->linesize[0] + (start_x + x)*channel_count),
+                                channel_count);
+                        offset += channel_count;
+                    
+                    } 
+                }
+            }
+            
+            break;
 	}
 	if(pico != NULL){
 		log_debug("offset = %d\n", offset);

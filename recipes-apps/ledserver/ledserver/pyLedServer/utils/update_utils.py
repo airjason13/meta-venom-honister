@@ -17,7 +17,7 @@ def request_post_upload_file(ip, swu_file_url, cb):
     try:
         r = requests.post(url=url, files=files, timeout=10 ).text
 
-        log.debug("r.status_code = %s", r.status_code)
+        #log.debug("r.status_code = %s", r.status_code)
         log.debug("r = %s", r)
         cb(ip, True)
         return True
@@ -50,3 +50,4 @@ def update_client_callback(ip, ret):
         log.info("%s update OK!", ip)
     else:
         log.info("%s update NG!", ip)
+
