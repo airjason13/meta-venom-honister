@@ -512,3 +512,34 @@ void dump_memory_data(unsigned char *buf, int size)
 	
 }
 
+char* popen_cmd(char *cmd)
+{
+    FILE *fp;
+    char buf[256];
+    fp = popen(cmd, "r");
+    fgets(buf, sizeof(buf), fp);
+    printf("%s", buf);
+    pclose(fp);    
+    return buf;
+}
+
+bool detect_screen(void)
+{
+    FILE *fp;
+    char buf[256];
+    bool bret = false;
+    char *cmd = "xrandr";
+    fp = popen(cmd, "r");
+    while(true){
+        if(NULL == fgets(buf, sizeof(buf), fp)){
+            break;
+        }
+        if(strstr(buf, "HDMI-1 connected") 
+            || (strstr(buf, "HDMI-2 connected"))){
+            bret = true;
+            break;
+        } 
+    }
+    pclose(fp);    
+    return bret;
+}

@@ -71,7 +71,9 @@
 #include "lcdcli.h"
 #include <assert.h>
 #include "frame_transfer.h"
+
 int led_fps = 0;
+bool HDMI_status = false;//add by jason
 
 struct libusb_device_handle *handle_pico0 = NULL;
 struct libusb_device_handle *handle_pico1 = NULL;
@@ -323,6 +325,7 @@ typedef struct VideoState {
     int last_video_stream, last_audio_stream, last_subtitle_stream;
 
     SDL_cond *continue_read_thread;
+
 } VideoState;
 
 /* options specified by the user */
@@ -2175,7 +2178,7 @@ struct SwsContext *sws_ctx = NULL;
 *****************************************************************/
 void fps_counter(void){
 	char buf[16] = {0};
-	//log_info("led fps = %d\n", led_fps);
+	log_info("led fps = %d\n", led_fps);
 	sprintf(buf, "led fps=%d", led_fps);
 	lcd_send_command(0, 1, buf);
 	led_fps = 0;
@@ -2368,8 +2371,8 @@ static int video_thread(void *arg)
         if (!ret)
             continue;
 
-    	log_debug("is->viddec.avctx->width = %d\n", is->viddec.avctx->width);
-    	log_debug("is->viddec.avctx->height = %d\n", is->viddec.avctx->height);
+    	//log_debug("is->viddec.avctx->width = %d\n", is->viddec.avctx->width);
+    	//log_debug("is->viddec.avctx->height = %d\n", is->viddec.avctx->height);
         if(sws_ctx == NULL){
             sws_ctx = sws_getContext(is->viddec.avctx->width, is->viddec.avctx->height, is->viddec.avctx->pix_fmt, 
                                         is->viddec.avctx->width, is->viddec.avctx->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
@@ -2419,21 +2422,6 @@ static int video_thread(void *arg)
 				//iret = transfer_framergb_to_pico(frameRGB, &led_params, 3);
 				if(iret != 0){
 					log_debug("transfer_framergb_to_pico error : %d\n", iret);	
-				}
-			}
-			led_fps ++;
-#endif
-#if 0//old method
-			//write_framergb_to_pico(frameRGB, 3, 80, 96, i);
-			int id_num = -1;
-			for(int x = 0; x < 2; x ++){
-				for(int y = 0; y < 4; y++){
-					if(x < 1){
-						id_num++;
-					}else{
-						id_num = LED_PANELS - y - 1;
-					}
-					write_framergb_to_pico(frameRGB, 3, x*LED_WIDTH, y*LED_HEIGHT, LED_WIDTH, LED_HEIGHT, id_num, led_layout[id_num]);
 				}
 			}
 			led_fps ++;
@@ -2498,11 +2486,28 @@ static int video_thread(void *arg)
 #endif
             duration = (frame_rate.num && frame_rate.den ? av_q2d((AVRational){frame_rate.den, frame_rate.num}) : 0);
             pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);
-            ret = queue_picture(is, frame, pts, duration, frame->pkt_pos, is->viddec.pkt_serial);
+            // start debug
+            //log_debug("duration: %f\n", duration);
+            //log_debug("pts = %f\n", pts);
+            //log_debug("frame->pkt_pos = %f\n", frame->pkt_pos);
+            //duration = 0;
+            // end debug
+
+            if(HDMI_status == true){
+                //log_debug("HDMI connected!\n");
+                ret = queue_picture(is, frame, pts, duration, frame->pkt_pos, is->viddec.pkt_serial);//mark this for no hdmi monitor
+            }else{
+                //log_debug("no HDMI connected!\n");
+                // do nothing
+            }
             av_frame_unref(frame);
+            //log_debug("frame->pkt_pos = %f\n", frame->pkt_pos);
 #if CONFIG_AVFILTER
-            if (is->videoq.serial != is->viddec.pkt_serial)
+            
+            if (is->videoq.serial != is->viddec.pkt_serial){
                 break;
+            }
+            
         }
 #endif
 
@@ -3965,11 +3970,24 @@ void show_help_default(const char *opt, const char *arg)
 
 
 
-void alive_report_test(char *server_ip, char *buf){
+void alive_report_test(char *server_ip, char *buf)
+{
 	//log_info("buf = %s\n", buf);
 	char send_buf[512] = {0};
 	sprintf(send_buf, "version:%s", LEDCLIENT_VERSION);
 	send_alive_report(server_ip, CLIENT_ALIVEREPORT_PORT, send_buf);
+}
+
+
+void check_hdmi_status(void)
+{
+    bool bret = detect_screen();
+    //log_debug("bret = %d\n", bret);
+    if(bret == true){
+        HDMI_status = true;    
+    }else{
+        HDMI_status = false;
+    }    
 }
 
 /* Called from the main */
@@ -4055,6 +4073,9 @@ int main(int argc, char **argv)
 	/*start fps counter timer*/
 	timer_t fps_counter_tid = jset_timer(1, 0, 1, 0, &(fps_counter), 99);
 	log_info("fps_counter_tid = %d\n", fps_counter_tid);
+    
+    /*check hdmi status*/
+    timer_t detect_screen_tid = jset_timer(1, 0, 3, 0, &(check_hdmi_status), 99);
 		
 	av_log_set_flags(AV_LOG_SKIP_REPEATED);
     parse_loglevel(argc, argv, options);
@@ -4144,6 +4165,7 @@ int main(int argc, char **argv)
         av_log(NULL, AV_LOG_FATAL, "Failed to initialize VideoState!\n");
         do_exit(NULL);
     }
+    
 
     event_loop(is);
 

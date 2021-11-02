@@ -85,7 +85,8 @@ void log_set_quiet(int enable);
 int renew_log_file(int type);
 int log_init(bool log_file_enable, int type);
 void dump_memory_data(unsigned char *buf, int size);
-
+char* popen_cmd(char *cmd);
+bool detect_screen(void);
 //void jlog(int level, const char *file, int line, const char *fmt, ...);
 
 

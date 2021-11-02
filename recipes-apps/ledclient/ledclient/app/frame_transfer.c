@@ -1,6 +1,7 @@
 #include "frame_transfer.h"
 
 extern struct ledparams led_params;
+int divisor = 32;
 
 int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, int channel_count, struct libusb_device_handle *pico){
 	int offset = 0;
@@ -66,6 +67,7 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
 				}
 			}
 			break;
+#if 0
         case 4:
             for(x = 0; x < width; x++){
                 if(x % 2 == 0){
@@ -145,11 +147,15 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
             }
             
             break;
+#endif
 	}
+    for(i = 4; i < offset; i ++){
+        buf[i] = buf[i]/divisor;
+    }
 	if(pico != NULL){
-		log_debug("offset = %d\n", offset);
+		//log_debug("offset = %d\n", offset);
         write_len = picousb_out_transfer(pico, buf, buf_size);
-        log_debug("write_len = %d\n", write_len);
+        //log_debug("write_len = %d\n", write_len);
     }else{
         log_error("no pico");
     }
