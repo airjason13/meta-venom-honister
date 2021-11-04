@@ -4,6 +4,7 @@ ROLE=''
 CLIENT_TAG='Client'
 SERVER_TAG='Server'
 PLAYER_TAG='Player'
+TESTER_TAG='Tester'
 
 #for auto-mount test
 udiskie &
@@ -20,6 +21,10 @@ if [ -e /home/root/player_now ];then
     rm /home/root/player_now
 fi
 
+if [ -e /home/root/tester_now ];then
+    rm /home/root/tester_now
+fi
+
 if [ -e $CONFIG_FILE ];then
     echo "config file exist"
     while read line; do
@@ -30,6 +35,8 @@ if [ -e $CONFIG_FILE ];then
             ROLE=Client
         elif [[ $PLAYER_TAG == $line ]];then
             ROLE=Player
+        elif [[ $TESTER_TAG == $line ]];then
+            ROLE=Tester
         fi     
     done < $CONFIG_FILE
     echo "ROLE:"$ROLE
@@ -63,4 +70,11 @@ elif [[ $SERVER_TAG == $ROLE ]];then
     setup_hotspot.sh &
 	run-filemanager.sh &
 	launch_pyLedServer.sh 
+elif [[ $TESTER_TAG == $ROLE ]];then
+    touch /home/root/tester_now
+    echo "Tester Now"
+	nmcli radio wifi on 
+    setup_hotspot_tester.sh &
+	run-filemanager.sh &
+	launch_pyLedTester.sh 
 fi  
