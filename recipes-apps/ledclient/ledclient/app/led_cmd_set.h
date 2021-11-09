@@ -8,7 +8,7 @@
 #include "ledlayout.h"
 #include "cabinetutils.h"
 #include "errno.h"
-
+#include "frame_transfer.h"
 
 #define REPLY_OK_TAG			"ok"
 #define REPLY_NG_TAG			"ng"

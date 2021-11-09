@@ -1,8 +1,32 @@
 #include "frame_transfer.h"
 
 extern struct ledparams led_params;
-int divisor = 32;
+int frame_br_divisor = 16;//32
+int frame_brightness = 50;
 
+int set_frame_brightness_value(int value){
+    if((value > 100) || (value < 0)){
+        return -EINVAL;
+    }
+    frame_brightness = value;
+    return 0;
+}
+
+int get_frame_brightness_value(void){
+    return frame_brightness;
+}
+
+int set_frame_br_divisor_value(int value){
+    if((value > 255) || (value < 0)){
+        return -EINVAL;
+    }
+    frame_br_divisor = value;
+    return 0;
+}
+
+int get_frame_br_divisor_value(void){
+    return frame_br_divisor;
+}
 int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, int channel_count, struct libusb_device_handle *pico){
 	int offset = 0;
 	int width = params->cabinet_width;
@@ -150,7 +174,8 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
 #endif
 	}
     for(i = 4; i < offset; i ++){
-        buf[i] = buf[i]/divisor;
+        //buf[i] = (buf[i]/divisor) * (frame_brightness/100);
+        buf[i] =(char)((int)buf[i]*frame_brightness/(frame_br_divisor*100));
     }
 	if(pico != NULL){
 		//log_debug("offset = %d\n", offset);
