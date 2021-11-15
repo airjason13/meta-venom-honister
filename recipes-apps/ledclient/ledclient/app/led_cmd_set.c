@@ -243,6 +243,32 @@ int get_frame_br_divisor(char *data, char *reply_buf){
     return strlen(reply_buf); 
 }
 
+int set_frame_contrast(char *data, char *reply_buf){
+	log_debug("data = %s\n", data);
+	int seq_id = 0;
+	char cmd[1024];
+	char param[1024];
+	sscanf(data, "cmd_seq_id:%d;cmd:%[1-9a-z|^_];param:%s", &seq_id, &cmd, &param);
+   
+    if(set_frame_contrast_value(atoi(param)) < 0){
+	 	sprintf(reply_buf,"cmd_seq_id:%d;cmd=%s;reply:%s", seq_id, cmd, REPLY_NG_TAG);
+    }else{
+	 	sprintf(reply_buf,"cmd_seq_id:%d;cmd=%s;reply:%s", seq_id, cmd, REPLY_OK_TAG);
+    }
+    log_debug("param = %s\n", param);
+    return strlen(reply_buf); 
+}
+
+int get_frame_contrast(char *data, char *reply_buf){
+	log_debug("data = %s\n", data);
+	int seq_id = 0;
+	char cmd[1024];
+	char param[1024];
+	sscanf(data, "cmd_seq_id:%d;cmd:%[1-9a-z|^_];param:%s", &seq_id, &cmd, &param);
+   
+    log_debug("param = %s\n", param);
+    return strlen(reply_buf); 
+}
 int spec_test(char *data, char *reply_buf){
      log_debug("data = %s\n", data);
 	 int seq_id = 0;
@@ -323,12 +349,26 @@ int set_udp_cmd_callbacks(void){
 		return ret;
     }   
 	
-    /*set get_client_brightness callback*/
+    /*set get_client_br_divisor callback*/
     ret = register_udp_cmd_callback(CMD_CALLBACK_GET_FRAME_BR_DIVISOR, &get_frame_br_divisor);
     if(ret != 0){
         log_error("callback register failed!\n");
 		return ret;
-    }   
+    }  
+ 
+    /*set set_client_contrast callback*/
+    ret = register_udp_cmd_callback(CMD_CALLBACK_SET_FRAME_CONTRAST, &set_frame_contrast);
+    if(ret != 0){
+        log_error("callback register failed!\n");
+		return ret;
+    }  
+ 
+    /*set get_client_contrast callback*/
+    ret = register_udp_cmd_callback(CMD_CALLBACK_GET_FRAME_CONTRAST, &get_frame_contrast);
+    if(ret != 0){
+        log_error("callback register failed!\n");
+		return ret;
+    }  
 	/*set spec_test callback*/
 	ret = register_udp_cmd_callback(CMD_CALLBACK_SPEC_TEST, &spec_test);
     if(ret != 0){
