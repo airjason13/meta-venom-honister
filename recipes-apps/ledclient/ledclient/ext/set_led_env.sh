@@ -9,6 +9,9 @@ TESTER_TAG='Tester'
 #for auto-mount test
 udiskie &
 
+#for monitor temperature
+b_measure_temp.sh &
+
 if [ -e /home/root/server_now ];then
     rm /home/root/server_now
 fi

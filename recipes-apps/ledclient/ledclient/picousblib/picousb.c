@@ -176,8 +176,11 @@ struct libusb_device_handle *picousb_init(void)
 	if(found == 0)
     {
         printf("\nDevice NOT found\n");
-        libusb_free_device_list(devs, 1);
-        libusb_close(handle);
+        
+        //libusb_free_device_list(devs, 1);// segmentation fault
+        //printf("\nfree device list\n");
+        //libusb_close(handle);// segamentation fault
+        //printf("\nclose handle\n");
         return NULL;
     }
     else

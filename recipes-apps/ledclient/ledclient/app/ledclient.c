@@ -71,7 +71,7 @@
 #include "lcdcli.h"
 #include <assert.h>
 #include "frame_transfer.h"
-
+#include "lcd_info.h"
 int led_fps = 0;
 bool HDMI_status = false;//add by jason
 
@@ -2179,8 +2179,9 @@ struct SwsContext *sws_ctx = NULL;
 void fps_counter(void){
 	char buf[16] = {0};
 	log_info("led fps = %d\n", led_fps);
-	sprintf(buf, "led fps=%d", led_fps);
-	lcd_send_command(0, 1, buf);
+	sprintf(buf, "LED FPS=%d", led_fps);
+	//lcd_send_command(0, 1, buf);
+    refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_FPS, buf, NULL);
 	led_fps = 0;
 }
 
@@ -2341,6 +2342,8 @@ static int video_thread(void *arg)
     int last_vfilter_idx = 0;
 #endif
 	int iret = 0;
+    char lcd_content_buf[16];
+
     if (!frame)
         return AVERROR(ENOMEM);
 
@@ -2379,6 +2382,9 @@ static int video_thread(void *arg)
 			if(sws_ctx == NULL){
 				log_error("sws_ctx initial failed!\n");
 			}
+            //refresh resolution in lcd content
+            sprintf(lcd_content_buf, "LED Res=%dx%d", is->viddec.avctx->width, is->viddec.avctx->height);
+            refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_FPS, NULL, lcd_content_buf);
         }else{
 
             //Convert the image from its native format to RGB
@@ -2386,17 +2392,6 @@ static int video_thread(void *arg)
 			/*int scale_ret = sws_scale(sws_ctx, (uint8_t const *)frame->data, frame->linesize, 0, 1080, frameRGB->data, frameRGB->linesize); */   
 			if(scale_ret < 0){
 				log_error("scale_ret = %d\n", scale_ret);
-    			/*av_frame_free(&frameRGB);
-				log_debug("re-initial frameRGB");
-    			frameRGB = av_frame_alloc();
-    			if(!frameRGB){
-        			printf("frameRGB alloc failed!\n");
-        			return AVERROR(ENOMEM);
-    			}
-    			numBytes = avpicture_get_size(AV_PIX_FMT_RGB24, is->viddec.avctx->width, is->viddec.avctx->height);
-    			buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
-    			avpicture_fill((AVPicture *)frameRGB, buffer, AV_PIX_FMT_RGB24, is->viddec.avctx->width, is->viddec.avctx->height);
-				log_debug("re-initial frameRGB ok!\n");*/
 				/*re-initial sws_ctx*/
 				sws_freeContext(sws_ctx);
 				sws_ctx = NULL;
@@ -2407,6 +2402,9 @@ static int video_thread(void *arg)
 				}else{
 					log_info("sws_ctx re-initial ok!\n");
 				}
+                //refresh resolution in lcd content
+                sprintf(lcd_content_buf, "LED Res=%dx%d", is->viddec.avctx->width, is->viddec.avctx->height);
+                refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_FPS, NULL, lcd_content_buf);
 			}
 #ifdef WRITE_FRAME_TO_DISK       // Save the frame to disk
 
@@ -4001,21 +3999,27 @@ int main(int argc, char **argv)
 		log_fatal("ERROR!Can't enable log file\n");
 	}
     init_dynload();
-
-	/* initial pico*/
-	log_info("Jason test pico usb!\n");
+    
+    /*init lcd content*/
+    init_lcd_content(LEDCLIENT_VERSION, "MCU_VERSION");
+    insert_lcd_content("TEST0", "TEST1", TAG_LCD_INFO, SUB_TAG_FPS);
+    lcd_start_routine();	
+	
+    /* initial pico*/
+	log_info("Init pico usb!\n");
 	//handle_pico0 = picousb_init();
 	led_params.pico_handle = picousb_init();
 
 	if(led_params.pico_handle == NULL){
 		log_fatal("No Pico Found!\n");
-		lcd_send_command(0, 1, "NoPicoFound!");
-		usleep(1000);
-        exit(1);
-	}
-	picousb_out_transfer(led_params.pico_handle, "Hello", 5);
-    
-	/*initial cabinet params*/
+		//lcd_send_command(0, 1, "NoPicoFound!");
+        insert_lcd_content("No Pico", "Check", TAG_LCD_ERROR, SUB_TAG_NOPICO);
+        sleep(8); 
+	}else{
+	    picousb_out_transfer(led_params.pico_handle, "Hello", 5);
+    }
+
+    /*initial cabinet params*/
 	for(int i = 0; i < LED_PANELS; i ++){
 		int ret = cabinet_params_init(i, &led_params.cab_params[i]);
 		if( ret < 0){
