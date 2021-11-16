@@ -4002,7 +4002,7 @@ int main(int argc, char **argv)
     
     /*init lcd content*/
     init_lcd_content(LEDCLIENT_VERSION, "MCU_VERSION");
-    insert_lcd_content("TEST0", "TEST1", TAG_LCD_INFO, SUB_TAG_FPS);
+    insert_lcd_content("LED FPS=", "LED Res=", TAG_LCD_INFO, SUB_TAG_FPS);
     lcd_start_routine();	
 	
     /* initial pico*/
@@ -4017,6 +4017,10 @@ int main(int argc, char **argv)
         sleep(8); 
 	}else{
 	    picousb_out_transfer(led_params.pico_handle, "Hello", 5);
+        //unsigned char buf[16];
+        picousb_in_transfer(led_params.pico_handle, led_params.pico_version, 16);
+        log_debug("%s\n", led_params.pico_version);
+        refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_VERSION, NULL, led_params.pico_version);
     }
 
     /*initial cabinet params*/
@@ -4025,7 +4029,7 @@ int main(int argc, char **argv)
 		if( ret < 0){
 			continue;
 		}
-		log_debug("A led_params.cab_params : 0x%x\n", led_params.cab_params[i]);
+		log_debug("led_params.cab_params : 0x%x\n", led_params.cab_params[i]);
 		log_debug("led_params.cab_params[%d].cabinet_width = %d", i,
 					led_params.cab_params[i].cabinet_width);
 		log_debug("led_params.cab_params[%d].cabinet_height = %d", i,
@@ -4036,7 +4040,6 @@ int main(int argc, char **argv)
 					led_params.cab_params[i].start_y);
 		log_debug("led_params.cab_params[%d].layout_type = %d", i,
 					led_params.cab_params[i].layout_type);
-		log_debug("B\n");
 	}
 
 
@@ -4052,12 +4055,6 @@ int main(int argc, char **argv)
 	led_params.udpmr_tid = udpmr_init("239.11.11.11", 9898);
 	
 	/*initial udp cmd callback test*/
-	/*ret = register_udp_cmd_callback(CMD_CALLBACK_GET_VERSION, &get_version);
-	if(ret != 0){
-		log_error("callback register failed!\n");
-	}else{
-		log_info("callback register ok!\n");
-	}*/
 	ret = set_udp_cmd_callbacks();
 	if(ret < 0){
 		log_fatal("cmd callbacks setup failed!\n");

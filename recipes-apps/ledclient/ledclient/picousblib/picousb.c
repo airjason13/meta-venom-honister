@@ -252,13 +252,25 @@ int picousb_out_transfer(struct libusb_device_handle *h, unsigned char *data, in
 	int e = -1;
 	e = libusb_bulk_transfer(h, BULK_EP_OUT, data, len, &transferred, 0);
     if(e == 0 && transferred == len){
-        //printf("\nWrite successful!");
-        //printf("\nSent %d bytes with string: %s\n", transferred, data);
 		return transferred;
-    }
-    else{
+    }else{
         printf("\nError in write! e = %d and transferred = %d\n", e, transferred);
 	}
 
 	return e;
+}
+
+int picousb_in_transfer(struct libusb_device_handle *h, unsigned char *data, int len)
+{
+	int transferred = -1;
+	int e = -1;
+	e = libusb_bulk_transfer(h, BULK_EP_IN, data, len, &transferred, 0);
+    if(e == 0 && transferred == len){
+		return transferred;
+    }else{
+        printf("\nError in write! e = %d and transferred = %d\n", e, transferred);
+	}
+
+	return e;
+
 }

@@ -54,6 +54,7 @@ typedef enum{
 
 typedef struct ledparams{
 	struct libusb_device_handle *pico_handle;
+    char pico_version[16];
 	struct cabinet_params cab_params[LED_PANELS];
 	int i_ledpanelsi;// = 8;
 	int i_pixelsperpanel;// = 960;
