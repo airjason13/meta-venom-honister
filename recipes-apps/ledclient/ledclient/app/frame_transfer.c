@@ -215,7 +215,8 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
         //log_debug("write_len = %d\n", write_len);
     }else{
         log_error("no pico");
+        write_len = -ENODEV;
     }
 	free(buf);
-	return 0;
+	return write_len;
 }

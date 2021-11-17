@@ -9,8 +9,6 @@ TESTER_TAG='Tester'
 #for auto-mount test
 udiskie &
 
-#for monitor temperature
-b_measure_temp.sh &
 
 if [ -e /home/root/server_now ];then
     rm /home/root/server_now
@@ -48,6 +46,9 @@ else
 fi     
 
 insmod /home/root/rtl8812au_module/88XXau.ko
+
+#for monitor temperature
+b_measure_temp.sh &
 
 echo "ROLE:"$ROLE
 if [[ $CLIENT_TAG == $ROLE ]];then
