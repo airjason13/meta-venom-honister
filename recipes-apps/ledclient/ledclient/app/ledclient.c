@@ -69,9 +69,13 @@
 #include "ledclient_version.h"
 #include "jtimer.h"
 #include "lcdcli.h"
+#include "picousb.h"
 #include <assert.h>
 #include "frame_transfer.h"
 #include "lcd_info.h"
+
+//#define WRITE_FRAME_TO_DISK     1
+
 int led_fps = 0;
 bool HDMI_status = false;//add by jason
 
@@ -2408,12 +2412,11 @@ static int video_thread(void *arg)
 			}
 #ifdef WRITE_FRAME_TO_DISK       // Save the frame to disk
 
-			if(++i <= 60){
+			if(++i <= 600){
 			    //SaveFrame(frameRGB, 1920, 1080, i);
-			    SaveFrame(frameRGB, 640, 480, i);
+			    SaveFrame(frameRGB, is->viddec.avctx->width, is->viddec.avctx->height, i);
             }
 #endif			
-#if 1
 			//transfer RGB frame to pico
 			for(i = 0; i < 8; i++){
 				iret = transfer_framergb_to_pico(frameRGB, &(led_params.cab_params[i]), 3, led_params.pico_handle);
@@ -2423,7 +2426,6 @@ static int video_thread(void *arg)
 				}
 			}
 			led_fps ++;
-#endif
         } 
 #if CONFIG_AVFILTER
         //printf("CONFIG_AVFILTER!\n");
@@ -4040,6 +4042,22 @@ int main(int argc, char **argv)
 					led_params.cab_params[i].start_y);
 		log_debug("led_params.cab_params[%d].layout_type = %d", i,
 					led_params.cab_params[i].layout_type);
+        
+        //write to pico the width & height of one port
+        if(i == 0){
+            char cmd_buf[64] = {0};
+            char reply_buf[64] = {0};
+            sprintf(cmd_buf,"cmd:set_port_res,%d,%d", led_params.cab_params[i].cabinet_width, led_params.cab_params[i].cabinet_height);
+            int iret = picousb_set_cmd(led_params.pico_handle, cmd_buf, reply_buf);
+            log_debug("iret = %d, recv_buf = %s\n", iret, reply_buf);
+            /*sprintf(tmp_buf,"cmd:set_port_res,%d,%d", led_params.cab_params[i].cabinet_width, led_params.cab_params[i].cabinet_height);
+            picousb_out_transfer(led_params.pico_handle, tmp_buf, 64);
+            memset(tmp_buf, 0, 64);
+            picousb_in_transfer(led_params.pico_handle, tmp_buf, 64);
+            log_debug("tmp_buf = %s", tmp_buf);*/
+            
+        }
+        
 	}
 
 

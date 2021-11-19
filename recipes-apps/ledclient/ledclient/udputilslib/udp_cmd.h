@@ -24,7 +24,8 @@ typedef int (*cmd_callback_t)(char *, char *);
 #define CMD_CALLBACK_GET_FRAME_BRIGHTNESS   3
 #define CMD_CALLBACK_GET_FRAME_BR_DIVISOR   4
 #define CMD_CALLBACK_GET_FRAME_CONTRAST     5
-#define CMD_CALLBACK_GET_FUNCTION_MAX       5
+#define CMD_CALLBACK_GET_PIXEL_INTERVAL     6
+#define CMD_CALLBACK_GET_FUNCTION_MAX       6
 
 #define CMD_CALLBACK_SET_LED_SIZE		    CMD_CALLBACK_GET_FUNCTION_MAX + 1 //5
 #define CMD_CALLBACK_SET_CABINET_SIZE	    CMD_CALLBACK_GET_FUNCTION_MAX + 2 //6
@@ -32,7 +33,8 @@ typedef int (*cmd_callback_t)(char *, char *);
 #define CMD_CALLBACK_SET_FRAME_BRIGHTNESS   CMD_CALLBACK_GET_FUNCTION_MAX + 4 //8
 #define CMD_CALLBACK_SET_FRAME_BR_DIVISOR   CMD_CALLBACK_GET_FUNCTION_MAX + 5 //9
 #define CMD_CALLBACK_SET_FRAME_CONTRAST     CMD_CALLBACK_GET_FUNCTION_MAX + 6 //9
-#define CMD_CALLBACK_SPEC_TEST			    CMD_CALLBACK_GET_FUNCTION_MAX + 7 //10
+#define CMD_CALLBACK_SET_PIXEL_INTERVAL     CMD_CALLBACK_GET_FUNCTION_MAX + 7 //10
+#define CMD_CALLBACK_SPEC_TEST			    CMD_CALLBACK_GET_FUNCTION_MAX + 8 //11
 
 #define CMD_CALLBACK_MAX				CMD_CALLBACK_SPEC_TEST
 #define CMD_CALLBACK_SIZE				CMD_CALLBACK_MAX + 1
@@ -44,6 +46,7 @@ typedef int (*cmd_callback_t)(char *, char *);
 #define CMD_TAG_GET_FRAME_BRIGHTNESS    "get_frame_brightness"
 #define CMD_TAG_GET_FRAME_BR_DIVISOR    "get_frame_br_divisor"
 #define CMD_TAG_GET_FRAME_CONTRAST      "get_frame_contrast"
+#define CMD_TAG_GET_PIXEL_INTERVAL      "get_pixel_interval"
 
 #define CMD_TAG_SET_LED_SIZE			"set_led_size"
 #define CMD_TAG_SET_CABINET_SIZE		"set_cabinet_size"
@@ -51,6 +54,7 @@ typedef int (*cmd_callback_t)(char *, char *);
 #define CMD_TAG_SET_FRAME_BRIGHTNESS    "set_frame_brightness"
 #define CMD_TAG_SET_FRAME_BR_DIVISOR    "set_frame_br_divisor"
 #define CMD_TAG_SET_FRAME_CONTRAST      "set_frame_contrast"
+#define CMD_TAG_SET_PIXEL_INTERVAL      "set_pixel_interval"
 #define CMD_TAG_SPEC_TEST				"spec_test"
 
 

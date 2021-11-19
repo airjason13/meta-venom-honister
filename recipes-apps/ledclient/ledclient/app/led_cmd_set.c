@@ -79,6 +79,17 @@ int handle_set_cabinet_params(char *cmd_params){
 	led_params.cab_params[port_id].layout_type = layout_type;
 	dump_led_params(port_id);
 	write_cabinet_params_config_file(port_id, &led_params.cab_params[port_id]);
+    
+    //not a good method,but we need it temp
+    if(port_id == 0){
+        if((cab_width != 0)||(cab_height != 0)){
+            char cmd_buf[64] = {0};
+            char reply_buf[64] = {0};
+            sprintf(cmd_buf,"cmd:set_port_res,%d,%d", led_params.cab_params[i].cabinet_width, led_params.cab_params[i].cabinet_height);
+            int iret = picousb_set_cmd(led_params.pico_handle, cmd_buf, reply_buf);
+            log_debug("iret = %d, recv_buf = %s\n", iret, reply_buf);
+        }
+    }
 	return 0;
 
 }
@@ -269,6 +280,61 @@ int get_frame_contrast(char *data, char *reply_buf){
     log_debug("param = %s\n", param);
     return strlen(reply_buf); 
 }
+
+
+int set_pixel_interval(char *data, char *reply_buf){
+	log_debug("data = %s\n", data);
+	int seq_id = 0;
+	char cmd[1024];
+	char param[1024];
+    char pico_cmd_buf[64];
+    char pico_reply_buf[64];
+    int i_pico_ret = -1;
+	sscanf(data, "cmd_seq_id:%d;cmd:%[1-9a-z|^_];param:%s", &seq_id, &cmd, &param);
+    
+    sprintf(pico_cmd_buf, "cmd:set_pixel_interval,%s", param);
+    log_debug("pico_cmd_buf = %s\n", pico_cmd_buf);
+    i_pico_ret = picousb_set_cmd(led_params.pico_handle, pico_cmd_buf, pico_reply_buf);
+    log_debug("pico_reply_buf = %s\n", pico_reply_buf);
+    if(i_pico_ret < 0){
+        if(strstr(pico_reply_buf, "OK")){
+	 	    sprintf(reply_buf,"cmd_seq_id:%d;cmd=%s;reply:%s", seq_id, cmd, REPLY_OK_TAG);
+        }else{
+	 	    sprintf(reply_buf,"cmd_seq_id:%d;cmd=%s;reply:%s", seq_id, cmd, REPLY_NG_TAG);
+        }
+    }else{
+	 	sprintf(reply_buf,"cmd_seq_id:%d;cmd=%s;reply:%s", seq_id, cmd, REPLY_OK_TAG);
+    }
+    return strlen(reply_buf);
+}
+
+int get_pixel_interval(char *data, char *reply_buf){
+	log_debug("data = %s\n", data);
+	int seq_id = 0;
+	char cmd[1024];
+	char param[1024];
+    char pico_cmd_buf[64];
+    char pico_reply_buf[64];
+    int i_pico_ret = -1;
+	sscanf(data, "cmd_seq_id:%d;cmd:%[1-9a-z|^_];param:%s", &seq_id, &cmd, &param);
+    
+    //get command no implemented yet!
+
+    
+    if(i_pico_ret < 0){
+        if(strstr(pico_reply_buf, "OK")){
+	 	    sprintf(reply_buf,"cmd_seq_id:%d;cmd=%s;reply:%s", seq_id, cmd, REPLY_NG_TAG);
+        }else{
+	 	    sprintf(reply_buf,"cmd_seq_id:%d;cmd=%s;reply:%s", seq_id, cmd, REPLY_OK_TAG);
+        }
+    }else{
+	 	sprintf(reply_buf,"cmd_seq_id:%d;cmd=%s;reply:%s", seq_id, cmd, REPLY_OK_TAG);
+    }
+    return strlen(reply_buf);
+
+    return strlen(reply_buf);
+
+}
 int spec_test(char *data, char *reply_buf){
      log_debug("data = %s\n", data);
 	 int seq_id = 0;
@@ -368,7 +434,22 @@ int set_udp_cmd_callbacks(void){
     if(ret != 0){
         log_error("callback register failed!\n");
 		return ret;
+    } 
+ 
+    /*set set_pixe_interval callback*/
+    ret = register_udp_cmd_callback(CMD_CALLBACK_SET_PIXEL_INTERVAL, &set_pixel_interval);
+    if(ret != 0){
+        log_error("callback register failed!\n");
+		return ret;
     }  
+
+    /*set get_pixe_interval callback*/
+    ret = register_udp_cmd_callback(CMD_CALLBACK_GET_PIXEL_INTERVAL, &get_pixel_interval);
+    if(ret != 0){
+        log_error("callback register failed!\n");
+		return ret;
+    } 
+ 
 	/*set spec_test callback*/
 	ret = register_udp_cmd_callback(CMD_CALLBACK_SPEC_TEST, &spec_test);
     if(ret != 0){

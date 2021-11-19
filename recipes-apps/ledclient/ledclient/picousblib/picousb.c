@@ -16,7 +16,7 @@ int print_configuration(struct libusb_device_handle *hDevice, struct libusb_conf
 
     libusb_get_string_descriptor_ascii(hDevice, index, data, 512);
 
-    printf("\nInterface Descriptors: ");
+    /*printf("\nInterface Descriptors: ");
     printf("\n\tNumber of Interfaces: %d", config->bNumInterfaces);
     printf("\n\tLength: %d", config->bLength);
     printf("\n\tDesc_Type: %d", config->bDescriptorType);
@@ -24,7 +24,7 @@ int print_configuration(struct libusb_device_handle *hDevice, struct libusb_conf
     printf("\n\tTotal length: %lu", config->wTotalLength);
     printf("\n\tConfiguration Value: %d", config->bConfigurationValue);
     printf("\n\tConfiguration Attributes: %d", config->bmAttributes);
-    printf("\n\tMaxPower(mA): %d\n", config->MaxPower);
+    printf("\n\tMaxPower(mA): %d\n", config->MaxPower);*/
 
     free(data);
     data = NULL;
@@ -60,13 +60,13 @@ struct libusb_endpoint_descriptor* active_config(struct libusb_device *dev, stru
                 interface_number = altsetting->bInterfaceNumber;
             }
 
-            printf("\nEndPoint Descriptors: ");
+            /*printf("\nEndPoint Descriptors: ");
             printf("\n\tSize of EndPoint Descriptor: %d", endpoint->bLength);
             printf("\n\tType of Descriptor: %d", endpoint->bDescriptorType);
             printf("\n\tEndpoint Address: 0x0%x", endpoint->bEndpointAddress);
             printf("\n\tMaximum Packet Size: %x", endpoint->wMaxPacketSize);
             printf("\n\tAttributes applied to Endpoint: %d", endpoint->bmAttributes);
-            printf("\n\tInterval for Polling for data Tranfer: %d\n", endpoint->bInterval);
+            printf("\n\tInterval for Polling for data Tranfer: %d\n", endpoint->bInterval);*/
         }
     }
     libusb_free_config_descriptor(NULL);
@@ -265,7 +265,7 @@ int picousb_in_transfer(struct libusb_device_handle *h, unsigned char *data, int
 	int transferred = -1;
 	int e = -1;
 	e = libusb_bulk_transfer(h, BULK_EP_IN, data, len, &transferred, 0);
-    if(e == 0 && transferred == len){
+    if(e == 0 ){
 		return transferred;
     }else{
         printf("\nError in write! e = %d and transferred = %d\n", e, transferred);
@@ -273,4 +273,16 @@ int picousb_in_transfer(struct libusb_device_handle *h, unsigned char *data, int
 
 	return e;
 
+}
+
+
+int picousb_set_cmd(struct libusb_device_handle *h, char *cmd, char *recv_buf){
+	int transferred = -1;
+	int e = -1;
+    int cmd_size = 64;
+    
+    picousb_out_transfer(h, cmd, strlen(cmd));
+    memset(recv_buf, 0, 64);
+    picousb_in_transfer(h, recv_buf, 64);
+    return 0;
 }
