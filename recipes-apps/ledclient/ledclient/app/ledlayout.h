@@ -56,7 +56,7 @@ typedef struct ledparams{
 	struct libusb_device_handle *pico_handle;
     char pico_version[16];
 	struct cabinet_params cab_params[LED_PANELS];
-	int i_ledpanelsi;// = 8;
+	int i_ledpanels;// = 8;
 	int i_pixelsperpanel;// = 960;
 	int i_widthperpanel;// = 40;
 	int i_heightperpanel;// = 24;
@@ -66,6 +66,7 @@ typedef struct ledparams{
 	int i_start_y;
 	int i_ledchannels;// = 3;
 	int i_ledic;// = 0;
+    int i_clientid;
 	pthread_t udp_cmd_tid;
 	pthread_t udpbr_tid;
 	pthread_t udpmr_tid;

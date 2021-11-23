@@ -4085,13 +4085,23 @@ int main(int argc, char **argv)
 	register_udpbr_callback(UDPBR_CALLBACK_SERVER_ALIVE_REPORT, alive_report_test);
 	led_params.udpbr_tid = udpbr_init(11334);
 	
-
+    /*get ip*/
+    char ip[16];
+    ret = get_ip_of_interface("br0", ip);
+    log_debug("br0 ip:%s\n", ip);
+    char ip_data[16]={0}, id_data[16] = {0};
+    sprintf(ip_data, "IP=%s", ip);
+    sprintf(id_data, "ID=NC");
+    insert_lcd_content(ip_data, "ID=", TAG_LCD_INFO, SUB_TAG_IP_ID);
+    
+#if 0//depreciated
 	/*set 1602 lcd*/
-	lcd_send_command(0, 0, LEDCLIENT_VERSION);
+	//lcd_send_command(0, 0, LEDCLIENT_VERSION);
+#endif    
 	
 	/*start fps counter timer*/
 	timer_t fps_counter_tid = jset_timer(1, 0, 1, 0, &(fps_counter), 99);
-	log_info("fps_counter_tid = %d\n", fps_counter_tid);
+	//log_info("fps_counter_tid = %d\n", fps_counter_tid);
     
     /*check hdmi status*/
     timer_t detect_screen_tid = jset_timer(1, 0, 3, 0, &(check_hdmi_status), 99);

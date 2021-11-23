@@ -15,6 +15,7 @@
 #define TAG_LCD_INFO                "INFO_"
 #define SUB_TAG_VERSION             "VERSION"
 #define SUB_TAG_FPS                 "FPS"
+#define SUB_TAG_IP_ID               "IPID"
 
 #define TAG_LCD_ERROR               "ERROR_"
 #define SUB_TAG_NOPICO              "NOPICO"

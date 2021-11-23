@@ -319,21 +319,43 @@ int get_pixel_interval(char *data, char *reply_buf){
 	sscanf(data, "cmd_seq_id:%d;cmd:%[1-9a-z|^_];param:%s", &seq_id, &cmd, &param);
     
     //get command no implemented yet!
-
-    
-    if(i_pico_ret < 0){
+    if(i_pico_ret > 0){
         if(strstr(pico_reply_buf, "OK")){
-	 	    sprintf(reply_buf,"cmd_seq_id:%d;cmd=%s;reply:%s", seq_id, cmd, REPLY_NG_TAG);
-        }else{
 	 	    sprintf(reply_buf,"cmd_seq_id:%d;cmd=%s;reply:%s", seq_id, cmd, REPLY_OK_TAG);
+        }else{
+	 	    sprintf(reply_buf,"cmd_seq_id:%d;cmd=%s;reply:%s", seq_id, cmd, REPLY_NG_TAG);
         }
     }else{
 	 	sprintf(reply_buf,"cmd_seq_id:%d;cmd=%s;reply:%s", seq_id, cmd, REPLY_OK_TAG);
     }
     return strlen(reply_buf);
+}
 
+int set_client_id(char *data, char *reply_buf){
+	log_debug("data = %s\n", data);
+	int seq_id = 0;
+	char cmd[1024];
+	char param[1024];
+    
+	sscanf(data, "cmd_seq_id:%d;cmd:%[1-9a-z|^_];param:%s", &seq_id, &cmd, &param);
+    led_params.i_clientid = atoi(param);
+    log_debug("led_params.i_clientid = %d\n", led_params.i_clientid);	
+    char id_data[16] = {0};
+    sprintf(id_data, "ID=%d", led_params.i_clientid);
+    refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_IP_ID, NULL, id_data);
+    sprintf(reply_buf,"cmd_seq_id:%d;cmd=%s;reply:%s", seq_id, cmd, REPLY_OK_TAG);
     return strlen(reply_buf);
+}
 
+int get_client_id(char *data, char *reply_buf){
+	log_debug("data = %s\n", data);
+	int seq_id = 0;
+	char cmd[1024];
+	char param[1024];
+
+	sscanf(data, "cmd_seq_id:%d;cmd:%[1-9a-z|^_];param:%s", &seq_id, &cmd, &param);
+	sprintf(reply_buf,"cmd_seq_id:%d;cmd=%s;reply:%s", seq_id, cmd, REPLY_NG_TAG);
+    return strlen(reply_buf);
 }
 int spec_test(char *data, char *reply_buf){
      log_debug("data = %s\n", data);
@@ -450,6 +472,19 @@ int set_udp_cmd_callbacks(void){
 		return ret;
     } 
  
+    /*set set_client_id callback*/
+    ret = register_udp_cmd_callback(CMD_CALLBACK_SET_CLIENT_ID, &set_client_id);
+    if(ret != 0){
+        log_error("callback register failed!\n");
+		return ret;
+    }
+  
+    /*get set_client_id callback*/
+    ret = register_udp_cmd_callback(CMD_CALLBACK_GET_CLIENT_ID, &get_client_id);
+    if(ret != 0){
+        log_error("callback register failed!\n");
+		return ret;
+    }
 	/*set spec_test callback*/
 	ret = register_udp_cmd_callback(CMD_CALLBACK_SPEC_TEST, &spec_test);
     if(ret != 0){

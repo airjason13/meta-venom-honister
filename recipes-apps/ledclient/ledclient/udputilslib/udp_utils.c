@@ -41,3 +41,33 @@ int send_alive_report(char *ip, int port, char *append_data){
 	}
 	return ret;
 }
+
+int get_ip_of_interface(char *iface, char *ip)
+{
+    int fd;
+	struct ifreq ifr;
+	int iret = -1;
+    // replace with your interface name
+    // or ask user to input
+    
+	
+	fd = socket(AF_INET, SOCK_DGRAM, 0);
+
+	//Type of address to retrieve - IPv4 IP address
+	ifr.ifr_addr.sa_family = AF_INET;
+
+	//Copy the interface name in the ifreq structure
+	strncpy(ifr.ifr_name , iface , IFNAMSIZ-1);
+
+	iret = ioctl(fd, SIOCGIFADDR, &ifr);
+    if(iret < 0){
+        log_error("no ip on %s", iface);
+        return iret;
+    }
+    
+	close(fd);
+    
+    sprintf(ip, "%s", inet_ntoa(( (struct sockaddr_in *)&ifr.ifr_addr )->sin_addr));
+
+    return 0;
+}
