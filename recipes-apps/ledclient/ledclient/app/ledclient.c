@@ -3039,6 +3039,42 @@ static int is_realtime(AVFormatContext *s)
     return 0;
 }
 
+/*Jason add av_read_frame interrupt callback function*/
+int i_timeout_count = 0;
+int i_read_start = 0;
+int timeout_count_threshold = 3;
+struct  timeval pre_time;
+int interruptCallback(void *arg){
+    VideoState *is = arg;
+    struct  timeval now;
+    unsigned long diff;
+    //log_debug("********%s*********\n", __func__);
+    if((pre_time.tv_sec == 0)&&(pre_time.tv_usec == 0)){
+        //log_debug("initial time ");
+        gettimeofday(&pre_time,NULL);
+    }else{
+        gettimeofday(&now,NULL);
+        diff = 1000000 * (now.tv_sec-pre_time.tv_sec)+ now.tv_usec-pre_time.tv_usec;
+        //log_debug("diff = %ld\n", diff);
+        gettimeofday(&pre_time,NULL);
+        if(i_read_start > 0){
+            if(diff > 100000){
+                i_timeout_count ++;
+                //log_debug("g i_timeout_count = %ld\n", i_timeout_count);
+                if(i_timeout_count > timeout_count_threshold){
+                    i_timeout_count = 0;
+                    //log_debug("flush queue ");
+                    packet_queue_flush(&is->videoq);
+                    packet_queue_put(&is->videoq, &flush_pkt);
+                }
+            }else{
+                i_timeout_count = 0; 
+            }
+        }
+    }
+    return 0;
+}
+
 /* this thread gets the stream from the disk or the network */
 static int read_thread(void *arg)
 {
@@ -3075,6 +3111,12 @@ static int read_thread(void *arg)
         av_dict_set(&format_opts, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE);
         scan_all_pmts_set = 1;
     }
+    
+    //av_dict_set(&format_opts, "rw_timeout", "3000000", 0);
+    /*+++++++++++Jason test av_read_frame timeout interrupt+++++++++++*/
+    ic->interrupt_callback.opaque = (void*)is;
+    ic->interrupt_callback.callback = interruptCallback; 
+    /*-----------Jason test av_read_frame timeout interrupt-----------*/
     err = avformat_open_input(&ic, is->filename, is->iformat, &format_opts);
     if (err < 0) {
         print_error(is->filename, err);
@@ -3214,6 +3256,8 @@ static int read_thread(void *arg)
     if (infinite_buffer < 0 && is->realtime)
         infinite_buffer = 1;
 
+
+
     for (;;) {
         if (is->abort_request)
             break;
@@ -3303,8 +3347,12 @@ static int read_thread(void *arg)
                 goto fail;
             }
         }
+        
+        //log_debug("ready to av read freame !");
         ret = av_read_frame(ic, pkt);
+        
         if (ret < 0) {
+           // log_debug("av read freame ret < 0!");
             if ((ret == AVERROR_EOF || avio_feof(ic->pb)) && !is->eof) {
                 if (is->video_stream >= 0)
                     packet_queue_put_nullpacket(&is->videoq, is->video_stream);
@@ -3323,6 +3371,9 @@ static int read_thread(void *arg)
         } else {
             is->eof = 0;
         }
+        //add this for test
+        i_read_start = 1;
+        //log_debug("done av read freame !");
         /* check if packet is in play range specified by user, then queue, otherwise discard */
         stream_start_time = ic->streams[pkt->stream_index]->start_time;
         pkt_ts = pkt->pts == AV_NOPTS_VALUE ? pkt->dts : pkt->pts;
