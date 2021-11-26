@@ -3046,6 +3046,7 @@ int timeout_count_threshold = 3;
 struct  timeval pre_time;
 int interruptCallback(void *arg){
     VideoState *is = arg;
+    AVFrame *frame = av_frame_alloc();
     struct  timeval now;
     unsigned long diff;
     //log_debug("********%s*********\n", __func__);
@@ -3066,6 +3067,14 @@ int interruptCallback(void *arg){
                     //log_debug("flush queue ");
                     packet_queue_flush(&is->videoq);
                     packet_queue_put(&is->videoq, &flush_pkt);
+                    //avcodec_flush_buffers(&is->viddec.avctx);
+                    while(true){
+                        int iret = avcodec_receive_frame(&is->viddec.avctx, frame);
+                        log_debug("iret = %d", iret);
+                        if(iret < 0){
+                            break;
+                        }
+                    }
                 }
             }else{
                 i_timeout_count = 0; 
