@@ -627,11 +627,11 @@ static int decoder_decode_frame(Decoder *d, AVFrame *frame, AVSubtitle *sub) {
 
     for (;;) {
         AVPacket pkt;
-
         if (d->queue->serial == d->pkt_serial) {
             do {
-                if (d->queue->abort_request)
+                if (d->queue->abort_request){
                     return -1;
+                }
 
                 switch (d->avctx->codec_type) {
                     case AVMEDIA_TYPE_VIDEO:
@@ -679,8 +679,9 @@ static int decoder_decode_frame(Decoder *d, AVFrame *frame, AVSubtitle *sub) {
                 if (packet_queue_get(d->queue, &pkt, 1, &d->pkt_serial) < 0)
                     return -1;
             }
-            if (d->queue->serial == d->pkt_serial)
+            if (d->queue->serial == d->pkt_serial){
                 break;
+            }
             av_packet_unref(&pkt);
         } while (1);
 
@@ -2096,8 +2097,10 @@ static int audio_thread(void *arg)
 
     do {
         if ((got_frame = decoder_decode_frame(&is->auddec, frame, NULL)) < 0)
+            log_debug("got_frame = %d\n", got_frame);
             goto the_end;
 
+        log_debug("got_frame = %d\n", got_frame);
         if (got_frame) {
                 tb = (AVRational){1, frame->sample_rate};
 
@@ -2472,6 +2475,7 @@ static int video_thread(void *arg)
             is->frame_last_returned_time = av_gettime_relative() / 1000000.0;
 
             ret = av_buffersink_get_frame_flags(filt_out, frame, 0);
+            log_debug("av_buffersink_get_frame_flags ret = %d\n", ret);
             if (ret < 0) {
                 if (ret == AVERROR_EOF)
                     is->viddec.finished = is->viddec.pkt_serial;
@@ -2504,6 +2508,8 @@ static int video_thread(void *arg)
             //log_debug("frame->pkt_pos = %f\n", frame->pkt_pos);
 #if CONFIG_AVFILTER
             
+            log_debug("in video_threadis->videoq.serial  = %d\n", is->videoq.serial);
+            log_debug("in video_threadis->viddec.pkt_serial  = %d\n", is->viddec.pkt_serial);
             if (is->videoq.serial != is->viddec.pkt_serial){
                 break;
             }
@@ -3064,17 +3070,28 @@ int interruptCallback(void *arg){
                 //log_debug("g i_timeout_count = %ld\n", i_timeout_count);
                 if(i_timeout_count > timeout_count_threshold){
                     i_timeout_count = 0;
+                    packet_queue_put_nullpacket(&is->videoq, is->video_stream);  //insert null video packet to enable the decoder drain mode
                     //log_debug("flush queue ");
-                    packet_queue_flush(&is->videoq);
-                    packet_queue_put(&is->videoq, &flush_pkt);
+                    //packet_queue_flush(&is->videoq);
+                    //packet_queue_put(&is->videoq, &flush_pkt);
                     //avcodec_flush_buffers(&is->viddec.avctx);
-                    while(true){
-                        int iret = avcodec_receive_frame(&is->viddec.avctx, frame);
-                        log_debug("iret = %d", iret);
-                        if(iret < 0){
-                            break;
-                        }
-                    }
+                    //while(true){
+                    //    AVPacket pkt;
+                    //    int iret;
+                        /*av_init_packet(&pkt);
+                        pkt.data = NULL;
+                        pkt.size = 0;
+                        log_debug("AVERROR(EINVAL) = %d\n", AVERROR(EINVAL)); 
+                        iret = avcodec_send_packet(is->viddec.avctx, &pkt);
+                        log_debug("av_send_apcket iret = %d", iret);*/
+                        
+                    //    packet_queue_put_nullpacket(&is->videoq, is->video_stream);
+                    //    iret = avcodec_receive_frame(is->viddec.avctx, frame);
+                    //    log_debug("iret = %d", iret);
+                    //    if(iret < 0){
+                    //        break;
+                    //    }
+                    //}
                 }
             }else{
                 i_timeout_count = 0; 
