@@ -4,6 +4,10 @@ extern struct ledparams led_params;
 int frame_br_divisor = 16;//32
 int frame_brightness = 50;
 int frame_contrast = 0;
+float f_gamma = 1.0;
+unsigned char g_GammaLut[256];
+
+
 
 int set_frame_brightness_value(int value){
     if((value > 100) || (value < 0)){
@@ -40,6 +44,21 @@ int set_frame_contrast_value(int value){
 int get_frame_contrast_value(void){
     return frame_contrast;
 }
+
+
+int set_frame_gamma_value(float fvalue){
+    int i;
+    float f;
+    f_gamma = fvalue;
+    for(i = 0; i < 256; i++){
+        f=(i+0.5F)/256;
+        f=(float)pow(f, f_gamma);
+        g_GammaLut[i] = (unsigned char)(f*256 - 0.5F); 
+    }
+    log_debug("set gamma lut ok!\n");
+    return 0;
+}
+
 
 int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, int channel_count, struct libusb_device_handle *pico){
 	int offset = 0;
@@ -218,12 +237,16 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
     for(i = 4; i < offset; i ++){
         //buf[i] = (buf[i]/divisor) * (frame_brightness/100);
         //buf[i] =(char)((int)buf[i]*frame_brightness/(frame_br_divisor*100));
-        buf[i] =(char)((int)buf[i]*frame_brightness/(frame_br_divisor*100));
-        if(buf[i] > frame_contrast){
-            buf[i] = buf[i] - frame_contrast;
+        buf[i] =(char)((int)buf[i]*frame_brightness/(frame_br_divisor*255));
+        /*if(buf[i] > frame_blacklevel){
+            buf[i] = buf[i] - frame_level;
         }else{
             buf[i] = 0;
-        }
+        }*/
+        #if 1
+        buf[i] = g_GammaLut[buf[i]];
+        //log_debug("buf[i] = %d\n", buf[i]);
+        #endif
     }
 	if(pico != NULL){
 		//log_debug("offset = %d\n", offset);

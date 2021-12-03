@@ -4167,7 +4167,7 @@ int main(int argc, char **argv)
     ret = get_ip_of_interface("br0", ip);
     log_debug("br0 ip:%s\n", ip);
     char ip_data[16]={0}, id_data[16] = {0};
-    sprintf(ip_data, "IP=%s", ip);
+    sprintf(ip_data, "%s", ip);
     sprintf(id_data, "ID=NC");
     insert_lcd_content(ip_data, "ID=", TAG_LCD_INFO, SUB_TAG_IP_ID);
     

@@ -281,6 +281,34 @@ int get_frame_contrast(char *data, char *reply_buf){
     return strlen(reply_buf); 
 }
 
+int set_frame_gamma(char *data, char *reply_buf){
+	log_debug("data = %s\n", data);
+	int seq_id = 0;
+	char cmd[1024];
+	char param[1024];
+	sscanf(data, "cmd_seq_id:%d;cmd:%[1-9a-z|^_];param:%s", &seq_id, &cmd, &param);
+    log_debug("param = %s\n", param);
+
+    log_debug(" params to float = %f\n", atof(param));
+    if(set_frame_gamma_value(atof(param)) < 0){
+	 	sprintf(reply_buf,"cmd_seq_id:%d;cmd=%s;reply:%s", seq_id, cmd, REPLY_NG_TAG);
+    }else{
+	 	sprintf(reply_buf,"cmd_seq_id:%d;cmd=%s;reply:%s", seq_id, cmd, REPLY_OK_TAG);
+    }
+    log_debug("param = %s\n", param);
+    return strlen(reply_buf); 
+}
+
+int get_frame_gamma(char *data, char *reply_buf){
+	log_debug("data = %s\n", data);
+	int seq_id = 0;
+	char cmd[1024];
+	char param[1024];
+	sscanf(data, "cmd_seq_id:%d;cmd:%[1-9a-z|^_];param:%s", &seq_id, &cmd, &param);
+   
+    log_debug("param = %s\n", param);
+    return strlen(reply_buf); 
+}
 
 int set_pixel_interval(char *data, char *reply_buf){
 	log_debug("data = %s\n", data);
@@ -458,6 +486,19 @@ int set_udp_cmd_callbacks(void){
 		return ret;
     } 
  
+    /*set set_client_gamma callback*/
+    ret = register_udp_cmd_callback(CMD_CALLBACK_SET_FRAME_GAMMA, &set_frame_gamma);
+    if(ret != 0){
+        log_error("callback register failed!\n");
+		return ret;
+    }  
+ 
+    /*set get_client_contrast callback*/
+    ret = register_udp_cmd_callback(CMD_CALLBACK_GET_FRAME_GAMMA, &get_frame_gamma);
+    if(ret != 0){
+        log_error("callback register failed!\n");
+		return ret;
+    } 
     /*set set_pixe_interval callback*/
     ret = register_udp_cmd_callback(CMD_CALLBACK_SET_PIXEL_INTERVAL, &set_pixel_interval);
     if(ret != 0){
