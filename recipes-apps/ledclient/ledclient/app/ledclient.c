@@ -2185,9 +2185,8 @@ struct SwsContext *sws_ctx = NULL;
 *****************************************************************/
 void fps_counter(void){
 	char buf[16] = {0};
-	log_info("led fps = %d\n", led_fps);
+	//log_info("led fps = %d\n", led_fps);
 	sprintf(buf, "LED FPS=%d", led_fps);
-	//lcd_send_command(0, 1, buf);
     refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_FPS, buf, NULL);
 	led_fps = 0;
 }
@@ -2360,8 +2359,8 @@ static int video_thread(void *arg)
         return AVERROR(ENOMEM);
     }
 
-    log_debug("is->viddec.avctx->width = %d\n", is->viddec.avctx->width);
-    log_debug("is->viddec.avctx->height = %d\n", is->viddec.avctx->height);
+    //log_debug("is->viddec.avctx->width = %d\n", is->viddec.avctx->width);
+    //log_debug("is->viddec.avctx->height = %d\n", is->viddec.avctx->height);
     //for initial frameRGB, initial with max widthxheight : 1920x1080
 #if 0
     numBytes = avpicture_get_size(AV_PIX_FMT_RGB24, is->viddec.avctx->width, is->viddec.avctx->height);
@@ -2475,7 +2474,6 @@ static int video_thread(void *arg)
             is->frame_last_returned_time = av_gettime_relative() / 1000000.0;
 
             ret = av_buffersink_get_frame_flags(filt_out, frame, 0);
-            log_debug("av_buffersink_get_frame_flags ret = %d\n", ret);
             if (ret < 0) {
                 if (ret == AVERROR_EOF)
                     is->viddec.finished = is->viddec.pkt_serial;
@@ -2508,8 +2506,6 @@ static int video_thread(void *arg)
             //log_debug("frame->pkt_pos = %f\n", frame->pkt_pos);
 #if CONFIG_AVFILTER
             
-            log_debug("in video_threadis->videoq.serial  = %d\n", is->videoq.serial);
-            log_debug("in video_threadis->viddec.pkt_serial  = %d\n", is->viddec.pkt_serial);
             if (is->videoq.serial != is->viddec.pkt_serial){
                 break;
             }
@@ -3052,7 +3048,7 @@ int timeout_count_threshold = 3;
 struct  timeval pre_time;
 int interruptCallback(void *arg){
     VideoState *is = arg;
-    AVFrame *frame = av_frame_alloc();
+    //AVFrame *frame = av_frame_alloc();
     struct  timeval now;
     unsigned long diff;
     //log_debug("********%s*********\n", __func__);
@@ -3098,6 +3094,7 @@ int interruptCallback(void *arg){
             }
         }
     }
+    //av_frame_free(&frame);
     return 0;
 }
 
@@ -4091,7 +4088,7 @@ int main(int argc, char **argv)
 
 	if(led_params.pico_handle == NULL){
 		log_fatal("No Pico Found!\n");
-		//lcd_send_command(0, 1, "NoPicoFound!");
+		lcd_send_command(0, 1, "NoPicoFound!");
         insert_lcd_content("No Pico", "Check", TAG_LCD_ERROR, SUB_TAG_NOPICO);
         sleep(8); 
 	}else{
@@ -4171,10 +4168,6 @@ int main(int argc, char **argv)
     sprintf(id_data, "ID=NC");
     insert_lcd_content(ip_data, "ID=", TAG_LCD_INFO, SUB_TAG_IP_ID);
     
-#if 0//depreciated
-	/*set 1602 lcd*/
-	//lcd_send_command(0, 0, LEDCLIENT_VERSION);
-#endif    
 	
 	/*start fps counter timer*/
 	timer_t fps_counter_tid = jset_timer(1, 0, 1, 0, &(fps_counter), 99);
