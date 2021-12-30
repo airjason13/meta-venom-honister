@@ -8,10 +8,15 @@ import os
 from global_def import *
 from set_qstyle import *
 from c_new_playlist_dialog import NewPlaylistDialog
+from commands_def import *
 import utils.log_utils
+import utils.ffmpy_utils
+import hashlib
 log = utils.log_utils.logging_init(__file__)
 
 class media_page(QObject):
+    signal_refresh_internal_medialist = pyqtSignal()
+
     def __init__(self, mainwindow, **kwargs):
         super(media_page, self).__init__(**kwargs)
         self.mainwindow = mainwindow
@@ -36,7 +41,8 @@ class media_page(QObject):
         for f in self.mainwindow.media_engine.internal_medialist.filelist:
             internal_file_item = QTreeWidgetItem()
             internal_file_item.setText(0, os.path.basename(f))
-            utils.ffmpy_utils.gen_webp_from_video(internal_media_folder, os.path.basename(f))  # need to remove later
+            #utils.ffmpy_utils.gen_webp_from_video(internal_media_folder, os.path.basename(f))  # need to remove later
+            utils.ffmpy_utils.gen_webp_from_video_threading(internal_media_folder, os.path.basename(f))
             self.internal_media_root.addChild(internal_file_item)
 
         self.file_tree.addTopLevelItem(self.internal_media_root)
@@ -52,8 +58,9 @@ class media_page(QObject):
             for f in external_media_list.filelist:
                 external_file_item = QTreeWidgetItem()
                 external_file_item.setText(0, os.path.basename(f))
-                utils.ffmpy_utils.gen_webp_from_video(external_media_list.folder_uri,
-                                                      os.path.basename(f))  # need to remove later
+                #utils.ffmpy_utils.gen_webp_from_video(external_media_list.folder_uri,
+                #                                      os.path.basename(f))  # need to remove later
+                utils.ffmpy_utils.gen_webp_from_video_threading(external_media_list.folder_uri, os.path.basename(f))
                 self.external_media_root.child(child_count).addChild(external_file_item)
             child_count += 1
             # self.external_media_root_list.append(external_media_root)
@@ -93,6 +100,22 @@ class media_page(QObject):
         self.file_tree_widget.setMouseTracking(True)
         self.file_tree.mouseMove.connect(self.mainwindow.media_page_mouseMove)
         self.mainwindow.right_layout.addWidget(self.file_tree_widget)
+
+        self.signal_refresh_internal_medialist.connect(self.mainwindow.internaldef_medialist_changed)
+
+    def refresh_internal_medialist(self):
+        for i in reversed(range(self.internal_media_root.childCount())):
+            log.debug("self.medialist_page.internal_media_root.child() = %s",
+                      self.internal_media_root.child(i).text(0))
+            self.internal_media_root.removeChild(self.internal_media_root.child(i))
+
+        self.internal_media_root.setText(0, "Internal Media")
+        for f in self.mainwindow.media_engine.internal_medialist.filelist:
+            internal_file_item = QTreeWidgetItem()
+            internal_file_item.setText(0, os.path.basename(f))
+            # utils.ffmpy_utils.gen_webp_from_video(internal_media_folder, os.path.basename(f))  # need to remove later
+            utils.ffmpy_utils.gen_webp_from_video_threading(internal_media_folder, os.path.basename(f))
+            self.internal_media_root.addChild(internal_file_item)
 
     def play_option_init(self):
         """play singal file btn"""
@@ -179,13 +202,96 @@ class media_page(QObject):
         self.bluegain_edit.setFixedWidth(100)
         self.bluegain_edit.setText(str(self.mainwindow.media_engine.media_processor.video_params.video_blue_bias))
 
+        #client brightness adjust
+        self.client_brightness_label = QLabel(self.mainwindow.right_frame)
+        self.client_brightness_label.setText("Client Br:")
+        self.client_brightness_edit = QLineEdit(self.mainwindow.right_frame)
+        self.client_brightness_edit.setFixedWidth(100)
+        self.client_brightness_edit.setText(
+            str(self.mainwindow.media_engine.media_processor.video_params.frame_brightness))
+
+        # client brightness adjust
+        self.client_br_divisor_label = QLabel(self.mainwindow.right_frame)
+        self.client_br_divisor_label.setText("Client BrDivisor:")
+        self.client_br_divisor_edit = QLineEdit(self.mainwindow.right_frame)
+        self.client_br_divisor_edit.setFixedWidth(100)
+        self.client_br_divisor_edit.setText(
+            str(self.mainwindow.media_engine.media_processor.video_params.frame_br_divisor))
+
+        # client contrast(black level) adjust
+        self.client_contrast_label = QLabel(self.mainwindow.right_frame)
+        self.client_contrast_label.setText("Client Black-Lv:")
+        self.client_contrast_edit = QLineEdit(self.mainwindow.right_frame)
+        self.client_contrast_edit.setFixedWidth(100)
+        self.client_contrast_edit.setText(
+            str(self.mainwindow.media_engine.media_processor.video_params.frame_contrast))
+
+        # client gamma adjust
+        self.client_gamma_label = QLabel(self.mainwindow.right_frame)
+        self.client_gamma_label.setText("Client Gamma:")
+        self.client_gamma_edit = QLineEdit(self.mainwindow.right_frame)
+        self.client_gamma_edit.setFixedWidth(100)
+        self.client_gamma_edit.setText(
+            str(self.mainwindow.media_engine.media_processor.video_params.frame_gamma))
+
         self.video_params_widget = QWidget(self.mainwindow.right_frame)
         video_params_layout = QGridLayout()
         self.video_params_widget.setLayout(video_params_layout)
 
         self.video_params_confirm_btn = QPushButton(self.mainwindow.right_frame)
         self.video_params_confirm_btn.setText("Set")
+        self.video_params_confirm_btn.setFixedWidth(100)
         self.video_params_confirm_btn.clicked.connect(self.video_params_confirm_btn_clicked)
+
+        self.video_params_pinch_btn = QPushButton(self.mainwindow.right_frame)
+        self.video_params_pinch_btn.setText("P5")
+        self.video_params_pinch_btn.setFixedWidth(100)
+        self.video_params_pinch_btn.clicked.connect(self.video_params_pinch_btn_clicked)
+
+        #crop params
+        self.video_params_crop_x_label = QLabel(self.mainwindow.right_frame)
+        self.video_params_crop_x_label.setText("Crop_Start_X:")
+        self.video_params_crop_x_label.setFixedWidth(100)
+
+        self.video_params_crop_x_edit = QLineEdit(self.mainwindow.right_frame)
+        self.video_params_crop_x_edit.setText("0")
+        self.video_params_crop_x_edit.setFixedWidth(100)
+
+        self.video_params_crop_y_label = QLabel(self.mainwindow.right_frame)
+        self.video_params_crop_y_label.setText("Crop_Start_Y:")
+        self.video_params_crop_y_label.setFixedWidth(100)
+
+        self.video_params_crop_y_edit = QLineEdit(self.mainwindow.right_frame)
+        self.video_params_crop_y_edit.setText("0")
+        self.video_params_crop_y_edit.setFixedWidth(100)
+
+        self.video_params_crop_w_label = QLabel(self.mainwindow.right_frame)
+        self.video_params_crop_w_label.setText("Crop_W:")
+        self.video_params_crop_w_label.setFixedWidth(100)
+
+        self.video_params_crop_w_edit = QLineEdit(self.mainwindow.right_frame)
+        self.video_params_crop_w_edit.setText("0")
+        self.video_params_crop_w_edit.setFixedWidth(100)
+
+        self.video_params_crop_h_label = QLabel(self.mainwindow.right_frame)
+        self.video_params_crop_h_label.setText("Crop_H:")
+        self.video_params_crop_h_label.setFixedWidth(100)
+
+        self.video_params_crop_h_edit = QLineEdit(self.mainwindow.right_frame)
+        self.video_params_crop_h_edit.setText("0")
+        self.video_params_crop_h_edit.setFixedWidth(100)
+
+        self.video_params_crop_enable = QPushButton(self.mainwindow.right_frame)
+        self.video_params_crop_enable.setText("Crop Enable")
+        self.video_params_crop_enable.setFixedWidth(100)
+        self.video_params_crop_enable.clicked.connect(self.video_crop_enable)
+
+        self.video_params_crop_disable = QPushButton(self.mainwindow.right_frame)
+        self.video_params_crop_disable.setText("Crop Disable")
+        self.video_params_crop_disable.setFixedWidth(100)
+        self.video_params_crop_disable.clicked.connect(self.video_crop_disable)
+
+
 
         video_params_layout.addWidget(self.redgain_label, 0, 0)
         video_params_layout.addWidget(self.redgain_edit, 0, 1)
@@ -198,7 +304,37 @@ class media_page(QObject):
         video_params_layout.addWidget(self.brightness_edit, 1, 1)
         video_params_layout.addWidget(self.contrast_label, 1, 2)
         video_params_layout.addWidget(self.contrast_edit, 1, 3)
-        video_params_layout.addWidget(self.video_params_confirm_btn, 1, 5)
+
+        video_params_layout.addWidget(self.client_brightness_label, 2, 0)
+        video_params_layout.addWidget(self.client_brightness_edit, 2, 1)
+        video_params_layout.addWidget(self.client_br_divisor_label, 2, 2)
+        video_params_layout.addWidget(self.client_br_divisor_edit, 2, 3)
+        video_params_layout.addWidget(self.client_contrast_label, 3, 0)
+        video_params_layout.addWidget(self.client_contrast_edit, 3, 1)
+        video_params_layout.addWidget(self.client_gamma_label, 4, 0)
+        video_params_layout.addWidget(self.client_gamma_edit, 4, 1)
+
+        #crop
+        video_params_layout.addWidget(self.video_params_crop_x_label, 5, 0)
+        video_params_layout.addWidget(self.video_params_crop_x_edit, 5, 1)
+        video_params_layout.addWidget(self.video_params_crop_y_label, 5, 2)
+        video_params_layout.addWidget(self.video_params_crop_y_edit, 5, 3)
+        video_params_layout.addWidget(self.video_params_crop_w_label, 6, 0)
+        video_params_layout.addWidget(self.video_params_crop_w_edit, 6, 1)
+        video_params_layout.addWidget(self.video_params_crop_h_label, 6, 2)
+        video_params_layout.addWidget(self.video_params_crop_h_edit, 6, 3)
+        video_params_layout.addWidget(self.video_params_crop_enable, 6, 5)
+        video_params_layout.addWidget(self.video_params_crop_disable, 6, 4)
+
+
+        video_params_layout.addWidget(self.video_params_pinch_btn, 3, 4)
+        video_params_layout.addWidget(self.video_params_confirm_btn, 3, 5)
+
+        if self.mainwindow.engineer_mode is True:
+            self.max_brightness_label = QLabel(self.mainwindow.right_frame)
+            self.max_brightness_label.setText( "Max Frame Brightness Value is " +
+                str((256*int(self.client_brightness_edit.text()))/(int(self.client_br_divisor_edit.text())*100)))
+            video_params_layout.addWidget(self.max_brightness_label, 4, 0, 1, 5)
 
     def stop_media_trigger(self):
         log.debug("")
@@ -279,6 +415,13 @@ class media_page(QObject):
 
         play_act = QAction("Play", self)
         pop_menu.addAction(play_act)
+
+        del_act = QAction("Delete", self)
+        pop_menu.addAction(del_act)
+
+        crop_act = QAction("Crop", self)
+        crop_act.setDisabled(True)
+        pop_menu.addAction(crop_act)
         pop_menu.addSeparator()
 
         add_to_playlist_menu = QMenu('AddtoPlaylist')
@@ -288,7 +431,7 @@ class media_page(QObject):
             playlist_name = playlist.name
             add_to_playlist_menu.addAction('add to ' + playlist_name)
 
-        add_to_playlist_menu.addAction('add to new playlist')
+        add_to_playlist_menu.addAction('Add to new playlist')
         pop_menu.addMenu(add_to_playlist_menu)
         pop_menu.triggered[QAction].connect(self.pop_menu_trigger_act)
 
@@ -357,6 +500,24 @@ class media_page(QObject):
             item = self.file_tree.itemAt(self.right_clicked_pos.x(), self.right_clicked_pos.y())
             play_playlist_name = item.text(0)
             self.mainwindow.media_engine.play_playlsit(play_playlist_name)
+        elif q.text() == "Delete":
+            log.debug("file_uri :%s", self.right_clicked_select_file_uri)
+            # remove file and thumbnail file
+            file_ui = self.right_clicked_select_file_uri.replace(" ", "\ ")
+            if os.path.exists(self.right_clicked_select_file_uri) is True:
+                os.remove(self.right_clicked_select_file_uri)
+            log.debug("self.right_clicked_select_file_uri.split(internal_media_folder)[1] = %s", self.right_clicked_select_file_uri.split(internal_media_folder +"/")[1]);
+            thumbnail_file_name = hashlib.md5(
+                self.right_clicked_select_file_uri.split(internal_media_folder + "/")[1].split(".")[0].encode('utf-8')).hexdigest() + ".webp"
+
+            thumbnail_file = internal_media_folder + ThumbnailFileFolder + thumbnail_file_name
+            log.debug("thumbnail_file = %s", thumbnail_file)
+            if os.path.exists(thumbnail_file) is True:
+                log.debug("thumbnail_file exists")
+                os.remove(self.right_clicked_select_file_uri)
+            self.signal_refresh_internal_medialist.emit()
+
+
 
     def resfresh_video_params_config_file(self):
         log.debug("")
@@ -381,4 +542,75 @@ class media_page(QObject):
             log.debug("blue gain changed!")
             media_processor.set_blue_bias_level(int(self.bluegain_edit.text()))
 
+        clients = self.mainwindow.clients
+        if video_params.frame_brightness != int(self.client_brightness_edit.text()):
+            video_params.frame_brightness = int(self.client_brightness_edit.text())
+            for c in clients:
+                log.debug("c.client_ip = %s", c.client_ip)
+                c.send_cmd(cmd_set_frame_brightness,
+                           self.mainwindow.cmd_seq_id_increase(),
+                            str(video_params.frame_brightness))
 
+        if video_params.frame_br_divisor != int(self.client_br_divisor_edit.text()):
+            video_params.frame_br_divisor = int(self.client_br_divisor_edit.text())
+            for c in clients:
+                c.send_cmd(cmd_set_frame_br_divisor,
+                           self.mainwindow.cmd_seq_id_increase(),
+                           str(video_params.frame_br_divisor))
+
+        if video_params.frame_contrast != int(self.client_contrast_edit.text()):
+            video_params.frame_contrast = int(self.client_contrast_edit.text())
+            for c in clients:
+                c.send_cmd(cmd_set_frame_contrast,
+                           self.mainwindow.cmd_seq_id_increase(),
+                           str(video_params.frame_contrast))
+
+        if video_params.frame_gamma != float(self.client_gamma_edit.text()):
+            video_params.frame_gamma = float(self.client_gamma_edit.text())
+            for c in clients:
+                c.send_cmd(cmd_set_frame_gamma,
+                           self.mainwindow.cmd_seq_id_increase(),
+                           str(video_params.frame_gamma))
+
+        if self.mainwindow.engineer_mode is True:
+            self.refresh_max_brightness_label()
+
+    def video_params_pinch_btn_clicked(self):
+        log.debug("")
+        clients = self.mainwindow.clients
+        if self.video_params_pinch_btn.text() == "P5":
+            self.video_params_pinch_btn.setText("P10")
+            for c in clients:
+                log.debug("c.client_ip = %s", c.client_ip)
+                c.send_cmd(cmd_set_pixel_interval,
+                           self.mainwindow.cmd_seq_id_increase(),
+                            str(1))
+        else:
+            self.video_params_pinch_btn.setText("P5")
+            for c in clients:
+                log.debug("c.client_ip = %s", c.client_ip)
+                c.send_cmd(cmd_set_pixel_interval,
+                           self.mainwindow.cmd_seq_id_increase(),
+                            str(0))
+
+
+    def video_crop_enable(self):
+        log.debug("crop_enable")
+        utils.ffmpy_utils.ffmpy_crop_enable(self.video_params_crop_x_edit.text(),
+                                     self.video_params_crop_y_edit.text(),
+                                     self.video_params_crop_w_edit.text(),
+                                     self.video_params_crop_h_edit.text(),
+                                     self.mainwindow.led_wall_width,
+                                     self.mainwindow.led_wall_height)
+
+    def video_crop_disable(self):
+        log.debug("crop_disable")
+        utils.ffmpy_utils.ffmpy_crop_disable(self.mainwindow.led_wall_width,
+                                     self.mainwindow.led_wall_height)
+
+    def refresh_max_brightness_label(self):
+        if self.mainwindow.engineer_mode is False:
+            return
+        self.max_brightness_label.setText("Max Frame Brightness Value is " +
+                                          str((256 * int(self.client_brightness_edit.text())) / (
+                                                      int(self.client_br_divisor_edit.text()) * 100)))

@@ -54,6 +54,7 @@ echo "ROLE:"$ROLE
 if [[ $CLIENT_TAG == $ROLE ]];then
     touch /home/root/client_now
     echo "Let's set client env"
+    check_client_peripheral_devices.sh &
     echo "1. set_br"
     set_br.sh
 	#turn the wifi off
@@ -69,6 +70,7 @@ elif [[ $PLAYER_TAG == $ROLE ]];then
     launch_led_player.sh
 elif [[ $SERVER_TAG == $ROLE ]];then
     touch /home/root/server_now
+    check_server_peripheral_devices.sh &
     echo "Server Now"
 	nmcli radio wifi on 
     setup_hotspot.sh &

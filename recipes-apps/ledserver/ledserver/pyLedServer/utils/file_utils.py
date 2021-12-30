@@ -3,14 +3,16 @@ import utils.log_utils
 import os
 import pyudev
 import psutil
+import pyinotify
+from global_def import *
 
 from subprocess import check_output, CalledProcessError
 
-log = utils.log_utils.logging_init('file_utils')
+log = utils.log_utils.logging_init(__file__)
 
 def get_media_file_list(dir, with_path=False):
     log.error("dir : %s", dir)
-    file_list = glob.glob(dir + "/*.mp4")
+    file_list = glob.glob(dir + "/*.mp4") + glob.glob(dir + "/*.jpg") + glob.glob(dir + "/*.jpeg") + glob.glob(dir + "/*.png")
 
     return file_list
 
@@ -38,4 +40,7 @@ def get_mount_points(devices=None):
                 mount_points.append(p.mountpoint)
 
     return mount_points
+
+
+
 

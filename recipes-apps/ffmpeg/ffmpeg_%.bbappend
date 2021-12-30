@@ -9,11 +9,14 @@ FILESEXTRAPATHS:append := "${THISDIR}/${PN}:"
 DEPENDS += "libwebp"
 DEPENDS += "zeromq"
 DEPENDS += "freetype"
+#DEPENDS += "userland"
 
 #add by Jason for test
 PACKAGECONFIG[libwebp] = "--enable-libwebp,--disable-libwebp,libwebp"
 PACKAGECONFIG[libzmq] = "--enable-libzmq,--disable-libzmq,zeromq"
 PACKAGECONFIG[freetype] = "--enable-libfreetype,--disable-libfreetype,freetype"
+#PACKAGECONFIG[mmal] = "--enable-mmal,--disable-mmal"
+#PACKAGECONFIG[omx-rpi] = "--enable-omx-rpi,--disable-omx-rpi"
 
 
 

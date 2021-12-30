@@ -1,9 +1,9 @@
 import enum
 import platform
 """Software version"""
+version = "LS211022A01"
 
 """Network relative"""
-version = "LS211022A01"
 multicast_group = "239.11.11.11"
 server_broadcast_port = 11334
 server_broadcast_message = "ABCDE;Server:192.168.0.3;Cmd_Port:11335;Alive_Port:11333"
@@ -51,9 +51,14 @@ media_btn_width = 110
 cmd_spliter = ";"
 
 """default led params"""
-default_led_wall_width = 80
-default_led_wall_height = 96
+default_led_wall_width = 160 #80
+default_led_wall_height = 108 #144 #96
 default_led_wall_brightness = 100
 default_led_cabinet_width = 40
 default_led_cabinet_height = 24
 default_led_wall_margin = 10
+
+"""default led client frame params"""
+default_led_client_brightness = 100
+default_led_client_brdivisor = 1
+default_led_client_gamma = 2.2

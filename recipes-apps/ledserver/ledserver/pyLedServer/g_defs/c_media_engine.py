@@ -165,6 +165,9 @@ class media_engine(QObject):
             self.signal_playlist_changed_ret.emit(True, remove_playlist_name, "", 0,
                                                   self.ACTION_TAG_REMOVE_ENTIRE_PLAYLIST)
 
+    def refresh_internal_medialist(self):
+        del self.internal_medialist
+        self.internal_medialist = medialist(internal_media_folder)
 
 class medialist(QObject):
     def __init__(self, uri):
@@ -227,7 +230,7 @@ class media_processor(QObject):
         self.play_single_file_thread = None
         self.ffmpy_process = None
         self.playing_file_name = None
-        self.video_params = video_params(True, 20, 50, 0, 0, 0)
+        self.video_params = video_params(True, 20, 50, 0, 0, 0, 0)
 
         self.check_ffmpy_process_timer = QTimer(self)
         self.check_ffmpy_process_timer.timeout.connect(self.check_ffmpy_process)  # 當時間到時會執行 run
@@ -513,6 +516,7 @@ class media_processor(QObject):
                     break
                 if self.force_stop is True:
                     break
+
             self.finished.emit()
             self.media_processor.play_type = play_type.play_none
             self.worker_status = 0

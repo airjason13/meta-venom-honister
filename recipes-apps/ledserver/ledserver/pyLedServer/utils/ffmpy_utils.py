@@ -7,14 +7,22 @@ import os
 import zmq
 import utils.log_utils
 import hashlib
+
 log = utils.log_utils.logging_init('ffmpy_utils')
 
-def neo_ffmpy_execute( video_path, brightness, contrast, red_bias, green_bias, blue_bias, width=80, height=96):
+still_image_loop_cnt = 1
+still_image_video_period = 600
+preview_start_time = 3
+preview_period = 3
+
+def neo_ffmpy_execute(video_path, brightness, contrast, red_bias, green_bias, blue_bias,
+                      width=80, height=96):
     # red_bias = 0.9
     # green_bias = 0.9
     # blue_bias = 0.9
+    ff = None
     global_opts = '-hide_banner -loglevel error'
-    scale_params = "scale=" + str(width) + ":" + str(height) + ",hflip"
+    scale_params = "scale=" + str(width) + ":" + str(height)  # + ",hflip"
     brightness_params = "brightness=" + str(brightness)
     # brightness_params = "brightness=" + str(-0.9)
     contrast_params = "contrast=" + str(contrast)
@@ -23,17 +31,21 @@ def neo_ffmpy_execute( video_path, brightness, contrast, red_bias, green_bias, b
     red_bias_params = "romin=" + str(red_bias)
     green_bias_params = "gomin=" + str(green_bias)
     blue_bias_params = "bomin=" + str(blue_bias)
-    # filter2_str = "colorlevels=" + "rimin=0.99:gimin=0.99:bimin=0.99:" + red_bias_params + ":" + green_bias_params + ":" + blue_bias_params
+    crop_str = "crop=iw:ih:0:0"
 
     color_level_str = "colorlevels=" + red_bias_params + ":" + green_bias_params + ":" + blue_bias_params
 
     # add TEXT
-    if "blank.mp4" in video_path:
-        drawtext_str = "drawtext=fontfile=/home/venom/Videos/fonts/msjhbd.ttc:text='歡迎林商行蒞臨指導':x=10*w/80-20*t:y=40:fontsize=24*h/96:fontcolor=white"
-        eq_params = "zmq," + eq_str + "," + color_level_str + "," + drawtext_str + "," + scale_params
+    if "blank" in video_path:
+        #drawtext_str = "drawtext=fontfile=" + internal_media_folder + \
+        #               "/fonts/msjhbd.ttc:text='p':x=10*w/80-40*t:y=20:fontsize=72*h/96:fontcolor=white"
+        drawtext_str = "drawtext=fontfile=" + internal_media_folder + \
+                      "/fonts/msjhbd.ttc:text='歡迎長虹光電蒞臨指導':x=10*w/80-40*t:y=20:fontsize=72*h/96:fontcolor=white"
+        filter_params = "zmq," + eq_str + "," + color_level_str + "," + drawtext_str + "," + scale_params
     else:
-        eq_params = "zmq," + eq_str + "," + color_level_str + "," + scale_params
-
+        drawtext_str = "drawtext=fontfile=" + internal_media_folder + \
+                       "/fonts/msjhbd.ttc:text='':x=10:y=20:fontsize=24*h/96:fontcolor=black"
+        filter_params = "zmq," + eq_str + "," + color_level_str + "," + drawtext_str + "," + crop_str + "," + scale_params
 
     video_encoder = "libx264"
 
@@ -42,27 +54,56 @@ def neo_ffmpy_execute( video_path, brightness, contrast, red_bias, green_bias, b
             video_encoder = "h264_v4l2m2m"
         else:
             video_encoder = "libx264"
+        if video_path.endswith("mp4"):
+            ff = ffmpy.FFmpeg(
+                global_options=global_opts,
+                inputs={
+                    video_path: ["-re"]
+                },
+                outputs={
+                    udp_sink: ["-vcodec", video_encoder, '-filter_complex', filter_params, "-b:v", "2000k", "-f",
+                               "h264", "-pix_fmt", "yuv420p", "-localaddr", "192.168.0.3"]
+                },
+            )
+        elif video_path.endswith("jpeg") or video_path.endswith("jpg") or video_path.endswith("png"):
+            log.debug("jpg to mp4")
+            ff = ffmpy.FFmpeg(
+                global_options=global_opts,
+                inputs={
+                    video_path: ["-loop", str(still_image_loop_cnt), "-t", str(still_image_video_period), "-re"]
+                },
+                outputs={
+                    udp_sink: ["-vcodec", video_encoder, '-filter_complex', filter_params, "-b:v", "2000k", "-f",
+                               "h264", "-pix_fmt", "yuv420p", "-localaddr", "192.168.0.3"]
 
-        ff = ffmpy.FFmpeg(
-            global_options=global_opts,
-            inputs={
-                        video_path: ["-re"]
-                    },
-            outputs={
-                udp_sink: [ "-vcodec", video_encoder, '-filter_complex', eq_params,"-b:v", "2000k", "-f", "h264", "-pix_fmt", "yuv420p", "-localaddr", "192.168.0.3"]
-                #udp_sink: ["-preset", "ultrafast", "-vcodec", "libx264", '-vf', scale_params, "-f", "h264", "-localaddr", "192.168.0.3"]
-            },
-
-        )
+                },
+            )
     else:
-        ff = ffmpy.FFmpeg(
-            global_options=global_opts,
-            inputs={video_path: ["-re"]},
-            outputs={
-                udp_sink: ["-preset", "ultrafast", "-vcodec", "libx264", '-filter_complex', eq_params , "-f", "h264", "-localaddr", "192.168.0.2"],
-            }
-        )
+        if video_path.endswith("mp4"):
+            ff = ffmpy.FFmpeg(
+                global_options=global_opts,
+                inputs={video_path: ["-re"]},
 
+                outputs={
+                    udp_sink: ["-preset", "ultrafast", "-vcodec", "libx264", '-filter_complex', filter_params,
+                               "-g", "60", "-f", "h264", "-pix_fmt", "yuv420p", "-localaddr", "192.168.0.2"],
+                    #udp_sink: ["-preset", "ultrafast", "-vcodec", "libx264", '-filter_complex', filter_params,
+                    #           "-g", "120", "-f", "h264", "-localaddr", "192.168.0.2"],
+                }
+            )
+        elif video_path.endswith("jpeg") or video_path.endswith("jpg") or video_path.endswith("png"):
+            log.debug("jpg to mp4")
+            ff = ffmpy.FFmpeg(
+                global_options=global_opts,
+                inputs={
+                    video_path: ["-loop", str(still_image_loop_cnt), "-t", str(still_image_video_period), "-re"]
+                },
+                outputs={
+                    udp_sink: ["-vcodec", video_encoder, '-filter_complex', filter_params, "-b:v", "2000k", "-f",
+                                "h264", "-pix_fmt", "yuv420p", "-localaddr", "192.168.0.2"]
+
+                },
+            )
     log.debug("%s", ff.cmd)
     try:
         thread_1 = threading.Thread(target=ff.run)
@@ -77,21 +118,23 @@ def neo_ffmpy_execute( video_path, brightness, contrast, red_bias, green_bias, b
 
     return ff.process
 
-''' deprecated'''
-def ffmpy_execute(QObject, video_path, width=80, height=96):
+
+# deprecated
+'''def ffmpy_execute(QObject, video_path, width=80, height=96):
     global_opts = '-hide_banner -loglevel error'
     scale_params = "scale=" + str(width) + ":" + str(height)
-    eq_params = "zmq,eq=brightness=0.0"+","+scale_params
+    eq_params = "zmq,eq=brightness=0.0" + "," + scale_params
 
     if platform.machine() in ('arm', 'arm64', 'aarch64'):
         ff = ffmpy.FFmpeg(
             global_options=global_opts,
             inputs={
-                        video_path: ["-re"]
-                    },
+                video_path: ["-re"]
+            },
             outputs={
-                udp_sink: ["-preset", "ultrafast", "-vcodec", "libx264", '--filter_complex', eq_params,"-f", "h264", "-localaddr", "192.168.0.3"]
-                #udp_sink: ["-preset", "ultrafast", "-vcodec", "libx264", '-vf', scale_params, "-f", "h264",
+                udp_sink: ["-preset", "ultrafast", "-vcodec", "libx264", '--filter_complex', eq_params, "-f", "h264",
+                           "-localaddr", "192.168.0.3"]
+                # udp_sink: ["-preset", "ultrafast", "-vcodec", "libx264", '-vf', scale_params, "-f", "h264",
                 #           "-localaddr", "192.168.0.3"]
             },
 
@@ -101,7 +144,8 @@ def ffmpy_execute(QObject, video_path, width=80, height=96):
             global_options=global_opts,
             inputs={video_path: ["-re"]},
             outputs={
-                udp_sink: ["-preset", "ultrafast", "-vcodec", "libx264", '-filter_complex', eq_params, "-f", "h264", "-localaddr", "192.168.0.2"]
+                udp_sink: ["-preset", "ultrafast", "-vcodec", "libx264", '-filter_complex', eq_params, "-f", "h264",
+                           "-localaddr", "192.168.0.2"]
             }
         )
 
@@ -121,10 +165,11 @@ def ffmpy_execute(QObject, video_path, width=80, height=96):
     log.debug("ff.process : %s", ff.process)
     log.debug("ff.process pid : %d", ff.process.pid)
 
-    return ff.process
+    return ff.process'''
 
-''' deprecated'''
-def ffmpy_execute_list(QObject, video_path_list):
+
+# deprecated
+'''def ffmpy_execute_list(QObject, video_path_list):
     mainUI = QObject
 
     while True:
@@ -143,14 +188,13 @@ def ffmpy_execute_list(QObject, video_path_list):
                             mainUI.ffmpy_running = play_status.stop
                             break
 
-
                 if mainUI.ffmpy_running == play_status.stop:
                     log.debug("playing %s", videoparam.file_uri)
                     video_path = videoparam.file_uri
                     thread_1 = threading.Thread(target=ffmpy_execute, args=(QObject, video_path,))
                     thread_1.start()
                     sleep(2)
-                #else:
+                # else:
                 #    while True:
                 #        if mainUI.ff_process.poll() is None:
                 #            break;
@@ -164,15 +208,17 @@ def ffmpy_execute_list(QObject, video_path_list):
             break
 
         if mainUI.play_type == play_type.play_none:
-            return
+            return'''
 
 
 def gen_webp_from_video(file_folder, video):
-    # usb hashlib md5 to generate preview file name
+    # use hashlib md5 to generate preview file name
     video_name = video.split(".")[0]
+    video_extension = video.split(".")[1]
+    log.debug("video_extension = %s", video_extension)
     preview_file_name = hashlib.md5(video_name.encode('utf-8')).hexdigest()
 
-    #thumbnail_path = internal_media_folder + ThumbnailFileFolder + video.replace(".mp4", ".webp")
+    # thumbnail_path = internal_media_folder + ThumbnailFileFolder + video.replace(".mp4", ".webp")
     thumbnail_path = internal_media_folder + ThumbnailFileFolder + preview_file_name + ".webp"
     video_path = file_folder + "/" + video
     log.debug("video_path = %s", video_path)
@@ -183,16 +229,29 @@ def gen_webp_from_video(file_folder, video):
     try:
         if os.path.isfile(thumbnail_path) is False:
             global_opts = '-hide_banner -loglevel error'
-            ff = ffmpy.FFmpeg(
-                global_options=global_opts,
-                inputs={video_path: ['-ss', '3', '-t', '3']},
-                outputs={thumbnail_path: ['-vf', 'scale=640:480']}
-            )
+            if video_extension in ["jpeg", "jpg", "png"]:
+                log.debug("still image")
+                ff = ffmpy.FFmpeg(
+                    global_options=global_opts,
+                    inputs={video_path: ['-loop', str(still_image_loop_cnt), '-t', str(preview_period)]},
+                    outputs={thumbnail_path: ['-vf', 'scale=640:480']}
+                )
+            else:
+                ff = ffmpy.FFmpeg(
+                    global_options=global_opts,
+                    inputs={video_path: ['-ss', str(preview_start_time), '-t', str(preview_period)]},
+                    outputs={thumbnail_path: ['-vf', 'scale=640:480']}
+                )
+            log.debug("%s", ff.cmd)
             ff.run()
     except Exception as e:
         log.debug(e)
     return thumbnail_path
 
+def gen_webp_from_video_threading(file_folder, video):
+    threads = []
+    threads.append(threading.Thread(target=gen_webp_from_video, args=(file_folder, video,)))
+    threads[0].start()
 
 def ffmpy_set_video_param_level(param_name, level):
     cmd = ""
@@ -219,6 +278,236 @@ def ffmpy_set_video_param_level(param_name, level):
 
     log.debug("cmd : %s", cmd)
     socket.send(cmd.encode())
+
+    socket.disconnect("tcp://localhost:%s" % 5555)
+
+    context.destroy()
+    context.term()
+
+
+def ffmpy_draw_text(text):
+    context = zmq.Context()
+    log.debug("Connecting to server...")
+    cmd = "Parsed_drawtext_3 reinit text=" + str(text)
+    log.debug("cmd : %s", cmd)
+    socket = context.socket(zmq.REQ)
+    socket.connect("tcp://localhost:%s" % 5555)
+
+    log.debug("cmd : %s", cmd)
+    socket.send(cmd.encode())
+
+    socket.disconnect("tcp://localhost:%s" % 5555)
+
+    context.destroy()
+    context.term()
+
+def ffmpy_crop_enable(crop_x, crop_y, crop_w, crop_h, led_w, led_h):
+    context = zmq.Context()
+    log.debug("Connecting to server...")
+    socket = context.socket(zmq.REQ)
+    socket.connect("tcp://localhost:%s" % 5555)
+
+
+    socket.send(("Parsed_crop_4 w " + str(crop_w)).encode())
+    data = socket.recv(1024)
+    log.debug("recv data = %s", data.decode())
+    if 'Success' not in data.decode():
+        socket.disconnect("tcp://localhost:%s" % 5555)
+        context.destroy()
+        context.term()
+        log.debug("Error")
+        return False
+
+    socket.send(("Parsed_crop_4 h " + str(crop_h)).encode())
+    data = socket.recv(1024)
+    if 'Success' not in data.decode():
+        socket.disconnect("tcp://localhost:%s" % 5555)
+        context.destroy()
+        context.term()
+        return False
+
+    socket.send(("Parsed_crop_4 x " + str(crop_x)).encode())
+    data = socket.recv(1024)
+    if 'Success' not in data.decode():
+        socket.disconnect("tcp://localhost:%s" % 5555)
+        context.destroy()
+        context.term()
+        return False
+
+    socket.send(("Parsed_crop_4 y " + str(crop_y)).encode())
+    data = socket.recv(1024)
+    if 'Success' not in data.decode():
+        socket.disconnect("tcp://localhost:%s" % 5555)
+        context.destroy()
+        context.term()
+        return False
+
+    socket.send(("Parsed_scale_5 w " + str(led_w)).encode())
+    data = socket.recv(1024)
+    if 'Success' not in data.decode():
+        socket.disconnect("tcp://localhost:%s" % 5555)
+        context.destroy()
+        context.term()
+        return False
+
+    socket.send(("Parsed_scale_5 h " + str(led_h)).encode())
+    data = socket.recv(1024)
+    if 'Success' not in data.decode():
+        socket.disconnect("tcp://localhost:%s" % 5555)
+        context.destroy()
+        context.term()
+        return False
+
+    socket.disconnect("tcp://localhost:%s" % 5555)
+
+    context.destroy()
+    context.term()
+    log.debug("set scale end")
+    return True
+
+def ffmpy_crop_disable(led_w, led_h):
+    context = zmq.Context()
+    log.debug("Connecting to server...")
+
+    cmd_w = "Parsed_crop_4 w iw"
+    cmd_h = "Parsed_crop_4 h ih"
+    cmd_x = "Parsed_crop_4 x 0"
+    cmd_y = "Parsed_crop_4 y 0"
+    cmd_scale_w = "Parsed_scale_5 w " + str(led_w)
+    cmd_scale_h = "Parsed_scale_5 h " + str(led_h)
+    log.debug("cmd_w : %s", cmd_w)
+    socket = context.socket(zmq.REQ)
+    socket.connect("tcp://localhost:%s" % 5555)
+
+    socket.send(("Parsed_crop_4 w iw" ).encode())
+    data = socket.recv(1024)
+    log.debug("recv data = %s", data.decode())
+    if 'Success' not in data.decode():
+        socket.disconnect("tcp://localhost:%s" % 5555)
+        context.destroy()
+        context.term()
+        log.debug("Error")
+        return False
+
+    socket.send(("Parsed_crop_4 h ih").encode())
+    data = socket.recv(1024)
+    if 'Success' not in data.decode():
+        socket.disconnect("tcp://localhost:%s" % 5555)
+        context.destroy()
+        context.term()
+        return False
+
+    socket.send(("Parsed_crop_4 x 0").encode())
+    data = socket.recv(1024)
+    if 'Success' not in data.decode():
+        socket.disconnect("tcp://localhost:%s" % 5555)
+        context.destroy()
+        context.term()
+        return False
+
+    socket.send(("Parsed_crop_4 y 0").encode())
+    data = socket.recv(1024)
+    if 'Success' not in data.decode():
+        socket.disconnect("tcp://localhost:%s" % 5555)
+        context.destroy()
+        context.term()
+        return False
+
+    socket.send(("Parsed_scale_5 w " + str(led_w)).encode())
+    data = socket.recv(1024)
+    if 'Success' not in data.decode():
+        socket.disconnect("tcp://localhost:%s" % 5555)
+        context.destroy()
+        context.term()
+        return False
+
+    socket.send(("Parsed_scale_5 h " + str(led_h)).encode())
+    data = socket.recv(1024)
+    if 'Success' not in data.decode():
+        socket.disconnect("tcp://localhost:%s" % 5555)
+        context.destroy()
+        context.term()
+        return False
+
+    socket.disconnect("tcp://localhost:%s" % 5555)
+
+    context.destroy()
+    context.term()
+
+def ffmpy_crop_enable_depreciated(crop_x, crop_y, crop_w, crop_h, led_w, led_h):
+    context = zmq.Context()
+    log.debug("Connecting to server...")
+
+    cmd_w = "Parsed_crop_4 w " + str(crop_w)
+    cmd_h = "Parsed_crop_4 h " + str(crop_h)
+    cmd_x = "Parsed_crop_4 x " + str(crop_x)
+    cmd_y = "Parsed_crop_4 y " + str(crop_y)
+    cmd_scale_w = "Parsed_scale_5 w " + str(led_w)
+    cmd_scale_h = "Parsed_scale_5 h " + str(led_h)
+    log.debug("cmd_w : %s", cmd_w)
+    socket = context.socket(zmq.REQ)
+    socket.connect("tcp://localhost:%s" % 5555)
+
+    socket.send(cmd_w.encode())
+    data = socket.recv(1024)
+
+    socket.send(cmd_h.encode())
+    data = socket.recv(1024)
+    # log.debug("data = %s", data)
+    socket.send(cmd_x.encode())
+    data = socket.recv(1024)
+    # log.debug("data = %s", data)
+    socket.send(cmd_y.encode())
+    data = socket.recv(1024)
+    # log.debug("data = %s", data)
+
+    socket.send(cmd_scale_w.encode())
+    data = socket.recv(1024)
+    # log.debug("data = %s", data)
+
+    socket.send(cmd_scale_h.encode())
+    data = socket.recv(1024)
+    # log.debug("data = %s", data)
+
+    socket.disconnect("tcp://localhost:%s" % 5555)
+
+    context.destroy()
+    context.term()
+
+def ffmpy_crop_disable_depreciated(led_w, led_h):
+    context = zmq.Context()
+    log.debug("Connecting to server...")
+
+    cmd_w = "Parsed_crop_4 w iw"
+    cmd_h = "Parsed_crop_4 h ih"
+    cmd_x = "Parsed_crop_4 x 0"
+    cmd_y = "Parsed_crop_4 y 0"
+    cmd_scale_w = "Parsed_scale_5 w " + str(led_w)
+    cmd_scale_h = "Parsed_scale_5 h " + str(led_h)
+    log.debug("cmd_w : %s", cmd_w)
+    socket = context.socket(zmq.REQ)
+    socket.connect("tcp://localhost:%s" % 5555)
+
+    socket.send(cmd_w.encode())
+    data = socket.recv(1024)
+    log.debug("data = %s", data)
+    socket.send(cmd_h.encode())
+    data = socket.recv(1024)
+    log.debug("data = %s", data)
+    socket.send(cmd_x.encode())
+    data = socket.recv(1024)
+    log.debug("data = %s", data)
+    socket.send(cmd_y.encode())
+    data = socket.recv(1024)
+    log.debug("data = %s", data)
+
+    socket.send(cmd_scale_w.encode())
+    data = socket.recv(1024)
+    log.debug("data = %s", data)
+
+    socket.send(cmd_scale_h.encode())
+    data = socket.recv(1024)
+    log.debug("data = %s", data)
 
     socket.disconnect("tcp://localhost:%s" % 5555)
 

@@ -11,8 +11,8 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QDesktopWidget, QStyleFa
                              QSlider, QLabel, QLineEdit, QPushButton, QTableWidget, QStackedLayout, QSplitter,
                              QTreeWidget, QTreeWidgetItem, QTreeWidgetItemIterator,
                              QFileDialog, QListWidget, QFileSystemModel, QTreeView, QMenu, QAction, QAbstractItemView,
-                             QItemDelegate)
-from PyQt5.QtGui import QPalette, QColor, QBrush, QFont, QMovie, QPixmap, QPainter, QIcon
+                             QItemDelegate, QShortcut, )
+from PyQt5.QtGui import QPalette, QColor, QBrush, QFont, QMovie, QPixmap, QPainter, QIcon, QKeySequence
 from PyQt5.QtCore import Qt, QMutex, pyqtSlot, QModelIndex, pyqtSignal, QSize
 import pyqtgraph as pg
 import qdarkstyle
@@ -45,6 +45,7 @@ from qtui.c_page_client import *
 from qtui.c_page_medialist import *
 from material import *
 import hashlib
+from g_defs.c_filewatcher import *
 
 log = utils.log_utils.logging_init(__file__)
 
@@ -60,6 +61,11 @@ class MainUi(QMainWindow):
         self.center()
         self.setWindowOpacity(1.0)  # 设置窗口透明度
         self.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
+
+        # set engineer mode trigger
+        #self.engineer_mode_trigger = QShortcut(QKeySequence("Ctrl+E"), self)
+        #self.engineer_mode_trigger.activated.connect(self.ctrl_e_trigger)
+        self.engineer_mode = False
 
         # instance elements
         self.NewPlaylistDialog = None
@@ -138,6 +144,16 @@ class MainUi(QMainWindow):
 
         self.media_engine.signal_playlist_changed_ret.connect(self.playlist_changed)
         self.media_engine.signal_external_medialist_changed_ret.connect(self.external_medialist_changed)
+
+        paths = []
+        paths.append(internal_media_folder)
+        self.filewatcher = FileWatcher(paths)
+        self.filewatcher.install_folder_changed_slot(self.internaldef_medialist_changed)
+
+    def ctrl_e_trigger(self):
+        log.debug(" ")
+        self.engineer_mode = True
+        self.init_ui()
 
     def closeEvent(self, event):
         log.debug("close")
@@ -255,12 +271,12 @@ class MainUi(QMainWindow):
         self.led_setting_width_textlabel = QLabel(self.right_frame)
         self.led_setting_width_textlabel.setText('LED Wall Width:')
         self.led_setting_width_editbox = QLineEdit(self.right_frame)
-        self.led_setting_width_editbox.setFixedWidth(120)
+        self.led_setting_width_editbox.setFixedWidth(100)
         self.led_setting_width_editbox.setText(str(self.led_wall_width))
         self.led_setting_height_textlabel = QLabel(self.right_frame)
         self.led_setting_height_textlabel.setText('LED Wall Height:')
         self.led_setting_height_editbox = QLineEdit(self.right_frame)
-        self.led_setting_height_editbox.setFixedWidth(120)
+        self.led_setting_height_editbox.setFixedWidth(100)
         self.led_setting_height_editbox.setText(str(self.led_wall_height))
         self.led_res_check_btn = QPushButton()
         self.led_res_check_btn.clicked.connect(self.set_led_wall_size)
@@ -270,14 +286,14 @@ class MainUi(QMainWindow):
         self.led_brightness_textlabel = QLabel(self.right_frame)
         self.led_brightness_textlabel.setText('LED Brightness:')
         self.led_brightness_editbox = QLineEdit(self.right_frame)
-        self.led_brightness_editbox.setFixedWidth(120)
+        self.led_brightness_editbox.setFixedWidth(100)
         self.led_brightness_editbox.setText(str(self.led_wall_brightness))
 
         # led contrast setting
         self.led_contrast_textlabel = QLabel(self.right_frame)
         self.led_contrast_textlabel.setText('LED Contrast:')
         self.led_contrast_editbox = QLineEdit(self.right_frame)
-        self.led_contrast_editbox.setFixedWidth(120)
+        self.led_contrast_editbox.setFixedWidth(100)
         self.led_contrast_editbox.setText(str(self.led_wall_brightness))
 
         # rgb gain
@@ -382,7 +398,47 @@ class MainUi(QMainWindow):
         self.led_layout_window.show()
 
     def func_testB(self):
+        # for test color adjust
+        self.test_timer_A = QTimer(self)
+        self.test_timer_A.timeout.connect(self.test_brightness_loop)
+        # i = int(self.medialist_page.client_br_divisor_edit.text())
+        i = 1
+
+        self.medialist_page.client_br_divisor_edit.setText(str(i))
+        self.medialist_page.client_brightness_edit.setText(str(i))
+        self.medialist_page.video_params_confirm_btn_clicked()
+        utils.ffmpy_utils.ffmpy_draw_text(str(i))
+        # time.sleep(4)
+        self.test_timer_A.start(500)
         log.debug("testB")
+
+    def test_brightness_loop(self):
+        i = int(self.medialist_page.client_brightness_edit.text())
+        i += 1
+        if i > 255 :
+            i = 0
+        utils.ffmpy_utils.ffmpy_draw_text(str(i))
+        self.medialist_page.client_brightness_edit.setText(str(i))
+        self.medialist_page.video_params_confirm_btn_clicked()
+
+
+    ''' test divisor '''
+    def test_timer_A_handler(self):
+        log.debug("AA")
+        log.debug("self.medialist_page.client_br_divisor_edit.text() = %s", self.medialist_page.client_br_divisor_edit.text())
+        i = int(self.medialist_page.client_br_divisor_edit.text())
+        j = i*2
+        if j > 255:
+            j = 1
+        utils.ffmpy_utils.ffmpy_draw_text(str(j))
+        i = i*2
+        if i > 255:
+            i = 1
+        self.medialist_page.client_br_divisor_edit.setText(str(i))
+        log.debug("BBself.medialist_page.client_br_divisor_edit.text() = %s",
+                  self.medialist_page.client_br_divisor_edit.text())
+        self.medialist_page.video_params_confirm_btn_clicked()
+        #utils.ffmpy_utils.ffmpy_draw_text(str(i))
 
     """ handle the command from qlocalserver"""
 
@@ -404,6 +460,7 @@ class MainUi(QMainWindow):
                     break
             """ no such client ip in clients list, new one and append"""
             if is_found is False:
+                log.debug("client_id_count = %d", self.client_id_count)
                 c = client(ip, net_utils.get_ip_address(), c_version, self.client_id_count)
                 # connect signal/slot function
                 c.signal_send_cmd_ret.connect(self.client_send_cmd_ret)
@@ -412,6 +469,23 @@ class MainUi(QMainWindow):
 
                 self.client_id_count += 1
                 self.clients.append(c)
+
+                # send brightness and br_divisor to the new client
+                c.send_cmd(cmd_set_frame_brightness,
+                           self.cmd_seq_id_increase(),
+                           str(self.media_engine.media_processor.video_params.frame_brightness))
+
+                c.send_cmd(cmd_set_frame_br_divisor,
+                           self.cmd_seq_id_increase(),
+                           str(self.media_engine.media_processor.video_params.frame_br_divisor))
+
+                c.send_cmd(cmd_set_frame_gamma,
+                           self.cmd_seq_id_increase(),
+                           str(self.media_engine.media_processor.video_params.frame_gamma))
+
+                c.send_cmd(cmd_set_client_id,
+                           self.cmd_seq_id_increase(),
+                           str(c.client_id))
 
                 self.sync_client_cabinet_params(c.client_ip, False)
                 self.client_page.refresh_clients(self.clients)
@@ -435,7 +509,6 @@ class MainUi(QMainWindow):
         #    log.debug("%d : %s", i, self.led_client_layout_tree.itemFromIndex(i).text(0))
 
     """send broadcast on eth0"""
-
     def server_broadcast(self, arg):
         data = arg.get("data")
         port = arg.get("port")
@@ -547,7 +620,6 @@ class MainUi(QMainWindow):
             log.debug("%s", file_uri)
 
     '''client table right clicked slot function'''
-
     def clientsmenuContextTree(self, position):
         QTableWidgetItem = self.client_page.client_table.itemAt(position)
         if QTableWidgetItem is None:
@@ -567,27 +639,6 @@ class MainUi(QMainWindow):
 
         popMenu.exec_(self.client_page.client_table.mapToGlobal(position))
 
-    '''def show_media_file_pop_menu(self, pos):
-        popMenu = QMenu()
-        set_qstyle_dark(popMenu)
-
-        playAct = QAction("Play", self)
-        popMenu.addAction(playAct)
-        popMenu.addSeparator()
-
-
-        addtoplaylist_menu = QMenu('AddtoPlaylist')
-        set_qstyle_dark(addtoplaylist_menu)
-
-        for playlist in self.media_engine.playlist:
-            playlist_name = playlist.name
-            addtoplaylist_menu.addAction('add to ' + playlist_name)
-
-        addtoplaylist_menu.addAction('add to new playlist')
-        popMenu.addMenu(addtoplaylist_menu)
-        popMenu.triggered[QAction].connect(self.popmenu_trigger_act)
-
-        popMenu.exec_(pos)'''
 
     # All popmenu trigger act
     def pop_menu_trigger_act(self, q):
@@ -669,9 +720,7 @@ class MainUi(QMainWindow):
         log.debug("")
         self.media_engine.stop_play()
 
-    '''def stop_media_trigger(self):
-        log.debug("")
-        self.media_engine.stop_play()'''
+
 
     def pause_media_trigger(self):
         """check the popen subprocess is alive or not"""
@@ -704,7 +753,6 @@ class MainUi(QMainWindow):
             self.port_layout_information_widget.hide()
 
     '''media page mouse move slot'''
-
     def led_client_layout_mouse_move(self, event):
         if self.led_client_layout_tree.itemAt(event.x(), event.y()) is None:
             if self.port_layout_information_widget.isVisible() is True:
@@ -734,7 +782,6 @@ class MainUi(QMainWindow):
     def media_page_mouseMove(self, event):
         try:
             self.grabMouse()
-
             if self.medialist_page.file_tree.itemAt(event.x(), event.y()) is None:
                 if self.media_preview_widget.isVisible() is True:
                     self.media_preview_widget.hide()
@@ -758,7 +805,6 @@ class MainUi(QMainWindow):
                     internal_media_folder + ThumbnailFileFolder + thumbnail_file_name)
 
                 self.media_preview_widget.setMovie(self.movie)
-
                 self.movie.start()
                 self.media_preview_widget.show()
         except Exception as e:
@@ -773,8 +819,7 @@ class MainUi(QMainWindow):
         self.cmd_seq_id_mutex.unlock()
 
     ''' cmd seqid increase method
-        cmd seqid range : 0~65534'''
-
+        cmd seqid range : 0~65535'''
     def cmd_seq_id_increase(self):
         self.cmd_seq_id_lock()
         self.cmd_send_seq_id += 1
@@ -788,7 +833,6 @@ class MainUi(QMainWindow):
         log.debug("ret :%s", ret)
 
     """Just for Test random command trigger"""
-
     def cmd_test(self, arg):
         while True:
 
@@ -861,6 +905,8 @@ class MainUi(QMainWindow):
         self.led_wall_height = int(self.led_setting_height_editbox.text())
         log.debug("%d", self.led_wall_width)
         log.debug("%d", self.led_wall_height)
+        self.media_engine.media_processor.output_width = int(self.led_setting_width_editbox.text())
+        self.media_engine.media_processor.output_height = int(self.led_setting_height_editbox.text())
         self.led_layout_window.change_led_wall_res(self.led_wall_width,
                                                    self.led_wall_height,
                                                    default_led_wall_margin)
@@ -1018,11 +1064,27 @@ class MainUi(QMainWindow):
                 self.medialist_page.external_media_root.child(child_count).setExpanded(True)
                 child_count += 1
 
+    def internaldef_medialist_changed(self):
+        log.debug("self.medialist_page.internal_media_root.childCount() = %d",
+                  self.medialist_page.internal_media_root.childCount())
+        self.media_engine.refresh_internal_medialist()
+
+        self.medialist_page.refresh_internal_medialist()
+
+
+
+
     def slot_new_playlist(self, new_playlist_name):
         log.debug("")
         new_playlist_name += '.playlist'
         # self.media_engine.new_playlist(new_playlist_name)
         self.media_engine.add_to_playlist(new_playlist_name, self.medialist_page.right_clicked_select_file_uri)
+
+    def focus_on_window_changed(self):
+        log.debug("")
+        if self.isActiveWindow() is False:
+            if self.media_preview_widget.isVisible() is True:
+                self.media_preview_widget.hide()
 
 
 class MyDelegate(QItemDelegate):
