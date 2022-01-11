@@ -431,7 +431,7 @@ class media_page(QObject):
             playlist_name = playlist.name
             add_to_playlist_menu.addAction('add to ' + playlist_name)
 
-        add_to_playlist_menu.addAction('Add to new playlist')
+        add_to_playlist_menu.addAction('add to new playlist')
         pop_menu.addMenu(add_to_playlist_menu)
         pop_menu.triggered[QAction].connect(self.pop_menu_trigger_act)
 

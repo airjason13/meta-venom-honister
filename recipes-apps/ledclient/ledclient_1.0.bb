@@ -43,6 +43,7 @@ do_install() {
     install -m 755 ext/set_panel_autohide.sh ${D}/${bindir}
     install -m 755 ext/setup_hotspot.sh ${D}/${bindir}
     install -m 755 ext/setup_hotspot_tester.sh ${D}/${bindir}
+    install -m 755 ext/b_measure_temp.sh ${D}/${bindir}
     install -m 755 ext/check_client_peripheral_devices.sh ${D}/${bindir}
     install -m 755 ext/check_server_peripheral_devices.sh ${D}/${bindir}
     cp -r ext/pyflask_machine_option/* ${D}/home/root/led_machine_option/

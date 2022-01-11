@@ -1,7 +1,7 @@
 import enum
 import platform
 """Software version"""
-version = "LS211022A01"
+version = "LS220109A01"
 
 """Network relative"""
 multicast_group = "239.11.11.11"
@@ -11,6 +11,8 @@ alive_report_port = 11333
 #cmd_port = 11335
 udp_sink = "udp://239.11.11.11:15000"
 local_sink = "udp://127.0.0.1:15001"
+cv2_preview_h264_sink = "udp://127.0.0.1:10011"
+hdmi_in_h264_src = "udp://127.0.0.1:10012"
 cmd_timeout = 2
 g_client_udp_cmd_port = 11335
 
@@ -29,6 +31,7 @@ class play_type(enum.IntEnum):
     play_none = 0
     play_single = 1
     play_playlist = 2
+    play_hdmi_in = 3
 
 class play_status(enum.IntEnum):
     stop = 0
@@ -62,3 +65,9 @@ default_led_wall_margin = 10
 default_led_client_brightness = 100
 default_led_client_brdivisor = 1
 default_led_client_gamma = 2.2
+
+"""right page idx"""
+page_client_connect_idx = 0
+page_media_content_idx = 1
+page_hdmi_in_content_idx = 2
+page_led_setting_idx = 3

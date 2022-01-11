@@ -16,7 +16,7 @@ do
     else
     	echo "pico missing"
         TEMP=$(vcgencmd measure_temp | cut -c 6-7)
-	CPU_CLOCK=$(vcgencmd measure_clock arm | cut -c 15-)
+	    CPU_CLOCK=$(vcgencmd measure_clock arm | cut -c 15-)
         echo TEMP=$TEMP at $CPU_CLOCK hz
         echo Pico Missing, TEMP=$TEMP at $CPU_CLOCK hz >> /home/root/check_client_peripheral_devices.dat
     fi	
@@ -28,7 +28,7 @@ do
     else
     	echo "eth/usb hub missing"
         TEMP=$(vcgencmd measure_temp | cut -c 6-7)
-	CPU_CLOCK=$(vcgencmd measure_clock arm | cut -c 15-)
+	    CPU_CLOCK=$(vcgencmd measure_clock arm | cut -c 15-)
         echo TEMP=$TEMP at $CPU_CLOCK hz
         echo Terminus Missing, TEMP=$TEMP at $CPU_CLOCK hz >> /home/root/check_client_peripheral_devices.dat
     fi	
@@ -40,7 +40,7 @@ do
     else
 	echo "br0 link missing"
         TEMP=$(vcgencmd measure_temp | cut -c 6-7)
-	CPU_CLOCK=$(vcgencmd measure_clock arm | cut -c 15-)
+	    CPU_CLOCK=$(vcgencmd measure_clock arm | cut -c 15-)
         echo TEMP=$TEMP at $CPU_CLOCK hz
         echo ETH Missing, TEMP=$TEMP at $CPU_CLOCK hz >> /home/root/check_client_peripheral_devices.dat
     fi
@@ -51,17 +51,9 @@ do
     else
 	echo "lcd1602 missing"
         TEMP=$(vcgencmd measure_temp | cut -c 6-7)
-	CPU_CLOCK=$(vcgencmd measure_clock arm | cut -c 15-)
+	    CPU_CLOCK=$(vcgencmd measure_clock arm | cut -c 15-)
         echo TEMP=$TEMP at $CPU_CLOCK hz
         echo lcd1602 Missing, TEMP=$TEMP at $CPU_CLOCK hz >> /home/root/check_client_peripheral_devices.dat
     fi
-#    TEMP=$(vcgencmd measure_temp | cut -c 6-7)
-#    TEMP=$(vcgencmd measure_temp | cut -c 6-7)
-#    if [ $TEMP -gt $HIGHEST_TEMP ];then
-#       HIGHEST_TEMP=$TEMP
-#	CPU_CLOCK=$(vcgencmd measure_clock arm | cut -c 15-)
-#        echo HIGHEST_TEMP=$HIGHEST_TEMP at $CPU_CLOCK hz
-#        echo HIGHEST_TEMP=$HIGHEST_TEMP at $CPU_CLOCK hz > /home/root/temperature.dat
-#    fi
-    sleep 3
+    sleep 60
 done
