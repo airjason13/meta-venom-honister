@@ -51,6 +51,9 @@ do_install() {
     #qtpy
     install -d ${D}${libdir}/${PYTHON_DIR}/site-packages/qtpy
 
+    #qtmodern
+    install -d ${D}${libdir}/${PYTHON_DIR}/site-packages/qtmodern
+    install -d ${D}${libdir}/${PYTHON_DIR}/site-packages/qtmodern-0.2.0.dist-info
 
     cp -r ${S}/py-dep-whl/opencv-python/cv2/* ${D}${libdir}/${PYTHON_DIR}/site-packages/cv2/
     cp -r ${S}/py-dep-whl/opencv-python/opencv_python-3.4.11.43.dist-info/* ${D}${libdir}/${PYTHON_DIR}/site-packages/opencv_python-3.4.11.43.dist-info/
@@ -79,6 +82,10 @@ do_install() {
     cp -r ${S}/py-dep-whl/udiskie/udiskie/* ${D}${libdir}/${PYTHON_DIR}/site-packages/udiskie/
     cp -r ${S}/py-dep-whl/udiskie/udiskie-2.3.3.dist-info/* ${D}${libdir}/${PYTHON_DIR}/site-packages/udiskie-2.3.3.dist-info/
     install -m 755 ${S}/py-dep-whl/udiskie/usr_bin/* ${D}/${bindir}/
+    
+    #qtmodern
+    cp -r ${S}/py-dep-whl/qtmodern/qtmodern/* ${D}${libdir}/${PYTHON_DIR}/site-packages/qtmodern/
+    cp -r ${S}/py-dep-whl/qtmodern/qtmodern-0.2.0.dist-info/* ${D}${libdir}/${PYTHON_DIR}/site-packages/qtmodern-0.2.0.dist-info/
 	
     #docopt
     #cp -r ${S}/py-dep-whl/docopt/docopt.py ${D}${libdir}/${PYTHON_DIR}/site-packages/

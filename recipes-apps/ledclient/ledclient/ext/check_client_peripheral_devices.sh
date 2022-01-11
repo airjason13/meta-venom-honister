@@ -5,16 +5,21 @@ sleep 30
 
 FILE_URI='/home/root/check_client_peripheral_devices.dat'
 #echo Start to check > 
-
+IP="$(ifconfig | grep -A 1 'br0' | tail -1 | cut -d ':' -f 2 | cut -d ' ' -f 1)"
+echo $IP
 while :
 do
+    IP="$(ifconfig | grep -A 1 'br0' | tail -1 | cut -d ':' -f 2 | cut -d ' ' -f 1)"
+    MSG="ip=$IP"
     #check usb pico
     USB_LOG=$(lsusb -d 0x0000:0x0001)
     echo USB_LOG=$USB_LOG
     if [[ $USB_LOG == *"Pico"* ]]; then
 	echo "pico alive"
+	MSG="$MSG,pico_status=OK"
     else
     	echo "pico missing"
+	MSG="$MSG,pico_status=NG"
         TEMP=$(vcgencmd measure_temp | cut -c 6-7)
 	    CPU_CLOCK=$(vcgencmd measure_clock arm | cut -c 15-)
         echo TEMP=$TEMP at $CPU_CLOCK hz
@@ -25,8 +30,10 @@ do
     USB_LOG=$(lsusb -d 0x1a40:0x0101)
     if [[ $USB_LOG == *"Terminus"* ]]; then
 	echo "eth/usb hub alive"
+	MSG="$MSG,terminus_status=OK"
     else
     	echo "eth/usb hub missing"
+	MSG="$MSG,terminus_status=NG"
         TEMP=$(vcgencmd measure_temp | cut -c 6-7)
 	    CPU_CLOCK=$(vcgencmd measure_clock arm | cut -c 15-)
         echo TEMP=$TEMP at $CPU_CLOCK hz
@@ -37,8 +44,10 @@ do
     ETH_LOG=$(ethtool br0 | grep Link)
     if [[ $ETH_LOG == *"yes"* ]]; then
 	echo "br0 get link"
+	MSG="$MSG,br0_status=OK"
     else
 	echo "br0 link missing"
+	MSG="$MSG,br0_status=NG"
         TEMP=$(vcgencmd measure_temp | cut -c 6-7)
 	    CPU_CLOCK=$(vcgencmd measure_clock arm | cut -c 15-)
         echo TEMP=$TEMP at $CPU_CLOCK hz
@@ -48,12 +57,19 @@ do
     ETH_LOG=$(i2cdetect -y 1 | grep 27)
     if [[ $ETH_LOG == *"27"* ]]; then
 	echo "lcd1602 alive"
+	MSG="$MSG,lcd1602_status=OK"
     else
 	echo "lcd1602 missing"
+	MSG="$MSG,lcd1602_status=NG"
         TEMP=$(vcgencmd measure_temp | cut -c 6-7)
-	    CPU_CLOCK=$(vcgencmd measure_clock arm | cut -c 15-)
+	CPU_CLOCK=$(vcgencmd measure_clock arm | cut -c 15-)
         echo TEMP=$TEMP at $CPU_CLOCK hz
         echo lcd1602 Missing, TEMP=$TEMP at $CPU_CLOCK hz >> /home/root/check_client_peripheral_devices.dat
     fi
-    sleep 60
+    TEMP=$(vcgencmd measure_temp | cut -c 6-7)
+    MSG="$MSG,temperature_status=$TEMP"
+
+    echo $MSG
+    python3 /home/root/ra_zmq_send.py $MSG
+    sleep 10
 done
