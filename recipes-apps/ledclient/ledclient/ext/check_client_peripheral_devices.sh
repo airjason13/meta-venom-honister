@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #sleep for wait vcgencmd ok
-sleep 3
+#sleep 30
 
 fps_fifo_uri="/tmp/fps_fifo"
 [ -p $fps_fifo_uri ] || mkfifo $fps_fifo_uri
@@ -11,6 +11,7 @@ FILE_URI='/home/root/check_client_peripheral_devices.dat'
 IP="$(ifconfig | grep -A 1 'br0' | tail -1 | cut -d ':' -f 2 | cut -d ' ' -f 1)"
 echo $IP
 SLEEP_TIME=10
+
 while :
 do
     IP="$(ifconfig | grep -A 1 'br0' | tail -1 | cut -d ':' -f 2 | cut -d ' ' -f 1)"
@@ -85,7 +86,7 @@ do
     MSG="$MSG,temperature_status=$TEMP"
 
     echo $MSG
-    python3 /home/root/ra_zmq_send.py $MSG
+    ra_zmq_send.py $MSG $SLEEP_TIME
     SLEEP_TIME=$?
     echo SLEEP_TIME=$SLEEP_TIME
     sleep $SLEEP_TIME

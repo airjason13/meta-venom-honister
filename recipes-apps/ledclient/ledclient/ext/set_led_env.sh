@@ -75,6 +75,7 @@ echo "ROLE:"$ROLE
 if [[ $ROLE == *$CLIENT_TAG* ]];then
     echo "Let's set client env"
     if [[ $ROLE == *$RA_TAG* ]];then
+        ra_client.py &
     	check_client_peripheral_devices.sh &
         touch /home/root/client_ra_now
     else
