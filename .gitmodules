@@ -1,0 +1,3 @@
+[submodule "recipes-apps/ledratool/ledratool/pyLedRATool"]
+	path = recipes-apps/ledratool/ledratool/pyLedRATool
+	url = https://github.com/airjason13/pyLedRATool.git
