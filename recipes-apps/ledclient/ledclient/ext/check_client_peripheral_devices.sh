@@ -1,16 +1,31 @@
 #!/bin/sh
 
 #sleep for wait vcgencmd ok
-sleep 30
+sleep 3
+
+fps_fifo_uri="/tmp/fps_fifo"
+[ -p $fps_fifo_uri ] || mkfifo $fps_fifo_uri
 
 FILE_URI='/home/root/check_client_peripheral_devices.dat'
 #echo Start to check > 
 IP="$(ifconfig | grep -A 1 'br0' | tail -1 | cut -d ':' -f 2 | cut -d ' ' -f 1)"
 echo $IP
+SLEEP_TIME=10
 while :
 do
     IP="$(ifconfig | grep -A 1 'br0' | tail -1 | cut -d ':' -f 2 | cut -d ' ' -f 1)"
     MSG="ip=$IP"
+
+    #read fps from fifo
+    read -t 1 line <> $fps_fifo_uri
+    if [ ${#line} == 0 ];then
+	echo no fps
+	MSG="$MSG,fps=NG"
+    else
+    	echo fps=$line
+	MSG="$MSG,fps=$line"
+    fi
+
     #check usb pico
     USB_LOG=$(lsusb -d 0x0000:0x0001)
     echo USB_LOG=$USB_LOG
@@ -71,5 +86,7 @@ do
 
     echo $MSG
     python3 /home/root/ra_zmq_send.py $MSG
-    sleep 10
+    SLEEP_TIME=$?
+    echo SLEEP_TIME=$SLEEP_TIME
+    sleep $SLEEP_TIME
 done

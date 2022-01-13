@@ -49,6 +49,7 @@ do_install() {
     cp -r ext/pyflask_machine_option/* ${D}/home/root/led_machine_option/
     cp -r ext/py1602_server/* ${D}/home/root/i2c_lcd_server/
     install -m 755 ext/led_role.conf ${D}/home/root/
+    install -m 755 ext/ra_zmq_send.py ${D}/home/root/
     install -m 755 ext/led_role_option.desktop ${D}${sysconfdir}/xdg/autostart/led_role_option.desktop
     install -m 755 ext/i2c_lcd.desktop ${D}${sysconfdir}/xdg/autostart/i2c_lcd.desktop
     install -m 755 ext/set_led_env.desktop ${D}${sysconfdir}/xdg/autostart/set_led_env.desktop

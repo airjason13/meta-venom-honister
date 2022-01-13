@@ -29,6 +29,7 @@
 #include <limits.h>
 #include <signal.h>
 #include <stdint.h>
+#include <fcntl.h>
 
 #include "libavutil/avstring.h"
 #include "libavutil/eval.h"
@@ -2183,8 +2184,19 @@ struct SwsContext *sws_ctx = NULL;
 /****************************************************************
 *
 *****************************************************************/
+#define FPS_FIFO    "/tmp/fps_fifo"
+
 void fps_counter(void){
 	char buf[16] = {0};
+	char fifo_buf[16] = {0};
+    int fps_fifo_fd;
+    fps_fifo_fd = open(FPS_FIFO, O_RDWR | O_NONBLOCK);
+    if(fps_fifo_fd == -1){
+    }else{
+        sprintf(fifo_buf, "%d", led_fps);
+        write(fps_fifo_fd, fifo_buf, strlen(fifo_buf));
+        close(fps_fifo_fd);
+    }    
 	//log_info("led fps = %d\n", led_fps);
 	sprintf(buf, "LED FPS=%d", led_fps);
     refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_FPS, buf, NULL);
