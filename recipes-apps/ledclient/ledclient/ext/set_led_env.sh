@@ -44,7 +44,12 @@ if [ -e $CONFIG_FILE ];then
 	    echo "no line"
         else	    
             if [[ $line =~ $SERVER_TAG ]];then
-                ROLE=Server
+                if [[ $line =~ $RA_TAG ]];then
+		    echo "Server_RA check"
+		    ROLE=Server_RA
+                else
+		    ROLE=Server
+		fi
             elif [[ $line =~ $CLIENT_TAG ]];then
 	        echo "Client check"
 	        if [[ $line =~ $RA_TAG ]];then
