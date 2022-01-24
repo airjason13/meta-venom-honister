@@ -83,7 +83,7 @@ do
         echo lcd1602 Missing, TEMP=$TEMP at $CPU_CLOCK hz >> /home/root/check_client_peripheral_devices.dat
     fi
     TEMP=$(vcgencmd measure_temp | cut -c 6-7)
-    MSG="$MSG,temperature_status=$TEMP"
+    MSG="$MSG,temp_status=$TEMP"
 
     echo $MSG
     ra_zmq_send.py $MSG $SLEEP_TIME
