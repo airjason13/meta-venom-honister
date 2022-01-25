@@ -1,2 +1,3 @@
 #!/bin/sh
-python3 /home/root/pyLedServer/main.py
+cd /home/root/pyLedServer
+python3 main.py

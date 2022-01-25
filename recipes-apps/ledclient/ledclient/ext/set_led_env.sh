@@ -100,18 +100,20 @@ elif [[ $ROLE == *$PLAYER_TAG* ]];then
     run-filemanager.sh &
     launch_led_player.sh
 elif [[ $ROLE == *$SERVER_TAG* ]];then
+    echo "Server Now"
+    ifconfig eth0 192.168.0.3
+    nmcli radio wifi on 
+    setup_hotspot.sh &
+    run-filemanager.sh &
+    launch_pyLedServer.sh & 
     if [[ $ROLE == *$RA_TAG* ]];then
+        ra_client.py &
         check_server_peripheral_devices.sh &
         launch_pyLedRATool.sh &
         touch /home/root/server_ra_now
     else
         touch /home/root/server_now
     fi	    
-    echo "Server Now"
-    nmcli radio wifi on 
-    setup_hotspot.sh &
-    run-filemanager.sh &
-    launch_pyLedServer.sh 
 elif [[ $ROLE == *$TESTER* ]];then
     touch /home/root/tester_now
     echo "Tester Now"

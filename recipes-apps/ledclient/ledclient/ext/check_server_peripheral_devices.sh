@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #sleep for wait vcgencmd ok
 #sleep 30

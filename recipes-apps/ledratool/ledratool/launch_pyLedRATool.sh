@@ -1,2 +1,4 @@
 #!/bin/sh
-python3 /home/root/pyLedRATool/main.py
+cd /home/root/pyLedRATool/
+
+python3 main.py
