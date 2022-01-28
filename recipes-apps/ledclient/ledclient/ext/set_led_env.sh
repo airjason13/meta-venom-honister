@@ -73,6 +73,9 @@ fi
 
 insmod /home/root/rtl8812au_module/88XXau.ko
 
+#modprobe v4l2loopback
+modprobe v4l2loopback video_nr=3,4,5,6
+
 #for monitor temperature
 b_measure_temp.sh &
 
