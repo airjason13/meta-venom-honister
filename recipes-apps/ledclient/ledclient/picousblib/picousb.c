@@ -280,7 +280,8 @@ int picousb_set_cmd(struct libusb_device_handle *h, char *cmd, char *recv_buf){
 	int transferred = -1;
 	int e = -1;
     int cmd_size = 64;
-    
+    if(h == NULL)
+        return -ENODEV;
     picousb_out_transfer(h, cmd, strlen(cmd));
     memset(recv_buf, 0, 64);
     picousb_in_transfer(h, recv_buf, 64);

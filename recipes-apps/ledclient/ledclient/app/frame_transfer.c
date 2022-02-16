@@ -235,18 +235,8 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
             break;
 	}
     for(i = 4; i < offset; i ++){
-        //buf[i] = (buf[i]/divisor) * (frame_brightness/100);
-        //buf[i] =(char)((int)buf[i]*frame_brightness/(frame_br_divisor*100));
         buf[i] =(char)((int)buf[i]*frame_brightness/(frame_br_divisor*255));
-        /*if(buf[i] > frame_blacklevel){
-            buf[i] = buf[i] - frame_level;
-        }else{
-            buf[i] = 0;
-        }*/
-        #if 1
         buf[i] = g_GammaLut[buf[i]];
-        //log_debug("buf[i] = %d\n", buf[i]);
-        #endif
     }
 	if(pico != NULL){
 		//log_debug("offset = %d\n", offset);
