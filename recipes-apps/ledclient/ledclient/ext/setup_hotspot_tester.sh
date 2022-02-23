@@ -1,5 +1,5 @@
 #!/bin/sh
-FILE=/etc/Networkmanager/system-connections/Tester_Hotspot.nmconnection
+FILE=/etc/NetworkManager/system-connections/Tester_Hotspot.nmconnection
 if [ -f "$FILE" ];then
 	UUID=$(grep uuid $FILE | cut -d= -f2)
 	echo UUID=$UUID

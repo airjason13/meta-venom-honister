@@ -107,8 +107,10 @@ elif [[ $ROLE == *$SERVER_TAG* ]];then
     ifconfig eth0 192.168.0.3
     nmcli radio wifi on 
     setup_hotspot.sh &
+    setup_eth0_static.sh &
     run-filemanager.sh &
-    launch_pyLedServer.sh & 
+    launch_pyLedServer.sh &
+    write_tc358743_edid.sh & 
     if [[ $ROLE == *$RA_TAG* ]];then
         ra_client.py &
         check_server_peripheral_devices.sh &
