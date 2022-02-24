@@ -2401,7 +2401,7 @@ static int video_thread(void *arg)
 				log_error("sws_ctx initial failed!\n");
 			}
             //refresh resolution in lcd content
-            sprintf(lcd_content_buf, "LED Res=%dx%d", is->viddec.avctx->width, is->viddec.avctx->height);
+            sprintf(lcd_content_buf, "%dx%d", is->viddec.avctx->width, is->viddec.avctx->height);
             refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_FPS, NULL, lcd_content_buf);
         }else{
 
@@ -2421,7 +2421,7 @@ static int video_thread(void *arg)
 					log_info("sws_ctx re-initial ok!\n");
 				}
                 //refresh resolution in lcd content
-                sprintf(lcd_content_buf, "LED Res=%dx%d", is->viddec.avctx->width, is->viddec.avctx->height);
+                //sprintf(lcd_content_buf, "LED Res=%dx%d", is->viddec.avctx->width, is->viddec.avctx->height);
                 refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_FPS, NULL, lcd_content_buf);
 			}
 #ifdef WRITE_FRAME_TO_DISK       // Save the frame to disk
