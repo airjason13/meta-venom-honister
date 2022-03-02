@@ -60,7 +60,7 @@ int set_frame_gamma_value(float fvalue){
 }
 
 
-int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, int channel_count, int frame_width, int frame_height, struct libusb_device_handle *pico){
+int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, int channel_count, int frame_width, int frame_height, struct libusb_device_handle *pico, char *input_uri){
 	int offset = 0;
 	int width = params->cabinet_width;
 	int height = params->cabinet_height;
@@ -71,6 +71,7 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
 	int y = 0,x = 0;
 	int i = 0;
 	int write_len = 0;
+    bool config_err = true;
 	if(buf == NULL){
 		log_fatal("malloc failed!\n");
 		return -ENOMEM;
@@ -78,8 +79,9 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
 	sprintf(buf, "id%d:", params->port_id);
 	offset +=4;
 
-    log_debug("frame width = %d\n", frame_width);
-    log_debug("frame height = %d\n", frame_height);
+    log_debug("input uri = %s\n", input_uri);
+    //log_debug("frame width = %d\n", frame_width);
+    //log_debug("frame height = %d\n", frame_height);
     //log_debug("frame width = %d\n", pFrame->linesize[0]/channel_count);
 	/*log_debug("port_id = %d\n", params->port_id);
 	log_debug("width = %d\n", width);
@@ -103,6 +105,7 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
                 log_debug("case 0 params config error!");
                 break; 
             }
+            config_err = false;
 			for(y = 0; y < height; y++){
 	            if(y % 2 == 0){ //first line
 					memcpy(buf + offset, 
@@ -132,6 +135,7 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
                 log_debug("case 1 params config error!");
                 break; 
             }
+            config_err = false;
 			for(y = 0; y < height; y++){
                 if(y % 2 == 0){
 					memcpy(buf + offset, 
@@ -163,6 +167,7 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
                 break;
             }
             
+            config_err = false;
 			for(y = 0; y < height; y++){
 	            if(y % 2 == 1){ 
 					memcpy(buf + offset, 
@@ -188,12 +193,13 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
             if(start_y + 1 > frame_height){
                 log_debug("case 2 params config error!");
                 break;
-            
             }
             if((start_x - width + 1) < 0){
                 log_debug("case 2 params config error!");
                 break;
             }
+            config_err = false;
+            
 			for(y = 0; y < height; y++){
 				if(y % 2 == 0){ // first line
 					for(i = 0; i < width; i++){
@@ -223,6 +229,7 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
                 log_debug("case 2 params config error!");
                 break;
             }
+            config_err = false;
             for(x = 0;x < width; x++){
                 if(x % 2 == 0){
                     for(y = 0; y < height; y++){
@@ -254,6 +261,7 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
                 log_debug("case 1 params config error!");
                 break; 
             }
+            config_err = false;
             for(x = 0; x < width; x++){
                 if(x % 2 == 1){
                     for(y = height; y > 0; y--){
@@ -286,6 +294,7 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
                 log_debug("case 2 params config error!");
                 break;
             }
+            config_err = false;
             for(x = width;x > 0;x--){
                 if(x % 2 == 0){
                     for(y = 0; y < height; y++){
@@ -318,6 +327,7 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
                 log_debug("case 0 params config error!");
                 break; 
             }
+            config_err = false;
             for(x = 0; x < width; x++){
                 if(x % 2 == 0){
                     for(y = 0; y < height; y++){
@@ -337,6 +347,10 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
             }
             break;
 	}
+    if(config_err == true){
+        free(buf);
+        return 0;
+    }
     for(i = 4; i < offset; i ++){
         buf[i] =(char)((int)buf[i]*frame_brightness/(frame_br_divisor*255));
         buf[i] = g_GammaLut[buf[i]];
