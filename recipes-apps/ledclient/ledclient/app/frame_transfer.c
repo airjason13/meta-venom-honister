@@ -60,7 +60,7 @@ int set_frame_gamma_value(float fvalue){
 }
 
 
-int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, int channel_count, struct libusb_device_handle *pico){
+int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, int channel_count, int frame_width, int frame_height, struct libusb_device_handle *pico){
 	int offset = 0;
 	int width = params->cabinet_width;
 	int height = params->cabinet_height;
@@ -77,6 +77,10 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
 	}
 	sprintf(buf, "id%d:", params->port_id);
 	offset +=4;
+
+    log_debug("frame width = %d\n", frame_width);
+    log_debug("frame height = %d\n", frame_height);
+    //log_debug("frame width = %d\n", pFrame->linesize[0]/channel_count);
 	/*log_debug("port_id = %d\n", params->port_id);
 	log_debug("width = %d\n", width);
 	log_debug("height = %d\n", height);
@@ -87,6 +91,18 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
 	log_debug("pico = 0x%x\n", pico);*/
 	switch(params->layout_type){
 		case 0:
+            if((start_x < 0) || (start_y < 0)){
+                log_debug("case 0 params config error!");
+                break;
+            }
+            if((start_y + height + 1) > frame_height){
+                log_debug("case 0 params config error!");
+                break;
+            }
+            if((start_x + width + 1) > frame_width){
+                log_debug("case 0 params config error!");
+                break; 
+            }
 			for(y = 0; y < height; y++){
 	            if(y % 2 == 0){ //first line
 					memcpy(buf + offset, 
@@ -104,6 +120,18 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
 			}
 			break;
 		case 1:
+            if((start_x < 0) || ((start_y - height + 1) < 0)){
+                log_debug("case 1 params config error!");
+                break;
+            }
+            if((start_y + 1 ) > frame_height){
+                log_debug("case 1 params config error!");
+                break;
+            }
+            if((start_x + width + 1) > frame_width){
+                log_debug("case 1 params config error!");
+                break; 
+            }
 			for(y = 0; y < height; y++){
                 if(y % 2 == 0){
 					memcpy(buf + offset, 
@@ -122,6 +150,19 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
             }    
 			break;
 		case 2: //confirm@1115
+            if((start_x + 1 > frame_width)||(start_y < 0)){
+                log_debug("case 2 params config error!");
+                break;
+            }
+            if((start_x - width + 1) < 0){
+                log_debug("case 2 params config error!");
+                break;
+            }
+            if((start_y + height + 1) > frame_height){
+                log_debug("case 2 params config error!");
+                break;
+            }
+            
 			for(y = 0; y < height; y++){
 	            if(y % 2 == 1){ 
 					memcpy(buf + offset, 
@@ -140,6 +181,19 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
             
 			break;
 		case 3:
+            if((start_x + 1 > frame_width)||((start_y - frame_height + 1) < 0)){
+                log_debug("case 2 params config error!");
+                break;
+            }
+            if(start_y + 1 > frame_height){
+                log_debug("case 2 params config error!");
+                break;
+            
+            }
+            if((start_x - width + 1) < 0){
+                log_debug("case 2 params config error!");
+                break;
+            }
 			for(y = 0; y < height; y++){
 				if(y % 2 == 0){ // first line
 					for(i = 0; i < width; i++){
@@ -156,7 +210,19 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
 				}
 			}
 			break;
-        case 4:
+        case 4: 
+            if((start_x + 1 > frame_width)||(start_y < 0)){
+                log_debug("case 2 params config error!");
+                break;
+            }
+            if((start_x - width + 1) < 0){
+                log_debug("case 2 params config error!");
+                break;
+            }
+            if((start_y + height + 1) > frame_height){
+                log_debug("case 2 params config error!");
+                break;
+            }
             for(x = 0;x < width; x++){
                 if(x % 2 == 0){
                     for(y = 0; y < height; y++){
@@ -176,6 +242,18 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
             }
             break;
         case 5: //confirm @1115 
+            if((start_x < 0) || ((start_y - height + 1) < 0)){
+                log_debug("case 1 params config error!");
+                break;
+            }
+            if((start_y + 1 ) > frame_height){
+                log_debug("case 1 params config error!");
+                break;
+            }
+            if((start_x + width - 1 ) > frame_width){
+                log_debug("case 1 params config error!");
+                break; 
+            }
             for(x = 0; x < width; x++){
                 if(x % 2 == 1){
                     for(y = height; y > 0; y--){
@@ -195,6 +273,19 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
             }
             break;
         case 6: //confirm @1115
+            if((start_x + 1 > frame_width)||((start_y - frame_height + 1) < 0)){
+                log_debug("case 2 params config error!");
+                break;
+            }
+            if((start_y + 1) > frame_height){
+                log_debug("case 2 params config error!");
+                break;
+            
+            }
+            if((start_x - width + 1) < 0){
+                log_debug("case 2 params config error!");
+                break;
+            }
             for(x = width;x > 0;x--){
                 if(x % 2 == 0){
                     for(y = 0; y < height; y++){
@@ -215,6 +306,18 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
             
             break;
         case 7: //confirm @1115
+            if((start_x < 0) || (start_y < 0)){
+                log_debug("case 0 params config error!");
+                break;
+            }
+            if((start_y + height + 1 ) > frame_height){
+                log_debug("case 0 params config error!");
+                break;
+            }
+            if((start_x + width + 1 ) > frame_width){
+                log_debug("case 0 params config error!");
+                break; 
+            }
             for(x = 0; x < width; x++){
                 if(x % 2 == 0){
                     for(y = 0; y < height; y++){

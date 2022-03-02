@@ -2433,7 +2433,7 @@ static int video_thread(void *arg)
 #endif			
 			//transfer RGB frame to pico
 			for(i = 0; i < 8; i++){
-				iret = transfer_framergb_to_pico(frameRGB, &(led_params.cab_params[i]), 3, led_params.pico_handle);
+				iret = transfer_framergb_to_pico(frameRGB, &(led_params.cab_params[i]), 3, is->viddec.avctx->width, is->viddec.avctx->height, led_params.pico_handle);
 				//iret = transfer_framergb_to_pico(frameRGB, &led_params, 3);
 				if(iret < 0){
 					log_debug("transfer_framergb_to_pico error : %d\n", iret);	
