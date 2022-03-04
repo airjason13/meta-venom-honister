@@ -4,6 +4,8 @@ import platform
 import os
 import signal
 import threading
+
+import psutil
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QDesktopWidget, QStyleFactory, QWidget, QHBoxLayout,
                              QVBoxLayout, QFormLayout,
@@ -46,6 +48,7 @@ from qtui.c_page_medialist import *
 from qtui.c_page_hdmi_in import *
 from material import *
 import hashlib
+from g_defs.c_lcd1602 import *
 from g_defs.c_filewatcher import *
 
 log = utils.log_utils.logging_init(__file__)
@@ -155,6 +158,7 @@ class MainUi(QMainWindow):
 
         self.media_engine.signal_playlist_changed_ret.connect(self.playlist_changed)
         self.media_engine.signal_external_medialist_changed_ret.connect(self.external_medialist_changed)
+        self.media_engine.signal_play_status_changed.connect(self.play_status_changed)
 
         paths = []
         paths.append(internal_media_folder)
@@ -176,6 +180,16 @@ class MainUi(QMainWindow):
 
 
         self.signal_right_page_changed.connect(self.right_page_change_index)
+
+        '''self.lcd1602 = LCD1602("LCD_TAG_VERSION_INFO", "TEST", version, 5000)
+        self.lcd1602.add_data("LCD_TAG_VERSION_INFO", "LED SERVER", version)
+        self.lcd1602.add_data("LCD_TAG_TEST_INFO", "TEST0", "TEST1")
+        self.lcd1602.del_data("LCD_TAG_TEST_INFO")'''
+        self.lcd1602 = LCD1602("LCD_TAG_VERSION_INFO", "LED SERVER", version, 5000)
+        self.lcd1602.start()
+
+
+
 
     # enter engineer mode
     def ctrl_e_trigger(self):
@@ -417,6 +431,29 @@ class MainUi(QMainWindow):
         size = self.geometry()
         self.move((screen.width() - size.width()) / 2, (screen.height() - size.height()) / 2)
 
+    def play_status_changed(self, changed, status):
+        log.debug("changed = %d", changed)
+        log.debug("status = %d", status)
+        d0_str = ""
+        d1_str = ""
+        input_source = ""
+        if status == play_status.stop:
+            d0_str = "STANDBY"
+        elif status == play_status.pausing:
+            d0_str = "PAUSE"
+        elif status == play_status.playing:
+            d0_str = "PLAYING"
+        if self.media_engine.media_processor.ffmpy_process is not None:
+            #log.debug("process name : %d", self.media_engine.media_processor.ffmpy_process.pid)
+            #log.debug("process name : %s", self.media_engine.media_processor.ffmpy_process.args)
+            if "v4l2" in self.media_engine.media_processor.ffmpy_process.args:
+                d1_str = "HDMI-In Source"
+            else:
+                d1_str = "FILE Source"
+
+        log.debug("d0_str = %s", d0_str)
+        log.debug("d1_str = %s", d1_str)
+        self.lcd1602.add_data("LCD_TAG_PLAY_STATUS_INFO", d0_str, d1_str)
 
     def right_page_change_index(self, pre_idx, going_idx):
         log.debug("")

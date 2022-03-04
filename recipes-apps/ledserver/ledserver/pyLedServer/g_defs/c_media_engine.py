@@ -18,6 +18,8 @@ class media_engine(QObject):
     signal_playlist_changed_ret = pyqtSignal(bool, str, str, int, str)
     ''' changed_or_not '''
     signal_external_medialist_changed_ret = pyqtSignal(bool)
+    ''' play status changed '''
+    signal_play_status_changed = pyqtSignal(bool, int)
 
     '''Action TAG'''
     ACTION_TAG_ADD_MEDIA_FILE = "add_media_file"
@@ -51,9 +53,11 @@ class media_engine(QObject):
 
         '''media_process'''
         self.media_processor = media_processor()
-
+        self.media_processor.signal_media_play_status_changed.connect(self.play_status_changed)
         '''hdmi-in cast'''
 
+    # hdmi_in_src : string
+    # cast_dst : array of string
     def start_hdmi_in_v4l2(self, hdmi_in_src, cast_dst):
         log.debug("")
         if os.path.exists(hdmi_in_src) is False:
@@ -91,6 +95,9 @@ class media_engine(QObject):
 
     def resume_play(self):
         self.media_processor.resume_playing()
+
+    def play_status_changed(self, status_changed, status):
+        self.signal_play_status_changed.emit(status_changed, status)
 
     def init_usb_monitor(self):
         context = Context()
@@ -234,13 +241,15 @@ class playlist(QObject):
 
 class media_processor(QObject):
     signal_media_play_status_changed = pyqtSignal(bool, int)
+    signal_play_hdmi_in_start_ret = pyqtSignal()
+    signal_play_hdmi_in_finish_ret = pyqtSignal()
 
     def __init__(self):
         super(media_processor, self).__init__()
         self.output_width = default_led_wall_width
         self.output_height = default_led_wall_height
         self.play_status = play_status.stop
-        self.pre_play_status = play_status.stop
+        self.pre_play_status = play_status.initial
         self.play_type = play_type.play_none
         self.repeat_option = repeat_option.repeat_all
         self.play_single_file_thread = None
@@ -257,8 +266,11 @@ class media_processor(QObject):
         self.check_play_status_timer.start(500)
 
         self.play_single_file_worker = None
+        self.play_single_file_thread = None
         self.play_playlist_worker = None
+        self.play_playlist_thread = None
         self.play_hdmi_in_worker = None
+        self.play_hdmi_in_thread = None
 
         ''' this is only cast /dev/video0 to others for preview'''
         self.hdmi_in_cast_process = None
@@ -281,10 +293,12 @@ class media_processor(QObject):
             try:
                 if self.ffmpy_process is not None:
                     os.kill(self.ffmpy_process.pid, signal.SIGTERM)
-                if self.play_single_file_worker != None:
+                if self.play_single_file_worker is not None:
                     self.play_single_file_worker.stop()
-                if self.play_playlist_worker != None:
+                if self.play_playlist_worker is not None:
                     self.play_playlist_worker.stop()
+                if self.play_hdmi_in_worker is not None:
+                    self.play_hdmi_in_worker.stop()
             except Exception as e:
                 log.debug(e)
 
@@ -356,14 +370,26 @@ class media_processor(QObject):
                 self.play_hdmi_in_worker.quit()
                 self.play_hdmi_in_worker.wait()
 
+        # if self.play_hdmi_in_thread is not None:
+        #    self.play_hdmi_in_thread.finished()
+        #    self.play_hdmi_in_thread.deleteLater()
+
         self.play_hdmi_in_thread = QThread()
         self.play_hdmi_in_worker = self.play_hdmi_in_work(self, video_src, video_dst)
+        self.play_hdmi_in_worker.signal_play_hdmi_in_start.connect(self.play_hdmi_in_start_ret)
+        self.play_hdmi_in_worker.signal_play_hdmi_in_finish.connect(self.play_hdmi_in_finish_ret)
         self.play_hdmi_in_worker.moveToThread(self.play_hdmi_in_thread)
         self.play_hdmi_in_thread.started.connect(self.play_hdmi_in_worker.run)
-        self.play_hdmi_in_worker.finished.connect(self.play_hdmi_in_thread.quit)
-        self.play_hdmi_in_worker.finished.connect(self.play_hdmi_in_worker.deleteLater)
+        self.play_hdmi_in_worker.signal_play_hdmi_in_finish.connect(self.play_hdmi_in_thread.quit)
+        self.play_hdmi_in_worker.signal_play_hdmi_in_finish.connect(self.play_hdmi_in_worker.deleteLater)
         self.play_hdmi_in_thread.finished.connect(self.play_hdmi_in_thread.deleteLater)
         self.play_hdmi_in_thread.start()
+
+    def play_hdmi_in_start_ret(self):
+        self.signal_play_hdmi_in_start_ret.emit()
+
+    def play_hdmi_in_finish_ret(self):
+        self.signal_play_hdmi_in_finish_ret.emit()
 
     def hdmi_in_cast_h264(self, hdmi_in_src, cast_dst):
         self.hdmi_in_cast_process = \
@@ -373,8 +399,10 @@ class media_processor(QObject):
                               self.video_params.get_translated_redgain(),
                               self.video_params.get_translated_greengain(),
                               self.video_params.get_translated_bluegain(),
-                              self.output_width,
-                              self.output_height )
+                              160,
+                              120 )
+                              #self.output_width,
+                              #self.output_height )
         log.debug("self.hdmi_in_cast_process.pid = %d", self.hdmi_in_cast_process.pid)
         return self.hdmi_in_cast_process
 
@@ -389,7 +417,7 @@ class media_processor(QObject):
                               self.video_params.get_translated_bluegain(),
                               self.output_width,
                               self.output_height )
-        log.debug("self.hdmi_in_cast_process.pid = %d", self.hdmi_in_cast_process.pid)
+        #log.debug("self.hdmi_in_cast_process.pid = %d", self.hdmi_in_cast_process.pid)
         return self.hdmi_in_cast_process
 
     '''檢查影片是否推播完畢'''
@@ -412,7 +440,12 @@ class media_processor(QObject):
             log.debug(e)
 
     def check_play_status(self):
+
         if self.play_status != self.pre_play_status:
+            log.debug("self.play_status = %d", self.play_status )
+            log.debug("self.pre_play_status = %d", self.pre_play_status)
+            self.signal_media_play_status_changed.emit(True, self.play_status)
+            self.pre_play_status = self.play_status
             pass
 
     def set_brightness_level(self, level):
@@ -439,6 +472,9 @@ class media_processor(QObject):
         self.video_params.set_video_blue_bias(level)
         if self.ffmpy_process is not None:
             ffmpy_set_video_param_level('blue_gain', self.video_params.get_translated_bluegain())
+
+    def set_image_period_value(self, value):
+        self.video_params.set_image_peroid(value)
 
     class play_playlist_work(QObject):
         finished = pyqtSignal()
@@ -492,6 +528,7 @@ class media_processor(QObject):
                                       self.media_processor.video_params.get_translated_redgain(),
                                       self.media_processor.video_params.get_translated_greengain(),
                                       self.media_processor.video_params.get_translated_bluegain(),
+                                      self.media_processor.video_params.image_period,
                                       self.media_processor.output_width,
                                       self.media_processor.output_height)
                 if self.media_processor.ffmpy_process.pid > 0:
@@ -533,6 +570,7 @@ class media_processor(QObject):
         finished = pyqtSignal()
         progress = pyqtSignal(int)
 
+
         def __init__(self, QObject, file_uri, n):
             super().__init__()
             self.media_processor = QObject
@@ -565,6 +603,7 @@ class media_processor(QObject):
                        self.media_processor.video_params.get_translated_redgain(),
                        self.media_processor.video_params.get_translated_greengain(),
                        self.media_processor.video_params.get_translated_bluegain(),
+                       self.media_processor.video_params.image_period,
                        self.media_processor.output_width,
                        self.media_processor.output_height)
                 if self.media_processor.ffmpy_process.pid > 0:
@@ -593,7 +632,8 @@ class media_processor(QObject):
             return self.worker_status
 
     class play_hdmi_in_work(QObject):
-        finished = pyqtSignal()
+        signal_play_hdmi_in_finish = pyqtSignal()
+        signal_play_hdmi_in_start = pyqtSignal()
         def __init__(self, QObject, video_src, cast_dst):
             super().__init__()
             self.media_processor = QObject
@@ -630,20 +670,28 @@ class media_processor(QObject):
                        self.media_processor.output_width,
                        self.media_processor.output_height)
                 if self.media_processor.ffmpy_process.pid > 0:
+                    self.signal_play_hdmi_in_start.emit()
                     self.media_processor.play_status = play_status.playing
                     self.media_processor.playing_file_name = self.video_src
                     while True:
                         if self.media_processor.play_status == play_status.stop:
                             break
                         if self.force_stop is True:
+                            os.kill(self.media_processor.ffmpy_process.pid, signal.SIGTERM)
                             break
                         time.sleep(0.5)
 
-                if self.media_processor.repeat_option != repeat_option.repeat_one:
-                    break
+
                 if self.force_stop is True:
+
                     break
 
-            self.finished.emit()
+            self.signal_play_hdmi_in_finish.emit()
             self.media_processor.play_type = play_type.play_none
             self.worker_status = 0
+
+        def stop(self):
+            self.force_stop = True
+
+        def get_task_status(self):
+            return self.worker_status

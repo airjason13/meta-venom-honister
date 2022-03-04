@@ -79,7 +79,7 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
 	sprintf(buf, "id%d:", params->port_id);
 	offset +=4;
 
-    log_debug("input uri = %s\n", input_uri);
+    //log_debug("input uri = %s\n", input_uri);
     //log_debug("frame width = %d\n", frame_width);
     //log_debug("frame height = %d\n", frame_height);
     //log_debug("frame width = %d\n", pFrame->linesize[0]/channel_count);
@@ -97,7 +97,7 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
                 log_debug("case 0 params config error!");
                 break;
             }
-            if((start_y + height + 1) > frame_height){
+            if((start_y - height + 1) > frame_height){
                 log_debug("case 0 params config error!");
                 break;
             }
@@ -123,6 +123,7 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
 			}
 			break;
 		case 1:
+            //0304 test limit ok
             if((start_x < 0) || ((start_y - height + 1) < 0)){
                 log_debug("case 1 params config error!");
                 break;
@@ -153,7 +154,8 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
                 }
             }    
 			break;
-		case 2: //confirm@1115
+		case 2: 
+            //0304 test limit ok
             if((start_x + 1 > frame_width)||(start_y < 0)){
                 log_debug("case 2 params config error!");
                 break;
@@ -162,7 +164,7 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
                 log_debug("case 2 params config error!");
                 break;
             }
-            if((start_y + height + 1) > frame_height){
+            if((start_y + height - 1) > frame_height){
                 log_debug("case 2 params config error!");
                 break;
             }
@@ -225,7 +227,7 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
                 log_debug("case 2 params config error!");
                 break;
             }
-            if((start_y + height + 1) > frame_height){
+            if((start_y + height - 1) > frame_height){
                 log_debug("case 2 params config error!");
                 break;
             }
@@ -257,7 +259,7 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
                 log_debug("case 1 params config error!");
                 break;
             }
-            if((start_x + width - 1 ) > frame_width){
+            if((start_x + width + 1 ) > frame_width){
                 log_debug("case 1 params config error!");
                 break; 
             }
@@ -347,10 +349,10 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
             }
             break;
 	}
-    if(config_err == true){
+    /*if(config_err == true){
         free(buf);
         return 0;
-    }
+    }*/
     for(i = 4; i < offset; i ++){
         buf[i] =(char)((int)buf[i]*frame_brightness/(frame_br_divisor*255));
         buf[i] = g_GammaLut[buf[i]];

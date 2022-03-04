@@ -1,7 +1,7 @@
 import enum
 import platform
 """Software version"""
-version = "LS220109A01"
+version = "LS220304A01"
 
 """Network relative"""
 multicast_group = "239.11.11.11"
@@ -12,6 +12,7 @@ alive_report_port = 11333
 udp_sink = "udp://239.11.11.11:15000"
 local_sink = "udp://127.0.0.1:15001"
 cv2_preview_h264_sink = "udp://127.0.0.1:10011"
+cv2_preview_v4l2_sink = "/dev/video5"
 hdmi_in_h264_src = "udp://127.0.0.1:10012"
 cmd_timeout = 2
 g_client_udp_cmd_port = 11335
@@ -34,6 +35,7 @@ class play_type(enum.IntEnum):
     play_hdmi_in = 3
 
 class play_status(enum.IntEnum):
+    initial = -1
     stop = 0
     playing = 1
     pausing = 2
@@ -71,3 +73,13 @@ page_client_connect_idx = 0
 page_media_content_idx = 1
 page_hdmi_in_content_idx = 2
 page_led_setting_idx = 3
+
+"""ffmpy initial value"""
+still_image_loop_cnt = 1
+still_image_video_period = 600
+preview_start_time = 3
+preview_period = 3
+
+
+"""lcd1602 server address"""
+lcd1602_server_address = '/tmp/uds_socket_i2clcd7'
