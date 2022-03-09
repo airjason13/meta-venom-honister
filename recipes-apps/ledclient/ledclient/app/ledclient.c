@@ -4111,6 +4111,9 @@ int main(int argc, char **argv)
         refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_VERSION, NULL, led_params.pico_version);
     }
 
+    /*initial gamma lut*/
+    set_frame_gamma_value(2.2);
+
     /*initial cabinet params*/
 	for(int i = 0; i < LED_PANELS; i ++){
 		int ret = cabinet_params_init(i, &led_params.cab_params[i]);
