@@ -4111,6 +4111,10 @@ int main(int argc, char **argv)
         refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_VERSION, NULL, led_params.pico_version);
     }
 
+
+    set_frame_brightness_value(100);
+    set_frame_br_divisor_value(1);
+    
     /*initial gamma lut*/
     set_frame_gamma_value(2.2);
 

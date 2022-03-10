@@ -1,8 +1,8 @@
 #include "frame_transfer.h"
 
 extern struct ledparams led_params;
-int frame_br_divisor = 16;//32
-int frame_brightness = 50;
+int frame_br_divisor = 1;//32
+int frame_brightness = 100;//0~100
 int frame_contrast = 0;
 float f_gamma = 1.0;
 unsigned char g_GammaLut[256];
@@ -22,7 +22,7 @@ int get_frame_brightness_value(void){
 }
 
 int set_frame_br_divisor_value(int value){
-    if((value > 255) || (value < 0)){
+    if((value > 100) || (value < 0)){
         return -EINVAL;
     }
     frame_br_divisor = value;
@@ -92,7 +92,7 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
 	log_debug("led_params.pico_handle = 0x%x\n", led_params.pico_handle);
 	log_debug("pico = 0x%x\n", pico);*/
 	switch(params->layout_type){
-		case 0:
+		case 0://0310 test limit ok
             if((start_x < 0) || (start_y < 0)){
                 log_debug("case 0 params config error!");
                 break;
@@ -349,12 +349,15 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
             }
             break;
 	}
-    /*if(config_err == true){
+    if(config_err == true){
         free(buf);
+        log_debug("params config error!\n");
         return 0;
-    }*/
+    }
     for(i = 4; i < offset; i ++){
-        buf[i] =(char)((int)buf[i]*frame_brightness/(frame_br_divisor*255));
+        // frame_brightness : 0~100
+        // frame_br_divisor : 0~100
+        buf[i] =(char)((int)buf[i]*frame_brightness/(frame_br_divisor*100));
         buf[i] = g_GammaLut[buf[i]];
     }
 	if(pico != NULL){
