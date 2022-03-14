@@ -376,9 +376,19 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
             break;
 	}
     if(config_err == true){
+        // send zero while config error
+        for(i = 4; i < offset; i ++){
+            buf[i] = 0;
+        }
+	    if(pico != NULL){
+            write_len = picousb_out_transfer(pico, buf, buf_size);
+        }else{
+            log_error("no pico");
+            write_len = -ENODEV;
+        }
         free(buf);
         log_debug("params config error!\n");
-        return 0;
+        return write_len;
     }
     for(i = 4; i < offset; i ++){
         // frame_brightness : 0~100
@@ -387,9 +397,7 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
         buf[i] = g_GammaLut[buf[i]];
     }
 	if(pico != NULL){
-		//log_debug("offset = %d\n", offset);
         write_len = picousb_out_transfer(pico, buf, buf_size);
-        //log_debug("write_len = %d\n", write_len);
     }else{
         log_error("no pico");
         write_len = -ENODEV;
