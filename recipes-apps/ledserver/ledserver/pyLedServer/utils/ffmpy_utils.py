@@ -32,13 +32,13 @@ def neo_ffmpy_execute(video_path, brightness, contrast, red_bias, green_bias, bl
 
     # add TEXT
     if "blank" in video_path:
-        # drawtext_str = "drawtext=fontfile=" + internal_media_folder + \
-        #              "/fonts/msjhbd.ttc:text='1234567890':x=10*w/80-40*t:y=10:fontsize=36*h/96:fontcolor=white"
         drawtext_str = "drawtext=fontfile=" + internal_media_folder + \
-                  "/fonts/msjhbd.ttc:text='1234567890':x=10*w/80-40*t:y=10:fontsize=36*h/96:fontcolor=white"
-        drawtext_str_1 = "drawtext=fontfile=" + internal_media_folder + \
-                       "/fonts/msjhbd.ttc:text='1234567890':x=10*w/80-40*t:y=50:fontsize=36*h/96:fontcolor=white"
-        filter_params = "zmq," + eq_str + "," + color_level_str + "," + drawtext_str + "," + drawtext_str_1 + "," + scale_params
+                      "/fonts/msjhbd.ttc:text='歡迎明基蒞臨指導':x=10*w/80-20*t:y=10:fontsize=16*h/80:fontcolor=white"
+        #drawtext_str = "drawtext=fontfile=" + internal_media_folder + \
+        #          "/fonts/msjhbd.ttc:text='1234567890':x=10*w/80-40*t:y=10:fontsize=36*h/96:fontcolor=white"
+        #drawtext_str_1 = "drawtext=fontfile=" + internal_media_folder + \
+        #               "/fonts/msjhbd.ttc:text='1234567890':x=10*w/80-40*t:y=50:fontsize=36*h/96:fontcolor=white"
+        filter_params = "zmq," + eq_str + "," + color_level_str + "," + drawtext_str + "," + drawtext_str + "," + scale_params
     else:
         drawtext_str = "drawtext=fontfile=" + internal_media_folder + \
                        "/fonts/msjhbd.ttc:text='':x=10:y=20:fontsize=24*h/96:fontcolor=black"
@@ -56,6 +56,7 @@ def neo_ffmpy_execute(video_path, brightness, contrast, red_bias, green_bias, bl
                 global_options=global_opts,
                 inputs={
                     video_path: ["-re"]
+                    # video_path: ["-r 30"]
                 },
                 outputs={
                     udp_sink: ["-vcodec", video_encoder, '-filter_complex', filter_params, "-b:v", "2000k", "-f",
@@ -448,14 +449,14 @@ def gen_webp_from_video(file_folder, video):
     # use hashlib md5 to generate preview file name
     video_name = video.split(".")[0]
     video_extension = video.split(".")[1]
-    log.debug("video_extension = %s", video_extension)
+    # log.debug("video_extension = %s", video_extension)
     preview_file_name = hashlib.md5(video_name.encode('utf-8')).hexdigest()
 
     # thumbnail_path = internal_media_folder + ThumbnailFileFolder + video.replace(".mp4", ".webp")
     thumbnail_path = internal_media_folder + ThumbnailFileFolder + preview_file_name + ".webp"
     video_path = file_folder + "/" + video
-    log.debug("video_path = %s", video_path)
-    log.debug("thumbnail_path = %s", thumbnail_path)
+    # log.debug("video_path = %s", video_path)
+    # log.debug("thumbnail_path = %s", thumbnail_path)
     thunbnail_folder_path = internal_media_folder + ThumbnailFileFolder
     if not os.path.exists(thunbnail_folder_path):
         os.makedirs(thunbnail_folder_path)
@@ -463,7 +464,7 @@ def gen_webp_from_video(file_folder, video):
         if os.path.isfile(thumbnail_path) is False:
             global_opts = '-hide_banner -loglevel error'
             if video_extension in ["jpeg", "jpg", "png"]:
-                log.debug("still image")
+                # log.debug("still image")
                 ff = ffmpy.FFmpeg(
                     global_options=global_opts,
                     inputs={video_path: ['-loop', str(still_image_loop_cnt), '-t', str(preview_period)]},
@@ -475,7 +476,7 @@ def gen_webp_from_video(file_folder, video):
                     inputs={video_path: ['-ss', str(preview_start_time), '-t', str(preview_period)]},
                     outputs={thumbnail_path: ['-vf', 'scale=640:480']}
                 )
-            log.debug("%s", ff.cmd)
+            # log.debug("%s", ff.cmd)
             ff.run()
     except Exception as e:
         log.debug(e)

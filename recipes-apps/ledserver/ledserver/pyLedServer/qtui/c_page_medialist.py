@@ -32,7 +32,7 @@ class media_page(QObject):
         font.setPointSize(24)
         self.file_tree.setFont(font)
         # Add Internal Media Folder in tree root
-
+        self.right_clicked_select_file_uri = None
         self.NewPlaylistDialog = None
 
         self.internal_media_root = QTreeWidgetItem(self.file_tree)
@@ -41,7 +41,7 @@ class media_page(QObject):
         for f in self.mainwindow.media_engine.internal_medialist.filelist:
             internal_file_item = QTreeWidgetItem()
             internal_file_item.setText(0, os.path.basename(f))
-            #utils.ffmpy_utils.gen_webp_from_video(internal_media_folder, os.path.basename(f))  # need to remove later
+            # utils.ffmpy_utils.gen_webp_from_video(internal_media_folder, os.path.basename(f))  # need to remove later
             utils.ffmpy_utils.gen_webp_from_video_threading(internal_media_folder, os.path.basename(f))
             self.internal_media_root.addChild(internal_file_item)
 
@@ -58,7 +58,7 @@ class media_page(QObject):
             for f in external_media_list.filelist:
                 external_file_item = QTreeWidgetItem()
                 external_file_item.setText(0, os.path.basename(f))
-                #utils.ffmpy_utils.gen_webp_from_video(external_media_list.folder_uri,
+                # utils.ffmpy_utils.gen_webp_from_video(external_media_list.folder_uri,
                 #                                      os.path.basename(f))  # need to remove later
                 utils.ffmpy_utils.gen_webp_from_video_threading(external_media_list.folder_uri, os.path.basename(f))
                 self.external_media_root.child(child_count).addChild(external_file_item)
@@ -73,7 +73,7 @@ class media_page(QObject):
             playlist_root = QTreeWidgetItem(self.qtw_media_play_list)
             playlist_root.setText(0, playlist.name)
             for file_name in playlist.fileslist:
-                log.debug("playlist.fileslist :%s", file_name)
+                #log.debug("playlist.fileslist :%s", file_name)
                 file_name_item = QTreeWidgetItem(playlist_root)
                 file_name_item.setText(0, os.path.basename(file_name))
                 playlist_root.addChild(file_name_item)
@@ -98,7 +98,7 @@ class media_page(QObject):
         file_tree_layout.addWidget(self.play_option_widget)
         file_tree_layout.addWidget(self.video_params_widget)
         self.file_tree_widget.setMouseTracking(True)
-        self.file_tree.mouseMove.connect(self.mainwindow.media_page_mouseMove)
+        self.file_tree.mouseMove.connect(self.mainwindow.media_page_mousemove)
         self.mainwindow.right_layout.addWidget(self.file_tree_widget)
 
         self.signal_refresh_internal_medialist.connect(self.mainwindow.internaldef_medialist_changed)
@@ -261,7 +261,7 @@ class media_page(QObject):
         self.video_params_crop_x_label.setFixedWidth(100)
 
         self.video_params_crop_x_edit = QLineEdit(self.mainwindow.right_frame)
-        self.video_params_crop_x_edit.setText("0")
+        self.video_params_crop_x_edit.setText(str(self.media_engine.media_processor.video_params.crop_start_x))
         self.video_params_crop_x_edit.setFixedWidth(100)
 
         self.video_params_crop_y_label = QLabel(self.mainwindow.right_frame)
@@ -269,7 +269,7 @@ class media_page(QObject):
         self.video_params_crop_y_label.setFixedWidth(100)
 
         self.video_params_crop_y_edit = QLineEdit(self.mainwindow.right_frame)
-        self.video_params_crop_y_edit.setText("0")
+        self.video_params_crop_y_edit.setText(str(self.media_engine.media_processor.video_params.crop_start_y))
         self.video_params_crop_y_edit.setFixedWidth(100)
 
         self.video_params_crop_w_label = QLabel(self.mainwindow.right_frame)
@@ -277,7 +277,7 @@ class media_page(QObject):
         self.video_params_crop_w_label.setFixedWidth(100)
 
         self.video_params_crop_w_edit = QLineEdit(self.mainwindow.right_frame)
-        self.video_params_crop_w_edit.setText("0")
+        self.video_params_crop_w_edit.setText(str(self.media_engine.media_processor.video_params.crop_w))
         self.video_params_crop_w_edit.setFixedWidth(100)
 
         self.video_params_crop_h_label = QLabel(self.mainwindow.right_frame)
@@ -285,7 +285,7 @@ class media_page(QObject):
         self.video_params_crop_h_label.setFixedWidth(100)
 
         self.video_params_crop_h_edit = QLineEdit(self.mainwindow.right_frame)
-        self.video_params_crop_h_edit.setText("0")
+        self.video_params_crop_h_edit.setText(str(self.media_engine.media_processor.video_params.crop_h))
         self.video_params_crop_h_edit.setFixedWidth(100)
 
         self.video_params_crop_enable = QPushButton(self.mainwindow.right_frame)
@@ -384,7 +384,7 @@ class media_page(QObject):
         if widgetitem.childCount() != 0:
             ''' parent 為 Playlist,表示自己為playlist之一'''
             if widgetitem.parent().text(0) == "Playlist":
-                self.show_playlist_popMenu(self.file_tree.mapToGlobal(position))
+                self.show_playlist_pop_menu(self.file_tree.mapToGlobal(position))
                 return
             log.debug("Just a label, not file list")
             return
@@ -395,7 +395,7 @@ class media_page(QObject):
                 log.debug("%s", widgetitem.text(0))
                 return
             elif "Playlist" in widgetitem.parent().text(0):
-                self.show_playlist_popMenu(self.file_tree.mapToGlobal(position))
+                self.show_playlist_pop_menu(self.file_tree.mapToGlobal(position))
                 return
             elif widgetitem.parent().parent() is not None:
                 log.debug("%s", widgetitem.parent().parent().text(0))
@@ -428,9 +428,10 @@ class media_page(QObject):
         del_act = QAction("Delete", self)
         pop_menu.addAction(del_act)
 
-        crop_act = QAction("Crop", self)
-        crop_act.setDisabled(True)
-        pop_menu.addAction(crop_act)
+        # remove crop function in separate files
+        # crop_act = QAction("Crop", self)
+        # crop_act.setDisabled(True)
+        # pop_menu.addAction(crop_act)
         pop_menu.addSeparator()
 
         add_to_playlist_menu = QMenu('AddtoPlaylist')
@@ -447,8 +448,7 @@ class media_page(QObject):
         pop_menu.exec_(pos)
 
     '''處理playlist, 目前只有一個menu --> del'''
-
-    def show_playlist_popMenu(self, pos):
+    def show_playlist_pop_menu(self, pos):
         pop_menu = QMenu()
         set_qstyle_dark(pop_menu)
         playact = QAction("Play Playlist", self)
@@ -456,7 +456,6 @@ class media_page(QObject):
         remove_act = QAction("Remove Playlist", self)
         pop_menu.addAction(remove_act)
         pop_menu.triggered[QAction].connect(self.pop_menu_trigger_act)
-
         pop_menu.exec_(pos)
 
     def show_playlist_file_pop_menu(self, pos):
@@ -481,7 +480,7 @@ class media_page(QObject):
             log.debug("media file uri : %s", self.right_clicked_select_file_uri)
             playlist_name = q.text().split(" ")[2]
             if playlist_name == 'new':
-                #launch a dialog
+                # launch a dialog
                 # pop up a playlist generation dialog
                 if self.NewPlaylistDialog is None:
                     self.NewPlaylistDialog = NewPlaylistDialog(self.mainwindow.media_engine.playlist)
@@ -526,8 +525,6 @@ class media_page(QObject):
                 os.remove(self.right_clicked_select_file_uri)
             self.signal_refresh_internal_medialist.emit()
 
-
-
     def resfresh_video_params_config_file(self):
         log.debug("")
         self.media_engine.media_processor.video_params.refresh_config_file()
@@ -554,35 +551,42 @@ class media_page(QObject):
             log.debug("image period changed!")
             media_processor.set_image_period_value(int(self.image_period_edit.text()))
 
+
         clients = self.mainwindow.clients
         if video_params.frame_brightness != int(self.client_brightness_edit.text()):
-            video_params.frame_brightness = int(self.client_brightness_edit.text())
+            # video_params.frame_brightness = int(self.client_brightness_edit.text())
+            media_processor.set_frame_brightness_value(int(self.client_brightness_edit.text()))
             for c in clients:
                 log.debug("c.client_ip = %s", c.client_ip)
                 c.send_cmd(cmd_set_frame_brightness,
                            self.mainwindow.cmd_seq_id_increase(),
                             str(video_params.frame_brightness))
 
+
         if video_params.frame_br_divisor != int(self.client_br_divisor_edit.text()):
-            video_params.frame_br_divisor = int(self.client_br_divisor_edit.text())
+            # video_params.frame_br_divisor = int(self.client_br_divisor_edit.text())
+            media_processor.set_frame_br_divisor_value(int(self.client_br_divisor_edit.text()))
             for c in clients:
                 c.send_cmd(cmd_set_frame_br_divisor,
                            self.mainwindow.cmd_seq_id_increase(),
                            str(video_params.frame_br_divisor))
 
         if video_params.frame_contrast != int(self.client_contrast_edit.text()):
-            video_params.frame_contrast = int(self.client_contrast_edit.text())
+            # video_params.frame_contrast = int(self.client_contrast_edit.text())
+            media_processor.set_frame_contrast_value(int(self.client_contrast_edit.text()))
             for c in clients:
                 c.send_cmd(cmd_set_frame_contrast,
                            self.mainwindow.cmd_seq_id_increase(),
                            str(video_params.frame_contrast))
 
         if video_params.frame_gamma != float(self.client_gamma_edit.text()):
-            video_params.frame_gamma = float(self.client_gamma_edit.text())
+            # video_params.frame_gamma = float(self.client_gamma_edit.text())
+            media_processor.set_frame_gamma_value(float(self.client_gamma_edit.text()))
             for c in clients:
                 c.send_cmd(cmd_set_frame_gamma,
                            self.mainwindow.cmd_seq_id_increase(),
                            str(video_params.frame_gamma))
+
 
         if self.mainwindow.engineer_mode is True:
             self.refresh_max_brightness_label()
@@ -602,23 +606,48 @@ class media_page(QObject):
             for c in clients:
                 log.debug("c.client_ip = %s", c.client_ip)
                 c.send_cmd(cmd_set_pixel_interval,
-                           self.mainwindow.cmd_seq_id_increase(),
-                            str(0))
-
+                           self.mainwindow.cmd_seq_id_increase(), str(0))
 
     def video_crop_enable(self):
         log.debug("crop_enable")
-        utils.ffmpy_utils.ffmpy_crop_enable(self.video_params_crop_x_edit.text(),
-                                     self.video_params_crop_y_edit.text(),
-                                     self.video_params_crop_w_edit.text(),
-                                     self.video_params_crop_h_edit.text(),
-                                     self.mainwindow.led_wall_width,
-                                     self.mainwindow.led_wall_height)
+        # test
+        media_processor = self.media_engine.media_processor
+        video_params = media_processor.video_params
+        if video_params.crop_start_x != int(self.video_params_crop_x_edit.text()):
+            media_processor.set_crop_start_x_value(int(self.video_params_crop_x_edit.text()))
+
+        if video_params.crop_start_y != int(self.video_params_crop_y_edit.text()):
+            media_processor.set_crop_start_y_value(int(self.video_params_crop_y_edit.text()))
+
+        if video_params.crop_w != int(self.video_params_crop_w_edit.text()):
+            media_processor.set_crop_w_value(int(self.video_params_crop_w_edit.text()))
+
+        if video_params.crop_h != int(self.video_params_crop_h_edit.text()):
+            media_processor.set_crop_h_value(int(self.video_params_crop_h_edit.text()))
+
+        if self.media_engine.media_processor.ffmpy_process is not None:
+            utils.ffmpy_utils.ffmpy_crop_enable(self.video_params_crop_x_edit.text(),
+                                         self.video_params_crop_y_edit.text(),
+                                         self.video_params_crop_w_edit.text(),
+                                         self.video_params_crop_h_edit.text(),
+                                         self.mainwindow.led_wall_width,
+                                         self.mainwindow.led_wall_height)
 
     def video_crop_disable(self):
         log.debug("crop_disable")
-        utils.ffmpy_utils.ffmpy_crop_disable(self.mainwindow.led_wall_width,
-                                     self.mainwindow.led_wall_height)
+        media_processor = self.media_engine.media_processor
+        self.video_params_crop_x_edit.setText("0")
+        self.video_params_crop_y_edit.setText("0")
+        self.video_params_crop_w_edit.setText("0")
+        self.video_params_crop_h_edit.setText("0")
+        media_processor.set_crop_start_x_value(int(self.video_params_crop_x_edit.text()))
+        media_processor.set_crop_start_y_value(int(self.video_params_crop_y_edit.text()))
+        media_processor.set_crop_w_value(int(self.video_params_crop_w_edit.text()))
+        media_processor.set_crop_h_value(int(self.video_params_crop_h_edit.text()))
+
+        if self.media_engine.media_processor.ffmpy_process is not None:
+            utils.ffmpy_utils.ffmpy_crop_disable(self.mainwindow.led_wall_width,
+                                        self.mainwindow.led_wall_height)
 
     def refresh_max_brightness_label(self):
         if self.mainwindow.engineer_mode is False:
