@@ -9,6 +9,6 @@ do_install:append() {
 	install -m 0444 ${WORKDIR}/raspberrypi-swd-2.cfg ${D}${datadir}/openocd/scripts/interface/
 }
 
-#FILES_${PN}="${datadir}/openocd/scripts/interface/"
+FILES:${PN} +="${datadir}/openocd/scripts/interface/"
 
 

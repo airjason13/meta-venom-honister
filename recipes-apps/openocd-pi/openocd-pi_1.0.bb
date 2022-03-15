@@ -46,9 +46,9 @@ do_install() {
     fi
 }
 
-FILES_${PN} = " \
-  ${datadir}/openocd/* \
-  ${bindir}/openocd \
+FILES:${PN} = " \
+  ${datadir}/* \
+  ${bindir}/* \
   "
 
 PACKAGECONFIG[sysfsgpio] = "--enable-sysfsgpio,--disable-sysfsgpio"

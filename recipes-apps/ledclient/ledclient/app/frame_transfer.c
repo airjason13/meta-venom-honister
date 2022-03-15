@@ -302,7 +302,6 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
                 break;
             }
             config_err = false;
-#if 1
             for(x = width;x > 0;x--){
                 if(x % 2 == 0){
                     for(y = 0; y < height; y++){
@@ -321,25 +320,6 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
                 }
             }
             
-#else
-            for(x = width;x > 0;x--){
-                if(x % 2 == 0){
-                    for(y = 0; y < height; y++){
-                        memcpy(buf + offset,
-                                pFrame->data[0] + (start_y - y)*pFrame->linesize[0] + (start_x +width - x)*channel_count,
-                                channel_count);
-                        offset += channel_count;
-                    }
-                }else{
-                    for(y = 0; y < height; y++){
-                        memcpy(buf + offset,
-                                pFrame->data[0] + (start_y - height + y)*pFrame->linesize[0] + (start_x + width - x)*channel_count,
-                                channel_count);
-                        offset += channel_count;
-                    } 
-                }
-            }
-#endif            
             break;
         case 7: //confirm @1115
             //0310 test limit ok
@@ -375,19 +355,30 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
             }
             break;
 	}
+
+
+    if((width == 0)||(height == 0)){
+        config_err = true;
+    }
+
     if(config_err == true){
         // send zero while config error
-        for(i = 4; i < offset; i ++){
-            buf[i] = 0;
+        free(buf);
+	    unsigned int tmp_buf_size = (1024*channel_count) + 4;
+	    unsigned char *tmp_buf = malloc(tmp_buf_size);
+	    sprintf(tmp_buf, "id%d:", params->port_id);
+	    offset +=4;
+        for(i = offset; i < tmp_buf_size; i ++){
+            tmp_buf[i] = 0;
         }
 	    if(pico != NULL){
-            write_len = picousb_out_transfer(pico, buf, buf_size);
+            write_len = picousb_out_transfer(pico, tmp_buf, tmp_buf_size);
         }else{
             log_error("no pico");
             write_len = -ENODEV;
         }
-        free(buf);
-        log_debug("params config error!\n");
+        free(tmp_buf);
+        log_debug(" id : %d, write_len : %d, params config error!\n", params->port_id, write_len);
         return write_len;
     }
     for(i = 4; i < offset; i ++){
