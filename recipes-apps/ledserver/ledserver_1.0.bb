@@ -6,6 +6,7 @@ FILESEXTRAPATHS:append := "${THISDIR}/${PN}:"
 SRC_URI += "file://pyLedServer/ \
             file://launch_pyLedServer.sh \
             file://msjhbd.ttc \
+            file://demo_videos/ \
             file://LICENSE \
              "
 
@@ -22,6 +23,7 @@ do_install() {
     install -m 755 launch_pyLedServer.sh ${D}/${bindir}
     cp -r pyLedServer/* ${D}/home/root/pyLedServer/
     cp -r msjhbd.ttc ${D}/home/root/Videos/fonts/
+    cp -r demo_videos/* ${D}/home/root/Videos/
 }
 
 
