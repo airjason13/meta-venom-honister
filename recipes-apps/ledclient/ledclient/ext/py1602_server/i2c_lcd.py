@@ -36,17 +36,31 @@ class I2CLCDSocketServer:
         pass
 
     def handle_i2c_lcd(self):
+        data = []
+        tmp = {"x": "0", "str": ""}
+        data.append(tmp)
+        tmp_1 = {"x": "0", "str": ""}
+        data.append(tmp_1)
+        print("len(data) = ", len(data))
         while True:
             connection, client_address = self.sock.accept()
-            data = connection.recv(1024)
-            print(f"recv data from client '{client_address}': {data.decode()}")
-            recv_str = data.decode()
+            data_ = connection.recv(1024)
+            print(f"recv data from client '{client_address}': {data_.decode()}")
+            recv_str = data_.decode()
             recv_str_list = recv_str.split(':')
-            print("recv_str_list:", recv_str_list)
-            #connection.sendall("hello client".encode())
-            str_emtpy = "                "
-            LCD1602.write(int(recv_str_list[0]), int(recv_str_list[1]),  "                ")
-            LCD1602.write(int(recv_str_list[0]), int(recv_str_list[1]), recv_str_list[2].rstrip('\x00'))
+            # print("recv_str_list:", recv_str_list)
+            # print("int(recv_str_list[1]) = ", int(recv_str_list[1]))
+            data[int(recv_str_list[1])]['x'] = recv_str_list[0]
+            data[int(recv_str_list[1])]['str'] = recv_str_list[2]
+            # print("data[0] = ", data[0])
+            # print("data[1] = ", data[1])
+
+            # connection.sendall("hello client".encode())
+            LCD1602.init(0x27, 1)   # init(slave address, background light)
+            # LCD1602.clear()
+            # LCD1602.write(int(recv_str_list[0]), int(recv_str_list[1]),  "                ")
+            LCD1602.write(int(data[0].get("x")), 0, data[0].get("str").rstrip('\x00'))
+            LCD1602.write(int(data[1].get("x")), 1, data[1].get("str").rstrip('\x00'))
 
 
     def __del__(self):

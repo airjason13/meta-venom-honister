@@ -24,6 +24,7 @@ do_install() {
     cp -r pyLedServer/* ${D}/home/root/pyLedServer/
     cp -r msjhbd.ttc ${D}/home/root/Videos/fonts/
     cp -r demo_videos/* ${D}/home/root/Videos/
+    cp -r demo_videos/.subtitle ${D}/home/root/Videos/
 }
 
 
