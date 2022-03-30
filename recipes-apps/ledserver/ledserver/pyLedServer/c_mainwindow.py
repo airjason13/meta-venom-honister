@@ -507,11 +507,17 @@ class MainUi(QMainWindow):
 
     """ handle the command from qlocalserver"""
     def parser_cmd_from_qlocalserver(self, data):
-        log.debug("data : ", data)
-        pass
+        log.debug("data : %s", data)
+        if data.get("play_file"):
+            log.debug("play single file : %s!", data.get("play_file"))
+            self.medialist_page.right_clicked_select_file_uri = internal_media_folder + "/" + data.get("play_file")
+            log.debug("file_uri :%s", self.medialist_page.right_clicked_select_file_uri)
+            self.media_engine.play_single_file(self.medialist_page.right_clicked_select_file_uri)
+        elif data.get("play_playlist"):
+            log.debug("play playlist")
+            self.media_engine.play_playlsit(data.get("play_playlist"))
 
     def check_client(self, ip, data):
-
         is_found = False
         tmp_client = None
         c_version = ""
@@ -785,7 +791,6 @@ class MainUi(QMainWindow):
         log.debug("")
         self.media_engine.stop_play()
 
-
     def pause_media_trigger(self):
         """check the popen subprocess is alive or not"""
         if self.media_engine.media_processor.play_status == play_status.playing:
@@ -859,7 +864,7 @@ class MainUi(QMainWindow):
                 return
             else:
                 self.media_preview_widget.setGeometry(self.medialist_page.file_tree.x() + event.x(),
-                                                      self.medialist_page.file_tree.y() + event.y(), 640, 480)
+                                                      self.medialist_page.file_tree.y() + event.y(), 320, 240)
 
                 self.movie = QMovie(
                     internal_media_folder + ThumbnailFileFolder + thumbnail_file_name)
@@ -1134,9 +1139,6 @@ class MainUi(QMainWindow):
         self.media_engine.refresh_internal_medialist()
 
         self.medialist_page.refresh_internal_medialist()
-
-
-
 
     def slot_new_playlist(self, new_playlist_name):
         log.debug("")

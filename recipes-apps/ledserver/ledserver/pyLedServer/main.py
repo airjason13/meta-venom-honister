@@ -8,18 +8,27 @@ import sys
 from PyQt5.QtWidgets import QApplication
 import jqlocalserver
 import utils.log_utils
-import signal, traceback
+import signal
 import logging
+from flask import Flask
+from application_plugin import *
+from threading import Thread
 
+app = Flask(__name__)
+from routes import *
+
+#app_ = Flask(__name__)
+#from routes import *
+#   setting our root
+#@app_.route('/')
+#def index():
+#    return render_template('index.html')
 
 def sighandler(signum, frame):
     log.fatal("Caough signal %d", signum)
     traceback.print_stack(frame)
 
 
-
-
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     log = utils.log_utils.logging_init(__file__)
     log.info('Main')
@@ -28,27 +37,20 @@ if __name__ == '__main__':
     utils.log_utils.set_logging_level(global_debug_level)
 
     '''Insert signal handler'''
-    log.info("Insert signal")
-    '''for sig in dir(signal):
-        if sig.startswith("SIG"):
-            try:
-                signum = getattr(signal, sig)
-                signal.signal(signum, sighandler)
-            except: 
-                log.info("Skip %s", sig)'''
     signal.signal(signal.SIGSEGV, sighandler)
 
-    log.info("Insert signal down")
-
-    app = QApplication(sys.argv)
+    qt_app = QApplication(sys.argv)
     gui = MainUi()
     gui.show()
     server = jqlocalserver.Server()
     server.dataReceived.connect(gui.parser_cmd_from_qlocalserver)
 
-    # detect focus on windows or not
-    app.focusChanged.connect(gui.focus_on_window_changed)
+    flask_app = ApplicationPlugin(app_=app)
+    flask_app.start()
 
-    sys.exit(app.exec_())
+    # detect focus on windows or not
+    qt_app.focusChanged.connect(gui.focus_on_window_changed)
+
+    sys.exit(qt_app.exec_())
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

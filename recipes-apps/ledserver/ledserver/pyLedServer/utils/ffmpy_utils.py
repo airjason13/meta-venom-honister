@@ -13,7 +13,8 @@ log = utils.log_utils.logging_init(__file__)
 still_image_loop_cnt = 1
 still_image_video_period = 600
 preview_start_time = 3
-preview_period = 3
+preview_period = 1
+
 
 def neo_ffmpy_execute(video_path, brightness, contrast, red_bias, green_bias, blue_bias,
                       image_period=still_image_video_period, width=80, height=96):
@@ -27,9 +28,7 @@ def neo_ffmpy_execute(video_path, brightness, contrast, red_bias, green_bias, bl
     green_bias_params = "gomin=" + str(green_bias)
     blue_bias_params = "bomin=" + str(blue_bias)
     crop_str = "crop=iw:ih:0:0"
-
     color_level_str = "colorlevels=" + red_bias_params + ":" + green_bias_params + ":" + blue_bias_params
-
     content_line = ""
     # add TEXT
     if "blank" in video_path:
@@ -146,6 +145,7 @@ def neo_ffmpy_execute(video_path, brightness, contrast, red_bias, green_bias, bl
 
     return ff.process
 
+
 def neo_ffmpy_execute_hdmi_in(video_path, video_dst,brightness, contrast, red_bias, green_bias, blue_bias,
                       width=80, height=96):
     ff = None
@@ -191,7 +191,7 @@ def neo_ffmpy_execute_hdmi_in(video_path, video_dst,brightness, contrast, red_bi
         ff = ffmpy.FFmpeg(
             global_options=global_opts,
             inputs={
-                #video_path: ["-f", "v4l2", "-pix_fmt", "mjpeg", "-s", input_res]
+                # video_path: ["-f", "v4l2", "-pix_fmt", "mjpeg", "-s", input_res]
                 video_path: ["-f", "v4l2", "-s", input_res]
             },
             outputs=output,
@@ -229,6 +229,7 @@ def neo_ffmpy_execute_hdmi_in(video_path, video_dst,brightness, contrast, red_bi
     log.debug("ff.process pid : %d", ff.process.pid)
 
     return ff.process
+
 
 def neo_ffmpy_cast_video_v4l2(video_path, cast_dst, brightness, contrast, red_bias, green_bias, blue_bias, width=80, height=96):
     if len(cast_dst) == 0 or cast_dst is None:
@@ -450,6 +451,8 @@ def neo_ffmpy_cast_video_depreciated(video_path, cast_dst_0, cast_dst_1, width=8
 
 def gen_webp_from_video(file_folder, video):
     # use hashlib md5 to generate preview file name
+    error_count = 0
+    error_count_threshold = 3
     video_name = video.split(".")[0]
     video_extension = video.split(".")[1]
     # log.debug("video_extension = %s", video_extension)
@@ -458,37 +461,47 @@ def gen_webp_from_video(file_folder, video):
     # thumbnail_path = internal_media_folder + ThumbnailFileFolder + video.replace(".mp4", ".webp")
     thumbnail_path = internal_media_folder + ThumbnailFileFolder + preview_file_name + ".webp"
     video_path = file_folder + "/" + video
-    # log.debug("video_path = %s", video_path)
-    # log.debug("thumbnail_path = %s", thumbnail_path)
+    log.debug("video_path = %s", video_path)
+    log.debug("thumbnail_path = %s", thumbnail_path)
     thunbnail_folder_path = internal_media_folder + ThumbnailFileFolder
     if not os.path.exists(thunbnail_folder_path):
         os.makedirs(thunbnail_folder_path)
-    try:
-        if os.path.isfile(thumbnail_path) is False:
-            global_opts = '-hide_banner -loglevel error'
-            if video_extension in ["jpeg", "jpg", "png"]:
-                # log.debug("still image")
-                ff = ffmpy.FFmpeg(
-                    global_options=global_opts,
-                    inputs={video_path: ['-loop', str(still_image_loop_cnt), '-t', str(preview_period)]},
-                    outputs={thumbnail_path: ['-vf', 'scale=640:480']}
-                )
-            else:
-                ff = ffmpy.FFmpeg(
-                    global_options=global_opts,
-                    inputs={video_path: ['-ss', str(preview_start_time), '-t', str(preview_period)]},
-                    outputs={thumbnail_path: ['-vf', 'scale=640:480']}
-                )
-            # log.debug("%s", ff.cmd)
-            ff.run()
-    except Exception as e:
-        log.debug(e)
+    while True:
+        try:
+            if os.path.isfile(thumbnail_path) is False:
+                global_opts = '-hide_banner -loglevel error'
+                if video_extension in ["jpeg", "jpg", "png"]:
+                    # log.debug("still image")
+                    ff = ffmpy.FFmpeg(
+                        global_options=global_opts,
+                        inputs={video_path: ['-loop', str(still_image_loop_cnt), '-t', str(preview_period)]},
+                        outputs={thumbnail_path: ['-vf', 'scale=320:240']}
+                    )
+                else:
+                    ff = ffmpy.FFmpeg(
+                        global_options=global_opts,
+                        inputs={video_path: ['-ss', str(preview_start_time), '-t', str(preview_period)]},
+                        outputs={thumbnail_path: ['-vf', 'scale=320:240']}
+                    )
+                # log.debug("%s", ff.cmd)
+                ff.run()
+        except Exception as e:
+            log.debug("Excception %s", e)
+            os.remove(thumbnail_path)
+            error_count += 1
+            if error_count > error_count_threshold:
+                log.debug("source file : %s might be fault", video_path)
+                break
+            continue
+        break
+    log.debug("%s generated good", thumbnail_path)
     return thumbnail_path
 
+
 def gen_webp_from_video_threading(file_folder, video):
-    threads = []
-    threads.append(threading.Thread(target=gen_webp_from_video, args=(file_folder, video,)))
+    threads = [threading.Thread(target=gen_webp_from_video, args=(file_folder, video,))]
     threads[0].start()
+
 
 def ffmpy_set_video_param_level(param_name, level):
     cmd = ""
@@ -538,6 +551,7 @@ def ffmpy_draw_text(text):
     context.destroy()
     context.term()
 
+
 def ffmpy_crop_enable(crop_x, crop_y, crop_w, crop_h, led_w, led_h):
     context = zmq.Context()
     log.debug("Connecting to server...")
@@ -545,7 +559,7 @@ def ffmpy_crop_enable(crop_x, crop_y, crop_w, crop_h, led_w, led_h):
     socket.connect("tcp://localhost:%s" % 5555)
 
     socket.send(("Parsed_crop_4 w " + str(crop_w)).encode())
-    data = socket.recv(1024)
+    data = (socket.recv(1024))
     log.debug("recv data = %s", data.decode())
     if 'Success' not in data.decode():
         socket.disconnect("tcp://localhost:%s" % 5555)
@@ -554,7 +568,7 @@ def ffmpy_crop_enable(crop_x, crop_y, crop_w, crop_h, led_w, led_h):
         log.debug("Error")
         return False
     socket.send(("Parsed_crop_4 h " + str(crop_h)).encode())
-    data = socket.recv(1024)
+    data = (socket.recv(1024))
     if 'Success' not in data.decode():
         socket.disconnect("tcp://localhost:%s" % 5555)
         context.destroy()
@@ -665,6 +679,7 @@ def ffmpy_crop_disable(led_w, led_h):
 
 def ffmpy_crop_enable_depreciated(crop_x, crop_y, crop_w, crop_h, led_w, led_h):
     context = zmq.Context()
+
     log.debug("Connecting to server...")
 
     cmd_w = "Parsed_crop_4 w " + str(crop_w)
@@ -702,6 +717,7 @@ def ffmpy_crop_enable_depreciated(crop_x, crop_y, crop_w, crop_h, led_w, led_h):
 
     context.destroy()
     context.term()
+
 
 def ffmpy_crop_disable_depreciated(led_w, led_h):
     context = zmq.Context()
@@ -742,6 +758,7 @@ def ffmpy_crop_disable_depreciated(led_w, led_h):
 
     context.destroy()
     context.term()
+
 
 '''def ffmpy_set_brightness_level(level):
     context = zmq.Context()

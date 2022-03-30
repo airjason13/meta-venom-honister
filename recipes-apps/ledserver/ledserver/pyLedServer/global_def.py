@@ -1,7 +1,7 @@
 import enum
 import platform
 """Software version"""
-version = "LS220301601"
+version = "LS22032901"
 
 """Network relative"""
 multicast_group = "239.11.11.11"
@@ -15,7 +15,10 @@ cv2_preview_v4l2_sink = "/dev/video5"
 hdmi_in_h264_src = "udp://127.0.0.1:10012"
 cmd_timeout = 2
 g_client_udp_cmd_port = 11335
+flask_server_port = 9090
 
+
+SIZE_MB = 1024*1024
 
 """Media folder"""
 if platform.machine() in ('arm', 'arm64', 'aarch64'):
@@ -27,6 +30,13 @@ ThumbnailFileFolder = "/.thumbnails/"
 PlaylistFolder = "/.playlists/"
 init_config_file = "/.config_video_param"
 subtitle_file_name = "/.subtitle"
+
+mp4_extends = internal_media_folder + "/*.mp4"
+jpeg_extends = internal_media_folder + "/*.jpeg"
+jpg_extends = internal_media_folder + "/*.jpg"
+png_extends = internal_media_folder + "/*.png"
+webp_extends = internal_media_folder + '/*.webp'
+playlist_extends = internal_media_folder + PlaylistFolder + "*.playlist"
 
 class play_type(enum.IntEnum):
     play_none = 0
