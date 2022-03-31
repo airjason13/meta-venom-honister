@@ -20,11 +20,14 @@ do_install() {
     install -d ${D}/${sysconfdir}
     install -d ${D}/home/root/pyLedServer/
     install -d ${D}/home/root/Videos/fonts/
+    install -d ${D}/home/root/Videos/.subtitle_data
     install -m 755 launch_pyLedServer.sh ${D}/${bindir}
     cp -r pyLedServer/* ${D}/home/root/pyLedServer/
     cp -r msjhbd.ttc ${D}/home/root/Videos/fonts/
     cp -r demo_videos/* ${D}/home/root/Videos/
-    cp -r demo_videos/.subtitle ${D}/home/root/Videos/
+    cp -r demo_videos/.subtitle ${D}/home/root/Videos/.subtitle_data/
+    cp -r demo_videos/.subtitle_blank.jpg ${D}/home/root/Videos/.subtitle_data/
+
 }
 
 
