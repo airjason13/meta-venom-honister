@@ -2374,7 +2374,8 @@ static int video_thread(void *arg)
 #endif
 	int iret = 0;
     char lcd_content_buf[16];
-
+    int pico_lost_count = 0;
+    
     if (!frame)
         return AVERROR(ENOMEM);
 
@@ -2451,14 +2452,19 @@ static int video_thread(void *arg)
 					log_debug("transfer_framergb_to_pico error : %d\n", iret);
                     if(led_params.pico_handle != NULL){
                         picousb_close(led_params.pico_handle);
-                        //free(led_params.pico_handle);
                         led_params.pico_handle = NULL;
-                        //int iret_reset_usb_hub = reset_usb_hub();
-                        //log_debug("probe_pico = %d\n", iret_reset_usb_hub);
+                        pico_lost_count += 1;
+                        char pico_lost_str[256] = {0};
+                        FILE *fp;
+                        sprintf(pico_lost_str, "/bin/touch /home/root/pico_lost%d", pico_lost_count);
+                        fp = popen(pico_lost_str, "r");
+                        if (fp == NULL) {
+                            log_debug("Failed to run command\n" );
+                        }
+                        /* close */
+                        pclose(fp);
+
                     }
-                    //int iret_reset_usb_hub = reset_usb_hub();
-                    //log_debug("probe_pico = %d\n", iret_reset_usb_hub);
-	                //led_params.pico_handle = picousb_init();
                     i = 0xff;
 				}
 			}
