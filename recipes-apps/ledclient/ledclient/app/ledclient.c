@@ -2203,6 +2203,19 @@ void fps_counter(void){
 	led_fps = 0;
 }
 
+int check_pico_count = 0;
+void check_pico(void){
+    int iret_reset_usb_hub = 0;
+    //log_debug("check_pico\n");
+    if(led_params.pico_handle == NULL){
+        if((check_pico_count % 3) == 0){
+            iret_reset_usb_hub = reset_usb_hub();
+            log_debug("probe_pico = %d\n", iret_reset_usb_hub);
+        }
+        check_pico_count ++;
+        led_params.pico_handle = picousb_init();
+    }
+}
 /********************************************************
 * Write RGB Red to Pico TEST
 **********************************************************/
@@ -2434,9 +2447,19 @@ static int video_thread(void *arg)
 			//transfer RGB frame to pico
 			for(i = 0; i < 8; i++){
 				iret = transfer_framergb_to_pico(frameRGB, &(led_params.cab_params[i]), 3, is->viddec.avctx->width, is->viddec.avctx->height, led_params.pico_handle, input_filename);
-				//iret = transfer_framergb_to_pico(frameRGB, &led_params, 3);
 				if(iret < 0){
-					log_debug("transfer_framergb_to_pico error : %d\n", iret);	
+					log_debug("transfer_framergb_to_pico error : %d\n", iret);
+                    if(led_params.pico_handle != NULL){
+                        picousb_close(led_params.pico_handle);
+                        //free(led_params.pico_handle);
+                        led_params.pico_handle = NULL;
+                        //int iret_reset_usb_hub = reset_usb_hub();
+                        //log_debug("probe_pico = %d\n", iret_reset_usb_hub);
+                    }
+                    //int iret_reset_usb_hub = reset_usb_hub();
+                    //log_debug("probe_pico = %d\n", iret_reset_usb_hub);
+	                //led_params.pico_handle = picousb_init();
+                    i = 0xff;
 				}
 			}
 			led_fps ++;
@@ -4191,6 +4214,9 @@ int main(int argc, char **argv)
 	/*start fps counter timer*/
 	timer_t fps_counter_tid = jset_timer(1, 0, 1, 0, &(fps_counter), 99);
 	//log_info("fps_counter_tid = %d\n", fps_counter_tid);
+
+    /*check pico timer*/
+    timer_t pico_check_tid = jset_timer(1, 0, 10, 0, &(check_pico), 99);
     
     /*check hdmi status*/
     timer_t detect_screen_tid = jset_timer(1, 0, 3, 0, &(check_hdmi_status), 99);

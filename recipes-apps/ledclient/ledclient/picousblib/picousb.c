@@ -31,6 +31,9 @@ int print_configuration(struct libusb_device_handle *hDevice, struct libusb_conf
     return 0;
 }
 
+
+
+
 struct libusb_endpoint_descriptor* active_config(struct libusb_device *dev, struct libusb_device_handle *handle)
 {
     struct libusb_device_handle *hDevice_req;
@@ -89,7 +92,7 @@ struct libusb_device_handle *picousb_init(void)
 	int i = 0, index;
 	int e = 0, config2;
 	int r = -1;
-	char str1[64], str2[64];
+	char str1[256], str2[256];
 
 	printf("pico usb init!\n");
 	// Init libusb
@@ -98,7 +101,7 @@ struct libusb_device_handle *picousb_init(void)
     if(r < 0)
     {
         printf("\nFailed to initialise libusb\n");
-        return 1;
+        return NULL;
     }
     else
         printf("\nInit successful!\n");
@@ -108,12 +111,13 @@ struct libusb_device_handle *picousb_init(void)
     if (cnt < 0)
     {
         printf("\nThere are no USB devices on the bus\n");
-        return -1;
+        return NULL;
     }
     printf("\nDevice count: %d\n-------------------------------\n", cnt);
 
 	while ((dev = devs[i++]) != NULL)
     {
+        log_debug("start to query...\n");
         r = libusb_get_device_descriptor(dev, &desc);
         if (r < 0)
             {
@@ -123,6 +127,7 @@ struct libusb_device_handle *picousb_init(void)
             break;
         }
 
+        log_debug("start to open...\n");
         e = libusb_open(dev, &handle);
         if (e < 0)
         {
@@ -132,7 +137,7 @@ struct libusb_device_handle *picousb_init(void)
             break;
         }
 
-        /*printf("\nDevice Descriptors: ");
+        printf("\nDevice Descriptors: ");
         printf("\n\tVendor ID: %x", desc.idVendor);
         printf("\n\tProduct ID: %x", desc.idProduct);
         printf("\n\tSerial Number: %x", desc.iSerialNumber);
@@ -144,9 +149,12 @@ struct libusb_device_handle *picousb_init(void)
         printf("\n\tDevice Sub-Class: %d", desc.bDeviceSubClass);
         printf("\n\tDevice Protocol: %d", desc.bDeviceProtocol);
         printf("\n\tMax. Packet Size: %d", desc.bMaxPacketSize0);
-        printf("\n\tNumber of Configurations: %d\n", desc.bNumConfigurations);*/
+        printf("\n\tNumber of Configurations: %d\n", desc.bNumConfigurations);
 
+        log_debug("start to get string desc...\n");
         e = libusb_get_string_descriptor_ascii(handle, desc.iManufacturer, (unsigned char*) str1, sizeof(str1));
+        log_debug("start to get string desc... e = %d\n", e);
+        
         if (e < 0)
         {
 	        libusb_free_device_list(devs, 1);
@@ -159,7 +167,7 @@ struct libusb_device_handle *picousb_init(void)
         e = libusb_get_string_descriptor_ascii(handle, desc.iProduct, (unsigned char*) str2, sizeof(str2));
         if(e < 0)
         {
-        libusb_free_device_list(devs, 1);
+            libusb_free_device_list(devs, 1);
             libusb_close(handle);
             break;
         }
@@ -246,6 +254,17 @@ struct libusb_device_handle *picousb_init(void)
 	return handle;
 }
 
+
+int picousb_close(struct libusb_device_handle *h )
+{
+    if(h != NULL){
+        libusb_close(h);
+    }else{
+        return -ENODEV;
+    }
+    return 0;
+}
+
 int picousb_out_transfer(struct libusb_device_handle *h, unsigned char *data, int len)
 {
 	int transferred = -1;
@@ -254,7 +273,7 @@ int picousb_out_transfer(struct libusb_device_handle *h, unsigned char *data, in
     if(e == 0 && transferred == len){
 		return transferred;
     }else{
-        printf("\nError in write! e = %d and transferred = %d\n", e, transferred);
+        log_debug("Error in write! e = %d and transferred = %d\n", e, transferred);
 	}
 
 	return e;
@@ -268,7 +287,7 @@ int picousb_in_transfer(struct libusb_device_handle *h, unsigned char *data, int
     if(e == 0 ){
 		return transferred;
     }else{
-        printf("\nError in write! e = %d and transferred = %d\n", e, transferred);
+        log_debug("Error in write! e = %d and transferred = %d\n", e, transferred);
 	}
 
 	return e;
@@ -286,4 +305,72 @@ int picousb_set_cmd(struct libusb_device_handle *h, char *cmd, char *recv_buf){
     memset(recv_buf, 0, 64);
     picousb_in_transfer(h, recv_buf, 64);
     return 0;
+}
+
+int reset_usb_device(struct libusb_device_handle *devh){
+    int res = -1;
+    int count = 0;
+    while (count < 10){
+        res = libusb_reset_device(devh);
+        count ++;
+        if(res >= 0){
+            log_debug("usb reset ok!\n");
+            break;
+        }
+        log_debug("usb reset count = %d\n", count);    
+    }
+    return res;
+}
+
+int probe_pico(void){
+    FILE *fp;
+    char path[1024];
+
+    /* Open the command for reading. */
+    fp = popen("/usr/bin/lsusb", "r");
+    if (fp == NULL) {
+        log_debug("Failed to run command\n" );
+        return -ENODEV;
+    }
+
+    /* Read the output a line at a time - output it. */
+    while (fgets(path, sizeof(path), fp) != NULL) {
+        //log_debug("%s", path);
+        if(strstr(path, "Pico")){
+            pclose(fp);
+            return 1;
+        }
+    }
+
+    /* close */
+    pclose(fp);
+
+    return 0;
+}
+
+int reset_usb_hub(void){
+    FILE *fp;
+    char path[1024];
+
+    /* Open the command for reading. */
+    fp = popen("/usr/sbin/uhubctl -l 1-1 -a 0", "r");
+    if (fp == NULL) {
+        log_debug("Failed to run command\n" );
+        return -EINVAL;
+    }
+
+    /* close */
+    pclose(fp);
+    usleep(100000);
+    fp = popen("/usr/sbin/uhubctl -l 1-1 -a 1", "r");
+    if (fp == NULL) {
+        log_debug("Failed to run command\n" );
+        return -EINVAL;
+    }
+
+    /* close */
+    pclose(fp);
+    usleep(100000);
+    return 0;
+    
 }

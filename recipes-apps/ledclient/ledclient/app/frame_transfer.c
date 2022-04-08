@@ -72,6 +72,9 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
 	int i = 0;
 	int write_len = 0;
     bool config_err = true;
+    if(pico == NULL){
+        return -ENODEV;
+    }
 	if(buf == NULL){
 		log_fatal("malloc failed!\n");
 		return -ENOMEM;
@@ -389,6 +392,13 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
     }
 	if(pico != NULL){
         write_len = picousb_out_transfer(pico, buf, buf_size);
+        if(write_len < 0){
+            
+            //int iret_reset_usb = reset_usb_device(pico);
+            //log_debug("reset pico error : %d\n", iret_reset_usb); 
+            //free(pico);
+            //pico = picousb_init();
+        }
     }else{
         log_error("no pico");
         write_len = -ENODEV;
