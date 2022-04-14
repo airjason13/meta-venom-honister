@@ -44,6 +44,7 @@ do_install() {
     install -m 755 ext/set_automount.sh ${D}/${bindir}
     install -m 755 ext/set_panel_autohide.sh ${D}/${bindir}
     install -m 755 ext/setup_hotspot.sh ${D}/${bindir}
+    install -m 755 ext/setup_hotspot_alfa.sh ${D}/${bindir}
     install -m 755 ext/setup_hotspot_tester.sh ${D}/${bindir}
     install -m 755 ext/b_measure_temp.sh ${D}/${bindir}
     install -m 755 ext/ra_client.py ${D}/${bindir}

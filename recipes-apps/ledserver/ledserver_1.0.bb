@@ -8,6 +8,7 @@ SRC_URI += "file://pyLedServer/ \
             file://msjhbd.ttc \
             file://subtitle_blank.jpg \
             file://subtitle.dat \
+            file://subtitle_size.dat \
             file://demo_videos/ \
             file://LICENSE \
              "
@@ -28,6 +29,7 @@ do_install() {
     cp -r msjhbd.ttc ${D}/home/root/Videos/fonts/
     cp -r demo_videos/* ${D}/home/root/Videos/
     cp -r subtitle.dat ${D}/home/root/Videos/.subtitle_data/
+    cp -r subtitle_size.dat ${D}/home/root/Videos/.subtitle_data/
     cp -r subtitle_blank.jpg ${D}/home/root/Videos/.subtitle_data/
 
 }

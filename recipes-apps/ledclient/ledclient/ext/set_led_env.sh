@@ -107,6 +107,7 @@ elif [[ $ROLE == *$SERVER_TAG* ]];then
     ifconfig eth0 192.168.0.3
     nmcli radio wifi on 
     setup_hotspot.sh &
+    setup_hotspot_alfa.sh &
     setup_eth0_static.sh &
     run-filemanager.sh &
     launch_pyLedServer.sh &

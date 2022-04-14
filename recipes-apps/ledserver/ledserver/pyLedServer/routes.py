@@ -16,6 +16,32 @@ log = utils.log_utils.logging_init(__file__)
 SECRET_KEY = os.urandom(32)
 app.config['SECRET_KEY'] = SECRET_KEY
 
+routes_repeat_option = ""
+route_text_size = 16
+route_text_content = ""
+
+
+def route_set_text_size(size):
+    global route_text_size
+    route_text_size = int(size)
+
+
+def route_set_text_content(content):
+    global route_text_content
+    route_text_content = content
+
+
+def route_set_repeat_option(option):
+    log.debug("option = %s", option)
+    global routes_repeat_option
+    if option == 0:
+        routes_repeat_option = "Repeat_None"
+    elif option == 1:
+        routes_repeat_option = "Repeat_One"
+    elif option == 2:
+        routes_repeat_option = "Repeat_All"
+    elif option == 3:
+        routes_repeat_option = "Repeat_Random"
 
 def find_file_maps():
     maps = {}
@@ -87,9 +113,22 @@ def get_nest_maps(maps):
     return dict_list
 
 
+'''class TestForm(Form):
+    style = {'class': 'ourClasses', 'style': 'font-size:24px;'}
+    color_switcher = RadioField(
+        'Led Color',
+        [validators.Required()],
+        choices=[('test_color:RED', 'RED'), ('test_color:GREEN', 'GREEN'), ('test_color:BLUE', 'BLUE'),
+                 ('test_color:WHITE', 'WHITE')],
+        default=led_color,
+        render_kw=style,
+        id='led_color'
+
+    )
+'''
 @app.route('/play_with_refresh_page/<filename>')
 def play_with_refresh_page(filename):
-    print("route play filename :", filename)
+    log.debug("route play filename :", filename)
     fname = filename
     send_message(play_file=fname)
     return redirect(url_for('index'))
@@ -97,17 +136,52 @@ def play_with_refresh_page(filename):
 
 @app.route('/play/<filename>', methods=['POST'])
 def play(filename):
-    print("route play filename :", filename)
+    log.debug("route play filename :", filename)
     fname = filename
     send_message(play_file=fname)
     status_code = Response(status=200)
     return status_code
 
+
 @app.route('/play_playlist/<playlist>', methods=['POST'])
 def play_playlist(playlist):
-    print("route play playlist :", playlist)
+    log.debug("route play playlist :", playlist)
     fname = playlist
     send_message(play_playlist=fname)
+    status_code = Response(status=200)
+    return status_code
+
+
+@app.route('/play_hdmi_in/<cmd>', methods=['POST'])
+def play_hdmi_in(cmd):
+    print("route hdmi_in cmd :", cmd)
+
+    send_message(play_hdmi_in=cmd)
+    status_code = Response(status=200)
+    return status_code
+
+
+@app.route('/set_text_size/<size>', methods=['POST'])
+def set_text_size(size):
+    log.debug("route set_text_size size : %s", str(size))
+    send_message(set_text_size=str(size))
+    status_code = Response(status=200)
+    return status_code
+
+
+@app.route('/play_text/<data>', methods=['POST'])
+def play_text(data):
+    log.debug("route play_text data %s:", data)
+
+    send_message(play_text=data)
+    status_code = Response(status=200)
+    return status_code
+
+@app.route('/set_repeat_option/<data>', methods=['POST'])
+def set_repeat_option(data):
+    log.debug("route play_text data : %s", data)
+
+    send_message(set_repeat_option=data)
     status_code = Response(status=200)
     return status_code
 
@@ -123,7 +197,11 @@ def index():
     maps = find_file_maps()
     playlist_nest_dict = find_playlist_maps()
     log.debug("playlist_maps = %s", playlist_nest_dict)
-    return render_template("index.html", files=maps, playlist_nest_dict=playlist_nest_dict)
+    log.debug("routes_repeat_option = %s", routes_repeat_option)
+
+    return render_template("index.html", files=maps, playlist_nest_dict=playlist_nest_dict,
+                           repeat_option=routes_repeat_option, text_size=route_text_size,
+                           text_content=route_text_content)
 
 
 

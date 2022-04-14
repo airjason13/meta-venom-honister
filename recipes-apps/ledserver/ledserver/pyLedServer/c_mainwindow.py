@@ -21,6 +21,7 @@ from qtui.c_page_hdmi_in import *
 from qtui.c_page_medialist import *
 from PyQt5.QtCore import QThread, pyqtSignal, QDateTime, QObject
 
+
 log = utils.log_utils.logging_init(__file__)
 
 
@@ -103,6 +104,16 @@ class MainUi(QMainWindow):
         self.play_type = play_type.play_none
         self.ff_process = None
         self.play_option_repeat = repeat_option.repeat_all
+        import routes
+        routes.route_set_repeat_option(self.play_option_repeat)
+        font_size_config_file = open(internal_media_folder + SubtitleFolder + subtitle_size_file_name, 'r')
+        font_size = font_size_config_file.readline()
+        routes.route_set_text_size(font_size)
+        font_size_config_file.close()
+        config_file = open(internal_media_folder + SubtitleFolder + subtitle_file_name, 'r')
+        content_line = config_file.readline()
+        routes.route_set_text_content(content_line)
+        config_file.close()
 
         # get eth0 ip and set it to server_ip
         self.server_ip = net_utils.get_ip_address()
@@ -505,9 +516,8 @@ class MainUi(QMainWindow):
         self.medialist_page.client_brightness_edit.setText(str(i))
         self.medialist_page.video_params_confirm_btn_clicked()
 
-
     ''' test divisor '''
-    def test_timer_A_handler(self):
+    '''def test_timer_A_handler(self):
         log.debug("AA")
         log.debug("self.medialist_page.client_br_divisor_edit.text() = %s", self.medialist_page.client_br_divisor_edit.text())
         i = int(self.medialist_page.client_br_divisor_edit.text())
@@ -522,7 +532,7 @@ class MainUi(QMainWindow):
         log.debug("self.medialist_page.client_br_divisor_edit.text() = %s",
                   self.medialist_page.client_br_divisor_edit.text())
         self.medialist_page.video_params_confirm_btn_clicked()
-        #utils.ffmpy_utils.ffmpy_draw_text(str(i))
+        #utils.ffmpy_utils.ffmpy_draw_text(str(i))'''
 
     """ handle the command from qlocalserver"""
     def parser_cmd_from_qlocalserver(self, data):
@@ -535,6 +545,33 @@ class MainUi(QMainWindow):
         elif data.get("play_playlist"):
             log.debug("play playlist")
             self.media_engine.play_playlsit(data.get("play_playlist"))
+        elif data.get("play_hdmi_in"):
+            log.debug("play_hdmi_in")
+            self.hdmi_in_page.play_action_btn.click()
+        elif data.get("play_text"):
+            log.debug("play_text")
+            utils.file_utils.change_text_content(data.get("play_text"))
+            self.medialist_page.right_clicked_select_file_uri = internal_media_folder + subtitle_blank_jpg
+            log.debug("file_uri :%s", self.medialist_page.right_clicked_select_file_uri)
+            self.media_engine.play_single_file(self.medialist_page.right_clicked_select_file_uri)
+        elif data.get("set_text_size"):
+            log.debug("set_text_size")
+            utils.file_utils.change_text_size(data.get("set_text_size"))
+        elif data.get("set_repeat_option"):
+            log.debug("set_repeat_option")
+            if data.get("set_repeat_option") == "Repeat_Random":
+                self.medialist_page.play_option_repeat = repeat_option.repeat_random
+                self.medialist_page.btn_repeat.setText("Repeat Random")
+            elif data.get("set_repeat_option") == "Repeat_All":
+                self.medialist_page.play_option_repeat = repeat_option.repeat_all
+                self.medialist_page.btn_repeat.setText("Repeat All")
+            elif data.get("set_repeat_option") == "Repeat_One":
+                self.medialist_page.play_option_repeat = repeat_option.repeat_one
+                self.medialist_page.btn_repeat.setText("Repeat One")
+            elif data.get("set_repeat_option") == "Repeat_None":
+                self.medialist_page.play_option_repeat = repeat_option.repeat_none
+                self.medialist_page.btn_repeat.setText("Repeat None")
+            self.mainwindow.repeat_option_set(self.medialist_page.play_option_repeat)
 
     def check_client(self, ip, data):
         is_found = False
@@ -828,6 +865,8 @@ class MainUi(QMainWindow):
     def repeat_option_set(self, repeat_value):
         self.play_option_repeat = repeat_value
         self.media_engine.media_processor.set_repeat_option(self.play_option_repeat)
+        import routes
+        routes.route_set_repeat_option(self.play_option_repeat)
         log.debug("self.play_option_repeat : %d", self.play_option_repeat)
 
     def mouseMoveEvent(self, event):
