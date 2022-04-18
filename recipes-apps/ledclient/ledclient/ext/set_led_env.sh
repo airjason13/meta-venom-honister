@@ -104,7 +104,11 @@ elif [[ $ROLE == *$PLAYER_TAG* ]];then
     launch_led_player.sh
 elif [[ $ROLE == *$SERVER_TAG* ]];then
     echo "Server Now"
-    ifconfig eth0 192.168.0.3
+    #ifconfig eth0 192.168.0.3
+    nmcli con mod eth0 ipv4.addresses 192.168.0.3/24
+    nmcli con mod eth0 ipv4.gateway 192.168.0.3
+    nmcli con mod eth0 ipv4.dns "8.8.8.8"
+    nmcli con mod eth0 ipv4.method manual
     nmcli radio wifi on 
     setup_hotspot.sh &
     setup_hotspot_alfa.sh &
