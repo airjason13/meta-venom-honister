@@ -10,6 +10,7 @@ oncontextmenu="return false;"
 
 <script src="https://cdn.bootcss.com/jquery/1.10.2/jquery.min.js"></script>
 <script>window.jQuery || document.write('<script src="static/jquery.min.js"><\/script>')</script>
+<script src="static/script.js" defer></script>
 <script>
 var cot=0;//設置一個計數器，初始值為0；作用是用來監聽點擊切換的時候哪一個圖片應該隱藏或者顯示
 var max_cot=0;
@@ -50,7 +51,6 @@ function play_with_refresh_page(data){
 }
 
 function submit_text_content(data1, data2){
-    /*alert(data1 + ",size :" + data2);*/
 
     var url = "/set_text_size/" + data2;
     $.post(url, {
@@ -63,10 +63,22 @@ function submit_text_content(data1, data2){
         });
 }
 
-function submit_hdmi_in(){
-    /*alert("hdmi in")*/
-    var data = "hdmi_in_start"
+function submit_hdmi_in(data){
+    /*var data = "hdmi_in_start"*/
+    /*alert(data);*/
     var url = "/play_hdmi_in/" + data;
+    $.post(url, {
+        javascript_data: data
+        });
+}
+
+function submit_wifi_configure(){
+    console.log(document.getElementById("wifi_bands"))
+    var bands_data = document.getElementById("wifi_bands").value;
+    var channels_data = document.getElementById("wifi_channels").value;
+    var data = "band=" + bands_data + "_" + "channel=" + channels_data
+    /*alert(data);*/
+    var url = "/configure_wifi/" + data;
     $.post(url, {
         javascript_data: data
         });
@@ -98,23 +110,72 @@ function submit_repeat_option(data){
 
 
 
-<body style="background-color:#000000;">
+<body ><!--style="background-color:#000000;">-->
     <div class="div_total_frame">
     <div class="div_drawtext">
-        <label for="text_context" style="font-size:36px" ><font color="#0000FF">Play Text Option:</font></label><br>
-        <label for="text_context" style="font-size:24px" ><font color="#0000FF">Font Size:</font></label>
+        <label class="label_h1" for="text_context" style="font-size:36px" ><font color="#0000FF">Play Text Option</font></label><br>
+        <label class="label_h1" for="text_context" style="font-size:24px" ><font color="#0000FF">Font Size:</font></label>
         <input id="text_font_size" type="number" id="text_font_size" name="text_font_size" size="2" style="font-size:24px" value={{ text_size }}><br><br>
-        <label for="text_context" style="font-size:24px" ><font color="#0000FF">Text Context:</font></label>
+        <label class="label_h1" for="text_context" style="font-size:24px" ><font color="#0000FF">Text Context:</font></label>
         <input type="text" id="text_context" name="text_context" size="50" style="font-size:24px" value={{ text_content }}>
-        <input type="submit" style="font-size:24px" value="Submit" onclick=
+        <input class="button-84" type="submit" value="Submit" onclick=
                 "submit_text_content(document.getElementById('text_context').value, document.getElementById('text_font_size').value)"><br><br>
     </div>
 
 
     <div class="div_hdmi_in">
-        <input type="submit" style="font-size:24px" value="HDMI-In" onclick="submit_hdmi_in()">
-        <input type="submit" id="btn_repeat" name="btn_repeat" style="font-size:24px" value={{ repeat_option }} onclick="submit_repeat_option(value)">
-        <!--<input onclick="submit_repeat_option(value)" type="button" value={{ repeat_option }} id="myButton1"></input>-->
+        <button class="button-84" id="btn_hdmi_in_start" value="btn_hdmi_in_start"
+                role="button" onclick="submit_hdmi_in(value)" >
+            HDMI-In Start
+        </button>
+        <button class="button-84" id="btn_hdmi_in_stop" value="btn_hdmi_in_stop"
+                role="button" onclick="submit_hdmi_in(value)" >
+            HDMI-In Stop
+        </button>
+        <input class="button-84" type="submit" id="btn_repeat" name="btn_repeat" value={{ repeat_option }} onclick="submit_repeat_option(value)">
+    </div>
+
+    <div class="div_wifioption">
+        <label class="label_h1" style="font-size:36px" ><font color="#0000FF">Wifi Options: </font></label><br>
+        <label class="label_h1" style="font-size:24px" ><font color="#0000FF">Wifi Bands: </font></label>
+        <select id="wifi_bands" name="Wifi Bands" style="font-size:24px">
+        　<option value="2.4G">2.4G</option>
+        　<option value="5G">5G</option>
+        </select>
+        <label class="label_h1" style="font-size:24px" ><font color="#0000FF">Wifi Channels: </font></label>
+        <select id="wifi_channels" name="Wifi Channels" style="font-size:24px">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+            <option value="11">11</option>
+            <option value="12">12</option>
+            <option value="13">13</option>
+            <option value="14">14</option>
+            <option value="36">36</option>
+            <option value="40">40</option>
+            <option value="44">44</option>
+            <option value="48">48</option>
+            <option value="52">52</option>
+            <option value="56">56</option>
+            <option value="60">60</option>
+            <option value="64">64</option>
+            <option value="100">100</option>
+            <option value="116">116</option>
+            <option value="132">132</option>
+            <option value="149">149</option>
+            <option value="165">165</option>
+        </select>
+        <button class="button-84" id="btn_wifi_configure"
+                role="button" onclick="submit_wifi_configure()" >
+            Wifi Configure
+        </button>
     </div>
 
     <!--<div>
@@ -134,32 +195,37 @@ function submit_repeat_option(data){
             <button onclick="submit_repeat_option()">Submit</button>
         </div>
     </div>-->
-
-
-    <div class="div_files_preview">
-        <input name="left_scroll" id="left_scroll" type="image" src="/static/left_arrow.webp" onclick="pre()" style="float:left"/>
-        <div style="width:80vw;height:240px;margin:auto;overflow:hidden;float:left">
-            <div class="img" style="width:600000px;">
-                <div class="inputs" style="width:500000px;">
-                        {% for k,v in files.items() %}
-                            <input name="{{k}}" id="test_play" type="image" src="./get_thumbnail/{{v}}" onclick="play(name)"/>
-                        {% endfor %}
-                </div>
-            </div>
+    <div class="row">
+        <div class="header">
+          <label class="label_h1" style="font-size:36px" ><font color="#0000FF">Media Files</font></label>
+          <div class="progress-bar"></div>
         </div>
-        <input class="img" name="right_scroll" id="right_scroll" type="image" src="/static/right_arrow.webp" onclick="nex()" style="float:left"/>
+        <div class="container">
+            <button class="handle left-handle">
+                <div class="text">&#8249;</div>
+            </button>
+            <div class="slider">
+                {% for k,v in files.items() %}
+                        <input name="{{k}}" id="test_play" type="image" src="./get_thumbnail/{{v}}" onclick="play(name)"/>
+                {% endfor %}
+            </div>
+            <button class="handle right-handle">
+                <div class="text">&#8250;</div>
+            </button>
+        </div>
     </div>
 
-    <div class="div_playlist">
 
-        <h2><font color="#0000FF">Playlist</font></h2>
+    <div class="div_playlist">
+        <label class="label_h1" style="font-size:36px" ><font color="#0000FF">Playlists</font></label><br>
             {% for k,v in playlist_nest_dict.items() %}
                 <div style="width:80vw;margin:auto;overflow:hidden;float:left">
                     <div class="img" style="width:600000px;">
-                    <h3><font color="#0000FF">{{k}}</font></h3>
+                    <label class="label_h1" style="font-size:24px" ><font color="#0000FF">{{k}}</font></label>
+                    <!--<h3><font color="#0000FF">{{k}}</font></h3>-->
                         <div class="inputs" style="width:500000px;">
                             {% for ki,vi in v.items() %}
-                                <input name="{{k}}" id="playlist_file" type="image" src="./get_thumbnail/{{vi}}" width="48" height="48" onclick="play_playlist(name)" />
+                                <input name="{{k}}" id="playlist_file" type="image" src="./get_thumbnail/{{vi}}" width="96" height="96" onclick="play_playlist(name)" />
                             {% endfor %}
                         </div>
                     </div>
@@ -167,6 +233,8 @@ function submit_repeat_option(data){
             {% endfor %}
     </div>
     </div>
+
+
 
 
 </body>
