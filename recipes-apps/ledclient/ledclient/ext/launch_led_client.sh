@@ -10,6 +10,9 @@ do
 	if [[ $br0_ip == 192.168.0.* ]];then
 		echo "Abr0 ip:"$br0_ip >> /home/root/.ledclient_network.log
 		ledclient -fflags nobuffer udp://239.11.11.11:15000
+		sleep 1
+		echo "set br again!"
+		set_br.sh
 	else
 		echo "no ip obtain!"
 		sleep 3	

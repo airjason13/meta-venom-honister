@@ -426,9 +426,9 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
 	if(pico != NULL){
         write_len = picousb_out_transfer(pico, buf, buf_size);
         if(write_len < 0){
-            
             //int iret_reset_usb = reset_usb_device(pico);
             //log_debug("reset pico error : %d\n", iret_reset_usb); 
+            //pico = NULL;
             //free(pico);
             //pico = picousb_init();
         }

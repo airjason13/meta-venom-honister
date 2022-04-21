@@ -2230,11 +2230,11 @@ void check_pico(void){
         }
         pclose(fp);
         system("sync");
-        sprintf(reset_br_cmd, "/usr/bin/set_br.sh");
+        /*sprintf(reset_br_cmd, "/usr/bin/set_br.sh");
         fp = popen(reset_br_cmd, "r");
         if (fp == NULL) {
             log_debug("Failed to run command reset_br_cmd \n" );
-        } 
+        } */
         /* close */
         pclose(fp);
         exit(0);
@@ -2473,6 +2473,7 @@ static int video_thread(void *arg)
 				iret = transfer_framergb_to_pico(frameRGB, &(led_params.cab_params[i]), 3, is->viddec.avctx->width, is->viddec.avctx->height, led_params.pico_handle, input_filename);
 				if(iret < 0){
 					log_debug("transfer_framergb_to_pico error : %d\n", iret);
+                    exit(0);//dirty
                     if(led_params.pico_handle != NULL){
                         picousb_close(led_params.pico_handle);
                         led_params.pico_handle = NULL;
