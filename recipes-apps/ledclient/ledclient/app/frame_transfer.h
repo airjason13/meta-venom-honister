@@ -18,4 +18,5 @@ int get_frame_brightness_value();
 int set_frame_br_divisor_value(int value);
 int get_frame_br_divisor_value();
 int set_frame_gamma_value(float fvalue);
+int init_frame_brightness();
 #endif

@@ -4154,11 +4154,11 @@ int main(int argc, char **argv)
     }
 
 
-    set_frame_brightness_value(100);
+    //set_frame_brightness_value(100);
     set_frame_br_divisor_value(1);
     
     /*initial gamma lut*/
-    set_frame_gamma_value(2.2);
+    //set_frame_gamma_value(2.2);
 
     /*initial cabinet params*/
 	for(int i = 0; i < LED_PANELS; i ++){
@@ -4229,6 +4229,12 @@ int main(int argc, char **argv)
     sprintf(id_data, "ID=NC");
     insert_lcd_content(ip_data, "ID=", TAG_LCD_INFO, SUB_TAG_IP_ID);
     
+    log_debug("init frame_brightness");
+    init_frame_brightness();
+    log_debug("init frame_contrast");
+    init_frame_contrast();
+    log_debug("init frame_gamma");
+    init_frame_gamma(); 
 	
 	/*start fps counter timer*/
 	timer_t fps_counter_tid = jset_timer(1, 0, 1, 0, &(fps_counter), 99);

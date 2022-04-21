@@ -7,13 +7,41 @@ int frame_contrast = 0;
 float f_gamma = 1.0;
 unsigned char g_GammaLut[256];
 
+int init_frame_brightness(void){
+    frame_brightness = get_brightness_from_config();
+    log_debug("frame_brightness : %d", frame_brightness);
+    return 0;
+}
 
+int init_frame_contrast(void){
+    log_debug("");
+    frame_contrast = get_contrast_from_config();
+    log_debug("frame_contrast : %d", frame_contrast);
+    return 0;
+}
+
+int init_frame_gamma(void){
+    f_gamma = get_gamma_from_config();
+    log_debug("f_gamma : %f", f_gamma);
+    //f_gamma = fvalue;
+    int i;
+    float f;
+    
+    for(i = 0; i < 256; i++){
+        f=(i+0.5F)/256;
+        f=(float)pow(f, f_gamma);
+        g_GammaLut[i] = (unsigned char)(f*256 - 0.5F); 
+    }
+    return 0;
+}
 
 int set_frame_brightness_value(int value){
     if((value > 100) || (value < 0)){
         return -EINVAL;
     }
     frame_brightness = value;
+    // write to default config
+    write_brightness_config_file(value);
     return 0;
 }
 
@@ -38,6 +66,7 @@ int set_frame_contrast_value(int value){
         return -EINVAL;
     }
     frame_contrast = value;
+    write_contrast_config_file(value);
     return 0;
 }
 
@@ -49,6 +78,7 @@ int get_frame_contrast_value(void){
 int set_frame_gamma_value(float fvalue){
     int i;
     float f;
+    write_gamma_config_file(fvalue);
     f_gamma = fvalue;
     for(i = 0; i < 256; i++){
         f=(i+0.5F)/256;
@@ -82,6 +112,9 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
 	sprintf(buf, "id%d:", params->port_id);
 	offset +=4;
 
+    //log_debug("frame brightness = %d\n", frame_brightness);
+    //log_debug("frame gamma = %f\n", f_gamma);
+    //return 2884;
     //log_debug("input uri = %s\n", input_uri);
     //log_debug("frame width = %d\n", frame_width);
     //log_debug("frame height = %d\n", frame_height);
