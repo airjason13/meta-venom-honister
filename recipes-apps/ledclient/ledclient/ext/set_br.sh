@@ -15,9 +15,18 @@ do
 done
 
 if [ -e /sys/class/net/enp1s0u1u1u4 ];then
+    	if [ -e /sys/class/net/br0 ];then
+		pkill udhcpc	
+        	ifconfig br0 down
+        	brctl delbr br0
+	fi
 	echo "enp1s0u1u1u4 exists"
 	pkill dnsmasq #for sure that all client request ip from server
 	brctl addbr br0
+    	nmcli con add con-name eth0 type ethernet ifname eth0 ip4 0.0.0.0/24 gw4 0.0.0.0 ipv4.method manual
+    	nmcli con add con-name enp1s0u1u1u4 type ethernet ifname enp1s0u1u1u4 ip4 0.0.0.0/24 gw4 0.0.0.0 ipv4.method manual
+    	nmcli con up eth0
+    	nmcli con up enp1s0u1u1u4
 	#brctl stp br0 off
 	brctl addif br0 eth0 
 	brctl addif br0 enp1s0u1u1u4 

@@ -2221,15 +2221,23 @@ void check_pico(void){
         led_params.pico_handle = picousb_init();
         pico_lost_count += 1;
         char pico_lost_str[256] = {0};
+        char reset_br_cmd[256] = {0};
         FILE *fp;
         sprintf(pico_lost_str, "/bin/touch /home/root/pico_lost%d", pico_lost_count);
         fp = popen(pico_lost_str, "r");
         if (fp == NULL) {
             log_debug("Failed to run command\n" );
         }
+        pclose(fp);
         system("sync");
+        sprintf(reset_br_cmd, "/usr/bin/set_br.sh");
+        fp = popen(reset_br_cmd, "r");
+        if (fp == NULL) {
+            log_debug("Failed to run command reset_br_cmd \n" );
+        } 
         /* close */
         pclose(fp);
+        exit(0);
     }
 }
 /********************************************************
