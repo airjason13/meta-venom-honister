@@ -9,6 +9,9 @@ SRC_URI += "file://pyLedServer/ \
             file://subtitle_blank.jpg \
             file://subtitle.dat \
             file://subtitle_size.dat \
+            file://subtitle_speed.dat \
+            file://subtitle_position.dat \
+            file://subtitle_period.dat \
             file://demo_videos/ \
             file://LICENSE \
              "
