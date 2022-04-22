@@ -30,6 +30,9 @@ do_install() {
     cp -r demo_videos/* ${D}/home/root/Videos/
     cp -r subtitle.dat ${D}/home/root/Videos/.subtitle_data/
     cp -r subtitle_size.dat ${D}/home/root/Videos/.subtitle_data/
+    cp -r subtitle_period.dat ${D}/home/root/Videos/.subtitle_data/
+    cp -r subtitle_speed.dat ${D}/home/root/Videos/.subtitle_data/
+    cp -r subtitle_position.dat ${D}/home/root/Videos/.subtitle_data/
     cp -r subtitle_blank.jpg ${D}/home/root/Videos/.subtitle_data/
 
 }
