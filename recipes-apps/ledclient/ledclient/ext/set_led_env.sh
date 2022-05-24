@@ -4,6 +4,7 @@ ROLE=''
 RA_TAG='RA'
 CLIENT_TAG='Client'
 SERVER_TAG='Server'
+AIO_TAG='AIO'
 PLAYER_TAG='Player'
 TESTER_TAG='Tester'
 #for auto-mount test
@@ -20,6 +21,10 @@ fi
 
 if [ -e /home/root/client_now ];then
     rm /home/root/client_now
+fi
+
+if [ -e /home/root/aio_now ];then
+    rm /home/root/aio_now
 fi
 
 if [ -e /home/root/client_ra_now ];then
@@ -45,23 +50,26 @@ if [ -e $CONFIG_FILE ];then
         else	    
             if [[ $line =~ $SERVER_TAG ]];then
                 if [[ $line =~ $RA_TAG ]];then
-		    echo "Server_RA check"
-		    ROLE=Server_RA
+		            echo "Server_RA check"
+		            ROLE=Server_RA
                 else
-		    ROLE=Server
-		fi
+		            ROLE=Server
+		        fi
             elif [[ $line =~ $CLIENT_TAG ]];then
-	        echo "Client check"
-	        if [[ $line =~ $RA_TAG ]];then
-	            echo "Client_RA check"
+	            echo "Client check"
+	            if [[ $line =~ $RA_TAG ]];then
+	                echo "Client_RA check"
             	    ROLE=Client_RA
-	        else
-		    ROLE=Client
-	        fi	
+	            else
+		            ROLE=Client
+	            fi	
+            elif [[ $line =~ $AIO_TAG ]];then
+                echo "AIO check"
+                ROLE=AIO
             elif [[ $line =~ $PLAYER_TAG ]];then
                 ROLE=Player
             elif [[ $line =~ $TESTER ]];then
-	        echo "Tester check"
+	            echo "Tester check"
                 ROLE=Tester
             fi     
 	fi    
@@ -102,6 +110,23 @@ elif [[ $ROLE == *$PLAYER_TAG* ]];then
     setup_hotspot.sh &
     run-filemanager.sh &
     launch_led_player.sh
+elif [[ $ROLE == *$AIO_TAG* ]];then
+    echo "AIO Now"
+    nmcli con add type ethernet ifname eth0 con-name eth0
+    nmcli con mod eth0 ipv4.addresses 192.168.0.3/24
+    nmcli con mod eth0 ipv4.gateway 192.168.0.3
+    nmcli con mod eth0 ipv4.dns "8.8.8.8"
+    nmcli con mod eth0 ipv4.method manual
+    nmcli con up eth0
+    nmcli radio wifi on 
+    setup_hotspot.sh &
+    setup_hotspot_alfa.sh &
+    # setup_eth0_static.sh &
+    # run-filemanager.sh &
+    launch_pyLedServer.sh &
+    write_tc358743_edid.sh & 
+    launch_led_aio_client.sh &
+    
 elif [[ $ROLE == *$SERVER_TAG* ]];then
     echo "Server Now"
     #ifconfig eth0 192.168.0.3

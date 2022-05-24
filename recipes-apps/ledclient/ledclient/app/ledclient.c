@@ -4119,12 +4119,38 @@ void check_hdmi_status(void)
     }    
 }
 
+int get_machine_role(char *role)
+{
+    FILE *role_config;
+    //char role[256];
+    int iret = 0;
+    role_config = fopen("/home/root/led_role.conf", "rw");
+    if(role_config == NULL){
+        log_debug("open config file error!\n");
+        return -ENOENT;
+    }
+    iret = fscanf(role_config, "%s", role);
+    if(iret < 0){
+        log_debug("read role config file error!\n");
+        return -EIO;
+    } 
+    log_debug("role = %s\n", role);
+
+    return 0;
+}
+
+
 /* Called from the main */
 int main(int argc, char **argv)
 {
     int flags;
+    char role[256] = {0};  
     VideoState *is;
-    log_info("Jason show ledcliend!\n");
+    log_info("Jason show ledclient!\n");
+    get_machine_role(role);
+    log_debug("role = %s\n", role);
+    
+    
 	int enable_log_file = log_init(true, LOG_PREFIX_ID);
 	if(enable_log_file != 0){
 		log_fatal("ERROR!Can't enable log file\n");
@@ -4242,8 +4268,11 @@ int main(int argc, char **argv)
 	//log_info("fps_counter_tid = %d\n", fps_counter_tid);
 
     /*check pico timer*/
-    timer_t pico_check_tid = jset_timer(1, 0, 10, 0, &(check_pico), 99);
-    
+    if(strstr(role, "AIO")){
+        //timer_t pico_check_tid = jset_timer(1, 0, 10, 0, &(check_pico), 99);
+    }else{
+        timer_t pico_check_tid = jset_timer(1, 0, 10, 0, &(check_pico), 99);
+    }
     /*check hdmi status*/
     timer_t detect_screen_tid = jset_timer(1, 0, 3, 0, &(check_hdmi_status), 99);
 		
