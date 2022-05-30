@@ -6,6 +6,14 @@
 #define CLIENT_SOCK_FILE "client.sock"
 #define SERVER_SOCK_FILE "/tmp/uds_socket_i2clcd7"
 
+bool b_lcd_active = false;
+
+int set_lcd_active(bool enable)
+{
+    b_lcd_active = enable;
+    return 0;
+}
+
 int lcd_send_command(int x, int y, char* cmd)
 {
 	int fd;
@@ -15,7 +23,11 @@ int lcd_send_command(int x, int y, char* cmd)
 	struct sockaddr_un from;
 	int ok = 1;
 	int len;
-
+    
+    if(b_lcd_active == false){
+        return -ENODEV;
+    }
+    
 	if ((fd = socket(PF_UNIX, SOCK_STREAM, 0)) < 0) {
 		log_error("socket init fail!\n");
 		ok = 0;

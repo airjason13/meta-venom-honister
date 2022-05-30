@@ -39,6 +39,11 @@ unsigned int init_lcd_content(char *version, char *mcu_version){
 ************************************************************************/
 int insert_lcd_content(char *data_0, char *data_1, char *tag, char *sub_tag){
     log_debug("%s%s\n", tag, sub_tag);
+    struct LCD_CONTENT *lc = lcd_content_head;
+    if(lc == NULL){
+        log_debug("no lcd1602 device!");
+        return -ENODEV;
+    }
     if((tag == NULL)||(sub_tag == NULL)){
         log_fatal("tag & sub_tag should not be NULL!\n");
         return -EINVAL;
@@ -55,7 +60,6 @@ int insert_lcd_content(char *data_0, char *data_1, char *tag, char *sub_tag){
         sprintf(lcd_content->buf[1], "%s", data_1);
     } 
     sprintf(lcd_content->tag, "%s%s", tag, sub_tag);
-    struct LCD_CONTENT *lc = lcd_content_head;
     
     for(;;){
         if(lc->next == NULL){
@@ -88,8 +92,11 @@ int insert_lcd_content(char *data_0, char *data_1, char *tag, char *sub_tag){
 int refresh_lcd_content(char *tag, char *sub_tag, char *data_0, char *data_1){
     struct LCD_CONTENT *lc = lcd_content_head;
     char buf[LCD_CONTENT_WIDTH];
+    if(lc == NULL){
+        log_debug("no lcd1602");
+        return -ENODEV;
+    }    
     sprintf(buf, "%s%s", tag, sub_tag);    
-    
     for(;;){
         if(strstr(lc->tag, buf) != 0){
             if(data_0 != NULL){

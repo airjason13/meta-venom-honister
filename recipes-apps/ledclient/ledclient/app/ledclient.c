@@ -426,6 +426,7 @@ static const struct TextureFormatEntry {
 ledparams_t led_params;
 char led_layout[LED_PANELS] = { 1, 1, 1, 1, 3, 3, 3, 3};
 int pico_lost_count = 0;
+char role[256] = {0};  
 
 
 
@@ -2200,7 +2201,11 @@ void fps_counter(void){
     }    
 	//log_info("led fps = %d\n", led_fps);
 	sprintf(buf, "LED FPS=%d", led_fps);
-    refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_FPS, buf, NULL);
+    if(strstr(role, "AIO")){
+
+    }else{
+        refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_FPS, buf, NULL);
+    }
 	led_fps = 0;
 }
 
@@ -4119,7 +4124,7 @@ void check_hdmi_status(void)
     }    
 }
 
-int get_machine_role(char *role)
+int get_machine_role(char *role_tmp)
 {
     FILE *role_config;
     //char role[256];
@@ -4129,12 +4134,12 @@ int get_machine_role(char *role)
         log_debug("open config file error!\n");
         return -ENOENT;
     }
-    iret = fscanf(role_config, "%s", role);
+    iret = fscanf(role_config, "%s", role_tmp);
     if(iret < 0){
         log_debug("read role config file error!\n");
         return -EIO;
     } 
-    log_debug("role = %s\n", role);
+    log_debug("role = %s\n", role_tmp);
 
     return 0;
 }
@@ -4144,7 +4149,7 @@ int get_machine_role(char *role)
 int main(int argc, char **argv)
 {
     int flags;
-    char role[256] = {0};  
+    //char role[256] = {0};  
     VideoState *is;
     log_info("Jason show ledclient!\n");
     get_machine_role(role);
@@ -4158,9 +4163,14 @@ int main(int argc, char **argv)
     init_dynload();
     
     /*init lcd content*/
-    init_lcd_content(LEDCLIENT_VERSION, "MCU_VERSION");
-    insert_lcd_content("LED FPS=", "LED Res=", TAG_LCD_INFO, SUB_TAG_FPS);
-    lcd_start_routine();	
+    if(strstr(role, "AIO")){
+        set_lcd_active(false); 
+    }else{
+        set_lcd_active(true);
+        init_lcd_content(LEDCLIENT_VERSION, "MCU_VERSION");
+        insert_lcd_content("LED FPS=", "LED Res=", TAG_LCD_INFO, SUB_TAG_FPS);
+        lcd_start_routine();	
+    }
 	
     /* initial pico*/
 	log_info("Init pico usb!\n");
@@ -4177,7 +4187,10 @@ int main(int argc, char **argv)
         //unsigned char buf[16];
         picousb_in_transfer(led_params.pico_handle, led_params.pico_version, 16);
         log_debug("%s\n", led_params.pico_version);
-        refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_VERSION, NULL, led_params.pico_version);
+        if(strstr(role, "AIO")){
+        }else{
+            refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_VERSION, NULL, led_params.pico_version);
+        }
     }
 
 
