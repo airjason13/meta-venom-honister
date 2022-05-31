@@ -54,6 +54,8 @@ do_install() {
     install -m 755 ext/tc358743_edid.txt ${D}/${sysconfdir}/
     install -m 755 ext/check_client_peripheral_devices.sh ${D}/${bindir}
     install -m 755 ext/check_server_peripheral_devices.sh ${D}/${bindir}
+    install -m 755 ext/probe_g_mass.sh ${D}/${bindir}
+    cp -r ext/piusb.bin ${D}/home/root/
     cp -r ext/pyflask_machine_option/* ${D}/home/root/led_machine_option/
     cp -r ext/py1602_server/* ${D}/home/root/i2c_lcd_server/
     cp -r ext/default_cabinets_params/.cabinet_params_config_* ${D}/home/root/.cabinets_params/

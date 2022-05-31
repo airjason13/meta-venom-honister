@@ -12,4 +12,8 @@ do_deploy:append() {
         echo "# Enable TC358743 HDMItoCSI" >>$CONFIG
         echo "dtoverlay=tc358743" >>$CONFIG
     fi
+    if [ "${OV5647}" = "1" ]; then
+        echo "# Enable OV5647 Image Sensor" >>$CONFIG
+        echo "dtoverlay=ov5647" >>$CONFIG
+    fi
 }
