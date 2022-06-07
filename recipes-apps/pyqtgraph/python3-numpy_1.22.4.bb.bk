@@ -1,0 +1,16 @@
+
+SUMMARY = "NumPy is the fundamental package for array computing with Python."
+HOMEPAGE = "https://www.numpy.org"
+AUTHOR = "Travis E. Oliphant et al. <>"
+LICENSE = "BSD"
+LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=8026691468924fb6ec155dadfe2a1a7f"
+
+SRC_URI = "https://files.pythonhosted.org/packages/f6/d8/ab692a75f584d13c6542c3994f75def5bce52ded9399f52e230fe402819d/numpy-1.22.4.zip"
+SRC_URI[md5sum] = "b44849506fbb54cdef9dbb435b2b1987"
+SRC_URI[sha256sum] = "425b390e4619f58d8526b3dcf656dde069133ae5c240229821f01b5f44ea07af"
+
+S = "${WORKDIR}/numpy-1.22.4"
+
+RDEPENDS_${PN} = ""
+
+inherit setuptools3

@@ -1,0 +1,70 @@
+SUMMARY = "bitbake-layers recipe"
+DESCRIPTION = "Recipe created by bitbake-layers"
+LICENSE = "MIT"
+LIC_FILES_CHKSUM = "file://${WORKDIR}/LICENSE;md5=e4ac654ba9b61686c2dc854a1128a323"
+FILESEXTRAPATHS:append := "${THISDIR}/${PN}:"
+SRC_URI += "file://files/ \
+            file://LICENSE \
+             "
+
+S = "${WORKDIR}"
+
+do_compile() {
+}
+
+do_install() {
+    install -d ${D}${bindir}
+    install -d ${D}/usr/lib64/
+    cp -r ${S}/files/usr/bin/* ${D}${bindir}/
+    cp -r ${S}/files/usr/lib64/* ${D}/usr/lib64/
+    #cp -r ${S}/files/usr/libexec/* ${D}${libexecdir}/
+    #cp -r ${S}/files/usr/include/* ${D}${includedir}/
+    #cp -r ${S}/files/usr/share/* ${D}/usr/share/
+
+}
+
+
+
+FILES:${PN} += " \
+		${bindir} \
+		/usr/lib64/ \
+		/usr/share/ \
+                "
+DEPENDS += "\
+          python3 \
+          boost \
+          libexif \
+          libepoxy \
+          libcamera \
+          libdrm \
+          libevent \
+          libsdl2 \
+          libyaml \
+          qtbase \
+          gstreamer1.0 \
+          elfutils \
+          libunwind \
+          gstreamer1.0-plugins-base \
+          tiff \
+                "
+
+RDEPENDS:${PN} = "\
+          python3-core \
+          libcamera \
+          libepoxy \
+          libexif \
+          boost \
+          libdrm \
+          libevent \
+          libsdl2 \
+          libyaml \
+          qtbase \
+          gstreamer1.0 \
+          elfutils \
+          libunwind \
+          gstreamer1.0-plugins-base \
+          tiff \
+         "
+
+
+INSANE:SKIP_${PN}:append = "already-stripped"
