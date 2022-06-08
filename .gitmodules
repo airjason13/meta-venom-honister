@@ -5,3 +5,6 @@
 [submodule "recipes-apps/ledtester/ledtester/pyLedTester"]
 	path = recipes-apps/ledtester/ledtester/pyLedTester
 	url = https://github.com/airjason13/pyLed_test_server.git
+[submodule "recipes-apps/ledserver/ledserver/pyLed_Server"]
+	path = recipes-apps/ledserver/ledserver/pyLed_Server
+	url = https://github.com/airjason13/pyLed_Server.git

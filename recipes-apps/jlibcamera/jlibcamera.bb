@@ -35,6 +35,8 @@ DEPENDS += "\
           libyaml \
           gstreamer1.0 \
           elfutils \
+          qtbase \
+          qtmultimedia \
           libunwind \
           gstreamer1.0-plugins-base \
           tiff \
@@ -46,6 +48,8 @@ RDEPENDS:${PN} = "\
           libsdl2 \
           libyaml \
           gstreamer1.0 \
+          qtbase \
+          qtmultimedia \
           elfutils \
           libunwind \
           gstreamer1.0-plugins-base \
