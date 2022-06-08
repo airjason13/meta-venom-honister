@@ -1,41 +1,38 @@
 SUMMARY = "bitbake-layers recipe"
 DESCRIPTION = "Recipe created by bitbake-layers"
-LICENSE = "MIT"
-LIC_FILES_CHKSUM = "file://${WORKDIR}/LICENSE;md5=e4ac654ba9b61686c2dc854a1128a323"
-FILESEXTRAPATHS:append := "${THISDIR}/${PN}:"
-SRC_URI += "file://files/ \
-            file://LICENSE \
-             "
+LICENSE="CLOSED"
+#SRC_URI = "https://github.com/raspberrypi/libcamera-apps;protocol=file;branch=master"
 
-S = "${WORKDIR}"
+SRC_URI = "https://github.com/raspberrypi/libcamera-apps/archive/refs/heads/main.zip;protocol=http"
 
-do_compile() {
-}
+#SRCREV = "6582a730b059f086552414b034c90688cca047eb"
+SRC_URI[sha256sum] = "2b3375c841248df8c8a7f66636fbddfc572bfba0dc45251b0f346694d1035ab8"
 
-do_install() {
-    install -d ${D}${bindir}
-    install -d ${D}/usr/lib64/
-    cp -r ${S}/files/usr/bin/* ${D}${bindir}/
-    cp -r ${S}/files/usr/lib64/* ${D}/usr/lib64/
-    #cp -r ${S}/files/usr/libexec/* ${D}${libexecdir}/
-    #cp -r ${S}/files/usr/include/* ${D}${includedir}/
-    #cp -r ${S}/files/usr/share/* ${D}/usr/share/
+S = "${WORKDIR}/libcamera-apps-main"
+#B = "${WORKDIR}/build"
 
-}
+inherit cmake pkgconfig
+
+EXTRA_OECMAKE = "-DENABLE_DRM=1 -DENABLE_X11=1 -DENABLE_QT=1 -DENABLE_OPENCV=0 -DENABLE_TFLITE=0"
+
 
 
 
 FILES:${PN} += " \
 		${bindir} \
-		/usr/lib64/ \
+		/usr/lib/ \
 		/usr/share/ \
                 "
+
+#FILES:${PN}-dev += " ${libdir}/libpreview.so"
+#FILES:${PN}-dev += " ${libdir}/libimage.so"
+
 DEPENDS += "\
           python3 \
           boost \
           libexif \
           libepoxy \
-          libcamera \
+          jlibcamera \
           libdrm \
           libevent \
           libsdl2 \
@@ -50,7 +47,7 @@ DEPENDS += "\
 
 RDEPENDS:${PN} = "\
           python3-core \
-          libcamera \
+          jlibcamera \
           libepoxy \
           libexif \
           boost \
@@ -66,5 +63,9 @@ RDEPENDS:${PN} = "\
           tiff \
          "
 
-
+INSANE_SKIP_${PN} += " ldflags"
+INHIBIT_PACKAGE_STRIP = "1"
+INHIBIT_SYSROOT_STRIP = "1"
+SOLIBS = ".so"
+FILES_SOLIBSDEV = ""
 INSANE:SKIP_${PN}:append = "already-stripped"

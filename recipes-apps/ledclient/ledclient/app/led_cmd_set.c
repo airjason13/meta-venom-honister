@@ -385,6 +385,27 @@ int get_client_id(char *data, char *reply_buf){
 	sprintf(reply_buf,"cmd_seq_id:%d;cmd=%s;reply:%s", seq_id, cmd, REPLY_NG_TAG);
     return strlen(reply_buf);
 }
+
+int set_start_test(char *data, char *reply_buf){
+	log_debug("data = %s\n", data);
+    
+	int seq_id = 0;
+	char cmd[1024];
+	char param[1024];
+
+	sscanf(data, "cmd_seq_id:%d;cmd:%[1-9a-z|^_];param:%s", &seq_id, &cmd, &param);
+    
+	log_debug("need to be implemented!\n");
+    
+    char pico_cmd_buf[64] = {0};
+    char pico_reply_buf[64] = {0};
+    sprintf(pico_cmd_buf,"cmd:set_test_color_start,%s", param);
+    int iret = picousb_set_cmd(led_params.pico_handle, pico_cmd_buf, pico_reply_buf);
+    log_debug("iret = %d, pico_reply_buf = %s\n", iret, pico_reply_buf);
+    sprintf(reply_buf,"cmd_seq_id:%d;cmd=%s;reply:%s", seq_id, cmd, REPLY_OK_TAG);
+    return strlen(reply_buf);
+}
+
 int spec_test(char *data, char *reply_buf){
      log_debug("data = %s\n", data);
 	 int seq_id = 0;
@@ -526,6 +547,14 @@ int set_udp_cmd_callbacks(void){
         log_error("callback register failed!\n");
 		return ret;
     }
+
+    /*get set_start_test callback*/
+    ret = register_udp_cmd_callback(CMD_CALLBACK_SET_START_TEST, &set_start_test);
+    if(ret != 0){
+        log_error("callback register failed!\n");
+		return ret;
+    }
+
 	/*set spec_test callback*/
 	ret = register_udp_cmd_callback(CMD_CALLBACK_SPEC_TEST, &spec_test);
     if(ret != 0){

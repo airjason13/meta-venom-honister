@@ -23,6 +23,7 @@ int get_cabinet_params(char *data, char *reply_buf);
 int set_led_size(char *data, char *reply_buf);
 int set_cabinet_size(char *data, char *reply_buf);
 int set_cabinet_params(char *data, char *reply_buf);
+int set_start_test(char *data, char *reply_buf);
 
 
 int spec_test(char *data, char *reply_buf);	

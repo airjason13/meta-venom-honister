@@ -38,7 +38,8 @@ typedef int (*cmd_callback_t)(char *, char *);
 #define CMD_CALLBACK_SET_FRAME_GAMMA        CMD_CALLBACK_GET_FUNCTION_MAX + 7 //10
 #define CMD_CALLBACK_SET_PIXEL_INTERVAL     CMD_CALLBACK_GET_FUNCTION_MAX + 8 //11
 #define CMD_CALLBACK_SET_CLIENT_ID          CMD_CALLBACK_GET_FUNCTION_MAX + 9 //12
-#define CMD_CALLBACK_SPEC_TEST			    CMD_CALLBACK_GET_FUNCTION_MAX + 10 //13
+#define CMD_CALLBACK_SET_START_TEST         CMD_CALLBACK_GET_FUNCTION_MAX + 10 //13
+#define CMD_CALLBACK_SPEC_TEST			    CMD_CALLBACK_GET_FUNCTION_MAX + 11 //14
 
 #define CMD_CALLBACK_MAX				CMD_CALLBACK_SPEC_TEST
 #define CMD_CALLBACK_SIZE				CMD_CALLBACK_MAX + 1
@@ -63,6 +64,7 @@ typedef int (*cmd_callback_t)(char *, char *);
 #define CMD_TAG_SET_FRAME_GAMMA         "set_frame_gamma"
 #define CMD_TAG_SET_PIXEL_INTERVAL      "set_pixel_interval"
 #define CMD_TAG_SET_CLIENT_ID           "set_client_id"
+#define CMD_TAG_SET_START_TEST          "set_test_color"
 #define CMD_TAG_SPEC_TEST				"spec_test"
 
 
