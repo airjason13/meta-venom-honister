@@ -111,6 +111,7 @@ elif [[ $ROLE == *$PLAYER_TAG* ]];then
     run-filemanager.sh &
     launch_led_player.sh
 elif [[ $ROLE == *$AIO_TAG* ]];then
+    touch /home/root/aio_now
     echo "AIO Now"
     nmcli con add type ethernet ifname eth0 con-name eth0
     nmcli con mod eth0 ipv4.addresses 192.168.0.3/24
