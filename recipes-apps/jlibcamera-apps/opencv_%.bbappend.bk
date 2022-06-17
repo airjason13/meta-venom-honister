@@ -1,0 +1,12 @@
+do_install:append() {
+    install -d ${D}${includedir}/opencv2
+    install -d ${D}${includedir}/opencv2/objdetect/
+    cp -r ${S}/modules/objdetect/include/opencv2/objdetect.hpp ${D}${includedir}/opencv2
+    cp -r ${S}/modules/objdetect/include/opencv2/objdetect/detection_based_tracker.hpp ${D}${includedir}/opencv2/objdetect
+    cp -r ${S}/modules/objdetect/include/opencv2/objdetect/face.hpp ${D}${includedir}/opencv2/objdetect
+    cp -r ${S}/modules/objdetect/include/opencv2/objdetect/objdetect.hpp ${D}${includedir}/opencv2/objdetect
+    #cp -r ${S}/* ${D}${includedir}/opencv2
+        
+}
+
+FILES:${PN} = "${includedir}/opencv2"

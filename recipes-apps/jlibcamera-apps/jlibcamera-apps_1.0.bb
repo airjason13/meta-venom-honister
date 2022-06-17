@@ -13,7 +13,7 @@ S = "${WORKDIR}/libcamera-apps-main"
 
 inherit cmake pkgconfig
 
-EXTRA_OECMAKE = "-DENABLE_DRM=1 -DENABLE_X11=1 -DENABLE_QT=1 -DENABLE_OPENCV=0 -DENABLE_TFLITE=0"
+EXTRA_OECMAKE = "-DENABLE_DRM=1 -DENABLE_X11=1 -DENABLE_QT=1 -DENABLE_OPENCV=1 -DENABLE_TFLITE=1"
 
 
 
@@ -43,6 +43,9 @@ DEPENDS += "\
           libunwind \
           gstreamer1.0-plugins-base \
           tiff \
+          tf-lite \
+          flatbuffers \
+          opencv \
                 "
 
 RDEPENDS:${PN} = "\
@@ -61,6 +64,9 @@ RDEPENDS:${PN} = "\
           libunwind \
           gstreamer1.0-plugins-base \
           tiff \
+          tf-lite \
+          flatbuffers \
+          opencv \  
          "
 
 INSANE_SKIP_${PN} += " ldflags"

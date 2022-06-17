@@ -1,0 +1,11 @@
+prefix=/usr/
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include/tensorflow
+
+Name: TensorFlow
+Version: 2.9.1
+Description: Library for computation using data flow graphs for scalable machine learning
+Requires:
+Libs: -L${libdir} -ltensorflow -ltensorflow-lite -ltensorflow_framework
+Cflags: -I${includedir}
