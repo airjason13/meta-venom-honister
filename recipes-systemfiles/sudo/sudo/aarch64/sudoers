@@ -98,4 +98,4 @@ ALL ALL=(ALL) ALL  # WARNING: only use this together with 'Defaults targetpw'
 %users ALL=(ALL) NOPASSWD: /bin/systemctl poweroff, /bin/systemctl halt, /bin/systemctl reboot
 
 jason ALL=(ALL) NOPASSWD:ALL
-gisled ALL=(ALL) NOPASSWD:ALL
+venom ALL=(ALL) NOPASSWD:ALL

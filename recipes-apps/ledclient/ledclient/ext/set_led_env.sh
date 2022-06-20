@@ -8,7 +8,7 @@ AIO_TAG='AIO'
 PLAYER_TAG='Player'
 TESTER_TAG='Tester'
 #for auto-mount test
-udiskie &
+sudo udiskie &
 
 
 if [ -e /home/gisled/server_now ];then
@@ -93,9 +93,9 @@ if [[ $ROLE == *$CLIENT_TAG* ]];then
     if [[ $ROLE == *$RA_TAG* ]];then
         sudo ra_client.py &
     	sudo check_client_peripheral_devices.sh &
-        touch /home/gisled/client_ra_now
+        sudo touch /home/gisled/client_ra_now
     else
-        touch /home/gisled/client_now	    
+        sudo touch /home/gisled/client_now	    
     fi
     echo "1. set_br"
     sudo set_br.sh 
@@ -104,14 +104,14 @@ if [[ $ROLE == *$CLIENT_TAG* ]];then
     echo "2. check ip and launch ledclient"
     sudo launch_led_client.sh
 elif [[ $ROLE == *$PLAYER_TAG* ]];then
-    touch /home/gisled/player_now
+    sudo touch /home/gisled/player_now
     echo "Just a simple player"
     sudo nmcli radio wifi on 
     sudo setup_hotspot.sh &
     sudo run-filemanager.sh &
     sudo launch_led_player.sh
 elif [[ $ROLE == *$AIO_TAG* ]];then
-    touch /home/gisled/aio_now
+    sudo touch /home/gisled/aio_now
     echo "AIO Now"
     sudo nmcli con add type ethernet ifname eth0 con-name eth0
     sudo nmcli con mod eth0 ipv4.addresses 192.168.0.3/24
@@ -129,7 +129,7 @@ elif [[ $ROLE == *$AIO_TAG* ]];then
     sudo launch_led_aio_client.sh &
     
 elif [[ $ROLE == *$SERVER_TAG* ]];then
-    echo "Server Now"
+    sudo echo "Server Now"
     #ifconfig eth0 192.168.0.3
     sudo nmcli con add type ethernet ifname eth0 con-name eth0
     sudo nmcli con mod eth0 ipv4.addresses 192.168.0.3/24
@@ -153,7 +153,7 @@ elif [[ $ROLE == *$SERVER_TAG* ]];then
         touch /home/gisled/server_now
     fi	    
 elif [[ $ROLE == *$TESTER* ]];then
-    touch /home/gisled/tester_now
+    sudo touch /home/gisled/tester_now
     echo "Tester Now"
     sudo mcli radio wifi on 
     sudo setup_hotspot_tester.sh &
