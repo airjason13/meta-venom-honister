@@ -6,7 +6,7 @@
 fps_fifo_uri="/tmp/fps_fifo"
 [ -p $fps_fifo_uri ] || mkfifo $fps_fifo_uri
 
-FILE_URI='/home/root/check_client_peripheral_devices.dat'
+FILE_URI='/home/gis/check_client_peripheral_devices.dat'
 #echo Start to check > 
 IP="$(ifconfig | grep -A 1 'br0' | tail -1 | cut -d ':' -f 2 | cut -d ' ' -f 1)"
 echo $IP
@@ -39,7 +39,7 @@ do
         TEMP=$(vcgencmd measure_temp | cut -c 6-7)
 	    CPU_CLOCK=$(vcgencmd measure_clock arm | cut -c 15-)
         echo TEMP=$TEMP at $CPU_CLOCK hz
-        echo Pico Missing, TEMP=$TEMP at $CPU_CLOCK hz >> /home/root/check_client_peripheral_devices.dat
+        echo Pico Missing, TEMP=$TEMP at $CPU_CLOCK hz >> /home/gis/check_client_peripheral_devices.dat
     fi	
 
     #check usb terminus
@@ -53,7 +53,7 @@ do
         TEMP=$(vcgencmd measure_temp | cut -c 6-7)
 	    CPU_CLOCK=$(vcgencmd measure_clock arm | cut -c 15-)
         echo TEMP=$TEMP at $CPU_CLOCK hz
-        echo Terminus Missing, TEMP=$TEMP at $CPU_CLOCK hz >> /home/root/check_client_peripheral_devices.dat
+        echo Terminus Missing, TEMP=$TEMP at $CPU_CLOCK hz >> /home/gis/check_client_peripheral_devices.dat
     fi	
 
     #check ethernet
@@ -67,7 +67,7 @@ do
         TEMP=$(vcgencmd measure_temp | cut -c 6-7)
 	    CPU_CLOCK=$(vcgencmd measure_clock arm | cut -c 15-)
         echo TEMP=$TEMP at $CPU_CLOCK hz
-        echo ETH Missing, TEMP=$TEMP at $CPU_CLOCK hz >> /home/root/check_client_peripheral_devices.dat
+        echo ETH Missing, TEMP=$TEMP at $CPU_CLOCK hz >> /home/gis/check_client_peripheral_devices.dat
     fi
     #check lcd1602
     ETH_LOG=$(i2cdetect -y 1 | grep 27)
@@ -80,7 +80,7 @@ do
         TEMP=$(vcgencmd measure_temp | cut -c 6-7)
 	CPU_CLOCK=$(vcgencmd measure_clock arm | cut -c 15-)
         echo TEMP=$TEMP at $CPU_CLOCK hz
-        echo lcd1602 Missing, TEMP=$TEMP at $CPU_CLOCK hz >> /home/root/check_client_peripheral_devices.dat
+        echo lcd1602 Missing, TEMP=$TEMP at $CPU_CLOCK hz >> /home/gis/check_client_peripheral_devices.dat
     fi
     TEMP=$(vcgencmd measure_temp | cut -c 6-7)
     MSG="$MSG,temp_status=$TEMP"

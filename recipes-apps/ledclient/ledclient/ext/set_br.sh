@@ -11,7 +11,7 @@ do
 	else
 		sleep 1
 	fi
-	echo "COUNT:$COUNT" >> /home/root/br_tmp.txt
+	echo "COUNT:$COUNT" >> /home/gisled/br_tmp.txt
 done
 
 if [ -e /sys/class/net/enp1s0u1u1u4 ];then

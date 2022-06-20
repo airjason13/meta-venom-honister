@@ -3,7 +3,7 @@
 #sleep for wait vcgencmd ok
 sleep 30
 
-FILE_URI='/home/root/temperature.dat'
+FILE_URI='/home/gis/temperature.dat'
 if [ -f $FILE_URI ];then
 	HIGHEST_TEMP=0
 	while read line
@@ -23,7 +23,7 @@ do
         HIGHEST_TEMP=$TEMP
 	CPU_CLOCK=$(vcgencmd measure_clock arm | cut -c 15-)
         echo HIGHEST_TEMP=$HIGHEST_TEMP at $CPU_CLOCK hz
-        echo HIGHEST_TEMP=$HIGHEST_TEMP at $CPU_CLOCK hz > /home/root/temperature.dat
+        echo HIGHEST_TEMP=$HIGHEST_TEMP at $CPU_CLOCK hz > /home/gis/temperature.dat
     fi
     sleep 3
 done

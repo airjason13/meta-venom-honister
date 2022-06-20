@@ -3,7 +3,7 @@
 import zmq
 import sys
 import os
-ra_server_info="/home/root/.ra_server_info"
+ra_server_info="/home/gisled/.ra_server_info"
 ip="192.168.0.2"
 port=17688
 if __name__ == '__main__':

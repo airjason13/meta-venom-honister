@@ -4,7 +4,7 @@ import socket
 import fcntl
 import time
 
-ra_server_info="/home/root/.ra_server_info"
+ra_server_info="/home/gisled/.ra_server_info"
 
 if __name__ == '__main__':
     if os.path.isfile(ra_server_info):

@@ -28,10 +28,10 @@ do_install() {
     install -d ${D}/${bindir}
     install -d ${D}/${sysconfdir}
     install -d ${D}/${sysconfdir}/xdg/autostart/
-    install -d ${D}/home/root/i2c_lcd_server/
-    install -d ${D}/home/root/led_machine_option/
-    install -d ${D}/home/root/led_machine_option/templates/
-    install -d ${D}/home/root/.cabinets_params/
+    install -d ${D}/home/gisled/i2c_lcd_server/
+    install -d ${D}/home/gisled/led_machine_option/
+    install -d ${D}/home/gisled/led_machine_option/templates/
+    install -d ${D}/home/gisled/.cabinets_params/
     install -m 755 prog/ledclient ${D}/${bindir}
     install -m 755 ext/hwrevision ${D}/${sysconfdir}/
     install -m 755 ext/launch_led_role_option.sh ${D}/${bindir}
@@ -56,11 +56,11 @@ do_install() {
     install -m 755 ext/check_client_peripheral_devices.sh ${D}/${bindir}
     install -m 755 ext/check_server_peripheral_devices.sh ${D}/${bindir}
     install -m 755 ext/probe_g_mass.sh ${D}/${bindir}
-    cp -r ext/piusb.bin ${D}/home/root/
-    cp -r ext/pyflask_machine_option/* ${D}/home/root/led_machine_option/
-    cp -r ext/py1602_server/* ${D}/home/root/i2c_lcd_server/
-    cp -r ext/default_cabinets_params/.cabinet_params_config_* ${D}/home/root/.cabinets_params/
-    install -m 755 ext/led_role.conf ${D}/home/root/
+    cp -r ext/piusb.bin ${D}/home/gisled/
+    cp -r ext/pyflask_machine_option/* ${D}/home/gisled/led_machine_option/
+    cp -r ext/py1602_server/* ${D}/home/gisled/i2c_lcd_server/
+    cp -r ext/default_cabinets_params/.cabinet_params_config_* ${D}/home/gisled/.cabinets_params/
+    install -m 755 ext/led_role.conf ${D}/home/gisled/
     install -m 755 ext/led_role_option.desktop ${D}${sysconfdir}/xdg/autostart/led_role_option.desktop
     install -m 755 ext/i2c_lcd.desktop ${D}${sysconfdir}/xdg/autostart/i2c_lcd.desktop
     install -m 755 ext/set_led_env.desktop ${D}${sysconfdir}/xdg/autostart/set_led_env.desktop
@@ -77,6 +77,6 @@ INSANE_SKIP:${PN} = "ldflags"
 
 INSANE_SKIP:${PN}-dev = "ldflags"
 FILES:${PN} += " \
-                /home/root/* \
-                /home/root/.cabinets_params/.cabinet_params_config_* \
+                /home/gisled/* \
+                /home/gisled/.cabinets_params/.cabinet_params_config_* \
                 "

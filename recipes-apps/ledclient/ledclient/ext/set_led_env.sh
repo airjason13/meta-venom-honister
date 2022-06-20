@@ -1,5 +1,5 @@
 #!/bin/sh
-CONFIG_FILE='/home/root/led_role.conf'
+CONFIG_FILE='/home/gisled/led_role.conf'
 ROLE=''
 RA_TAG='RA'
 CLIENT_TAG='Client'
@@ -11,32 +11,32 @@ TESTER_TAG='Tester'
 udiskie &
 
 
-if [ -e /home/root/server_now ];then
-    rm /home/root/server_now
+if [ -e /home/gisled/server_now ];then
+    rm /home/gisled/server_now
 fi
 
-if [ -e /home/root/server_ra_now ];then
-    rm /home/root/server_ra_now
+if [ -e /home/gisled/server_ra_now ];then
+    rm /home/gisled/server_ra_now
 fi
 
-if [ -e /home/root/client_now ];then
-    rm /home/root/client_now
+if [ -e /home/gisled/client_now ];then
+    rm /home/gisled/client_now
 fi
 
-if [ -e /home/root/aio_now ];then
-    rm /home/root/aio_now
+if [ -e /home/gisled/aio_now ];then
+    rm /home/gisled/aio_now
 fi
 
-if [ -e /home/root/client_ra_now ];then
-    rm /home/root/client_ra_now
+if [ -e /home/gisled/client_ra_now ];then
+    rm /home/gisled/client_ra_now
 fi
     
-if [ -e /home/root/player_now ];then
-    rm /home/root/player_now
+if [ -e /home/gisled/player_now ];then
+    rm /home/gisled/player_now
 fi
 
-if [ -e /home/root/tester_now ];then
-    rm /home/root/tester_now
+if [ -e /home/gisled/tester_now ];then
+    rm /home/gisled/tester_now
 fi
 
 if [ -e $CONFIG_FILE ];then
@@ -79,84 +79,84 @@ else
     echo "gen a default config file as Client"
 fi     
 
-insmod /home/root/rtl8812au_module/88XXau.ko
+sudo insmod /home/gisled/rtl8812au_module/88XXau.ko
 
 #modprobe v4l2loopback
-modprobe v4l2loopback video_nr=3,4,5,6
+sudo modprobe v4l2loopback video_nr=3,4,5,6
 
 #for monitor temperature
-b_measure_temp.sh &
+sudo b_measure_temp.sh &
 
 echo "ROLE:"$ROLE
 if [[ $ROLE == *$CLIENT_TAG* ]];then
     echo "Let's set client env"
     if [[ $ROLE == *$RA_TAG* ]];then
-        ra_client.py &
-    	check_client_peripheral_devices.sh &
-        touch /home/root/client_ra_now
+        sudo ra_client.py &
+    	sudo check_client_peripheral_devices.sh &
+        touch /home/gisled/client_ra_now
     else
-        touch /home/root/client_now	    
+        touch /home/gisled/client_now	    
     fi
     echo "1. set_br"
-    set_br.sh 
+    sudo set_br.sh 
     #turn the wifi off
-    nmcli radio wifi off 
+    sudo nmcli radio wifi off 
     echo "2. check ip and launch ledclient"
-    launch_led_client.sh
+    sudo launch_led_client.sh
 elif [[ $ROLE == *$PLAYER_TAG* ]];then
-    touch /home/root/player_now
+    touch /home/gisled/player_now
     echo "Just a simple player"
-    nmcli radio wifi on 
-    setup_hotspot.sh &
-    run-filemanager.sh &
-    launch_led_player.sh
+    sudo nmcli radio wifi on 
+    sudo setup_hotspot.sh &
+    sudo run-filemanager.sh &
+    sudo launch_led_player.sh
 elif [[ $ROLE == *$AIO_TAG* ]];then
-    touch /home/root/aio_now
+    touch /home/gisled/aio_now
     echo "AIO Now"
-    nmcli con add type ethernet ifname eth0 con-name eth0
-    nmcli con mod eth0 ipv4.addresses 192.168.0.3/24
-    nmcli con mod eth0 ipv4.gateway 192.168.0.3
-    nmcli con mod eth0 ipv4.dns "8.8.8.8"
-    nmcli con mod eth0 ipv4.method manual
-    nmcli con up eth0
-    nmcli radio wifi on 
-    setup_hotspot.sh &
-    setup_hotspot_alfa.sh &
+    sudo nmcli con add type ethernet ifname eth0 con-name eth0
+    sudo nmcli con mod eth0 ipv4.addresses 192.168.0.3/24
+    sudo nmcli con mod eth0 ipv4.gateway 192.168.0.3
+    sudo nmcli con mod eth0 ipv4.dns "8.8.8.8"
+    sudo nmcli con mod eth0 ipv4.method manual
+    sudo nmcli con up eth0
+    sudo nmcli radio wifi on 
+    sudo setup_hotspot.sh &
+    sudo setup_hotspot_alfa.sh &
     # setup_eth0_static.sh &
     # run-filemanager.sh &
-    launch_pyLedServer.sh &
-    write_tc358743_edid.sh & 
-    launch_led_aio_client.sh &
+    sudo launch_pyLedServer.sh &
+    sudo write_tc358743_edid.sh & 
+    sudo launch_led_aio_client.sh &
     
 elif [[ $ROLE == *$SERVER_TAG* ]];then
     echo "Server Now"
     #ifconfig eth0 192.168.0.3
-    nmcli con add type ethernet ifname eth0 con-name eth0
-    nmcli con mod eth0 ipv4.addresses 192.168.0.3/24
-    nmcli con mod eth0 ipv4.gateway 192.168.0.3
-    nmcli con mod eth0 ipv4.dns "8.8.8.8"
-    nmcli con mod eth0 ipv4.method manual
-    nmcli con up eth0
-    nmcli radio wifi on 
-    setup_hotspot.sh &
-    setup_hotspot_alfa.sh &
-    setup_eth0_static.sh &
-    run-filemanager.sh &
-    launch_pyLedServer.sh &
-    write_tc358743_edid.sh & 
+    sudo nmcli con add type ethernet ifname eth0 con-name eth0
+    sudo nmcli con mod eth0 ipv4.addresses 192.168.0.3/24
+    sudo nmcli con mod eth0 ipv4.gateway 192.168.0.3
+    sudo nmcli con mod eth0 ipv4.dns "8.8.8.8"
+    sudo nmcli con mod eth0 ipv4.method manual
+    sudo nmcli con up eth0
+    sudo nmcli radio wifi on 
+    sudo setup_hotspot.sh &
+    sudo setup_hotspot_alfa.sh &
+    sudo setup_eth0_static.sh &
+    sudo run-filemanager.sh &
+    sudo launch_pyLedServer.sh &
+    sudo write_tc358743_edid.sh & 
     if [[ $ROLE == *$RA_TAG* ]];then
-        ra_client.py &
-        check_server_peripheral_devices.sh &
-        launch_pyLedRATool.sh &
-        touch /home/root/server_ra_now
+        sudo ra_client.py &
+        sudo check_server_peripheral_devices.sh &
+        sudo launch_pyLedRATool.sh &
+        touch /home/gisled/server_ra_now
     else
-        touch /home/root/server_now
+        touch /home/gisled/server_now
     fi	    
 elif [[ $ROLE == *$TESTER* ]];then
-    touch /home/root/tester_now
+    touch /home/gisled/tester_now
     echo "Tester Now"
-    nmcli radio wifi on 
-    setup_hotspot_tester.sh &
-    run-filemanager.sh &
-    launch_pyLedTester.sh 
+    sudo mcli radio wifi on 
+    sudo setup_hotspot_tester.sh &
+    sudo run-filemanager.sh &
+    sudo launch_pyLedTester.sh 
 fi  

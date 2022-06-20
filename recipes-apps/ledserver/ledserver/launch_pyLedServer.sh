@@ -1,3 +1,3 @@
 #!/bin/sh
-cd /home/root/pyLedServer
+cd /home/gis/pyLedServer
 python3 main.py
