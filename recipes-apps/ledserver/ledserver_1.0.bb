@@ -39,6 +39,10 @@ do_install() {
     cp -r subtitle_blank.jpg ${D}/home/gisled/Videos/.subtitle_data/
 
 }
+pkg_postinst_${PN} () {
+       chmod 777 /home/gisled/
+}
+
 
 
 

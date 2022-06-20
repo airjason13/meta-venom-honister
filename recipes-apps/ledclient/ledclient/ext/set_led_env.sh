@@ -8,7 +8,7 @@ AIO_TAG='AIO'
 PLAYER_TAG='Player'
 TESTER_TAG='Tester'
 #for auto-mount test
-sudo udiskie &
+udiskie &
 
 
 if [ -e /home/gisled/server_now ];then

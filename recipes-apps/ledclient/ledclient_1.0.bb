@@ -69,6 +69,11 @@ do_install() {
     install -m 755 ext/set_always_display_on.desktop ${D}${sysconfdir}/xdg/autostart/set_always_display_on.desktop
 }
 
+pkg_postinst_${PN} () {
+       chmod 777 /home/gisled/
+}
+
+
 DEPENDS += "ffmpeg libsdl2 libusb1 "
 RDEPENDS:${PN} += "libubootenv ffmpeg libsdl2 libusb1 "
 RDEPENDS:${PN} += "python3-core"
