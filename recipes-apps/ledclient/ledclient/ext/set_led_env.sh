@@ -12,31 +12,31 @@ udiskie &
 
 
 if [ -e /home/gisled/server_now ];then
-    rm /home/gisled/server_now
+    sudo rm /home/gisled/server_now
 fi
 
 if [ -e /home/gisled/server_ra_now ];then
-    rm /home/gisled/server_ra_now
+    sudo rm /home/gisled/server_ra_now
 fi
 
 if [ -e /home/gisled/client_now ];then
-    rm /home/gisled/client_now
+    sudo rm /home/gisled/client_now
 fi
 
 if [ -e /home/gisled/aio_now ];then
-    rm /home/gisled/aio_now
+    sudo rm /home/gisled/aio_now
 fi
 
 if [ -e /home/gisled/client_ra_now ];then
-    rm /home/gisled/client_ra_now
+    sudo rm /home/gisled/client_ra_now
 fi
     
 if [ -e /home/gisled/player_now ];then
-    rm /home/gisled/player_now
+    sudo rm /home/gisled/player_now
 fi
 
 if [ -e /home/gisled/tester_now ];then
-    rm /home/gisled/tester_now
+    sudo rm /home/gisled/tester_now
 fi
 
 if [ -e $CONFIG_FILE ];then
@@ -148,13 +148,13 @@ elif [[ $ROLE == *$SERVER_TAG* ]];then
         sudo ra_client.py &
         sudo check_server_peripheral_devices.sh &
         sudo launch_pyLedRATool.sh &
-        touch /home/gisled/server_ra_now
+        sudo touch /home/gisled/server_ra_now
     else
-        touch /home/gisled/server_now
+        sudo touch /home/gisled/server_now
     fi	    
 elif [[ $ROLE == *$TESTER* ]];then
     sudo touch /home/gisled/tester_now
-    echo "Tester Now"
+    sudo echo "Tester Now"
     sudo mcli radio wifi on 
     sudo setup_hotspot_tester.sh &
     sudo run-filemanager.sh &
