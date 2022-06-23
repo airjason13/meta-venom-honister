@@ -109,7 +109,7 @@ void *udp_cmd_thread(void *data){
 			log_error("Could not send datagram!\n");
 			continue;
 		}
-		usleep(30);
+		usleep(3000);
      }
 	 close(fd);
 	 return;

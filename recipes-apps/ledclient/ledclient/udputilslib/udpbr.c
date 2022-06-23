@@ -66,7 +66,7 @@ void *udpbr_thread(void *data){
 			if(udpbr_callbacks[UDPBR_CALLBACK_SERVER_ALIVE_REPORT] != NULL)
 				udpbr_callbacks[UDPBR_CALLBACK_SERVER_ALIVE_REPORT](inet_ntoa(addr.sin_addr) , msgbuf);
 		}
-		usleep(30);
+		usleep(3000);
      }
 	 close(fd);
 }
