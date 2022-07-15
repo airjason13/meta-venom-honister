@@ -2228,7 +2228,7 @@ void check_pico(void){
         char pico_lost_str[256] = {0};
         char reset_br_cmd[256] = {0};
         FILE *fp;
-        sprintf(pico_lost_str, "/bin/touch /home/gisled/pico_lost%d", pico_lost_count);
+        sprintf(pico_lost_str, "/bin/touch /home/root/pico_lost%d", pico_lost_count);
         fp = popen(pico_lost_str, "r");
         if (fp == NULL) {
             log_debug("Failed to run command\n" );
@@ -4129,7 +4129,7 @@ int get_machine_role(char *role_tmp)
     FILE *role_config;
     //char role[256];
     int iret = 0;
-    role_config = fopen("/home/gisled/led_role.conf", "rw");
+    role_config = fopen("/home/root/led_role.conf", "rw");
     if(role_config == NULL){
         log_debug("open config file error!\n");
         return -ENOENT;

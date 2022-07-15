@@ -8,11 +8,11 @@
 #include <string.h>
 #include "utildbg.h"
 
-#define cabinet_params_config_folder "/home/gisled/.cabinets_params"
-#define cabinet_params_config_file_prefix "/home/gisled/.cabinets_params/.cabinet_params_config_"
-#define brightness_config_file "/home/gisled/.cabinets_params/.brightness_config"
-#define contrast_config_file "/home/gisled/.cabinets_params/.contrast_config"
-#define gamma_config_file "/home/gisled/.cabinets_params/.gamma_config"
+#define cabinet_params_config_folder "/home/root/.cabinets_params"
+#define cabinet_params_config_file_prefix "/home/root/.cabinets_params/.cabinet_params_config_"
+#define brightness_config_file "/home/root/.cabinets_params/.brightness_config"
+#define contrast_config_file "/home/root/.cabinets_params/.contrast_config"
+#define gamma_config_file "/home/root/.cabinets_params/.gamma_config"
 
 typedef struct cabinet_params{
 	unsigned int port_id; 

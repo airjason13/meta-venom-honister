@@ -1,3 +1,3 @@
 #!/bin/sh
-cd /home/gisled/pyLedServer
+cd /home/root/pyLedServer
 python3 main.py

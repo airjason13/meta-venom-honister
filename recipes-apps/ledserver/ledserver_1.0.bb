@@ -24,28 +24,28 @@ do_compile() {
 do_install() {
     install -d ${D}/${bindir}
     install -d ${D}/${sysconfdir}
-    install -d ${D}/home/gisled/pyLedServer/
-    install -d ${D}/home/gisled/Videos/fonts/
-    install -d ${D}/home/gisled/Videos/.subtitle_data
+    install -d ${D}/home/root/pyLedServer/
+    install -d ${D}/home/root/Videos/fonts/
+    install -d ${D}/home/root/Videos/.subtitle_data
     install -m 755 launch_pyLedServer.sh ${D}/${bindir}
-    cp -r pyLed_Server/* ${D}/home/gisled/pyLedServer/
-    cp -r msjhbd.ttc ${D}/home/gisled/Videos/fonts/
-    cp -r demo_videos/* ${D}/home/gisled/Videos/
-    cp -r subtitle.dat ${D}/home/gisled/Videos/.subtitle_data/
-    cp -r subtitle_size.dat ${D}/home/gisled/Videos/.subtitle_data/
-    cp -r subtitle_period.dat ${D}/home/gisled/Videos/.subtitle_data/
-    cp -r subtitle_speed.dat ${D}/home/gisled/Videos/.subtitle_data/
-    cp -r subtitle_position.dat ${D}/home/gisled/Videos/.subtitle_data/
-    cp -r subtitle_blank.jpg ${D}/home/gisled/Videos/.subtitle_data/
+    cp -r pyLed_Server/* ${D}/home/root/pyLedServer/
+    cp -r msjhbd.ttc ${D}/home/root/Videos/fonts/
+    cp -r demo_videos/* ${D}/home/root/Videos/
+    cp -r subtitle.dat ${D}/home/root/Videos/.subtitle_data/
+    cp -r subtitle_size.dat ${D}/home/root/Videos/.subtitle_data/
+    cp -r subtitle_period.dat ${D}/home/root/Videos/.subtitle_data/
+    cp -r subtitle_speed.dat ${D}/home/root/Videos/.subtitle_data/
+    cp -r subtitle_position.dat ${D}/home/root/Videos/.subtitle_data/
+    cp -r subtitle_blank.jpg ${D}/home/root/Videos/.subtitle_data/
 
 }
 pkg_postinst_${PN} () {
-       chmod 777 /home/gisled/
+       chmod 777 /home/root/
 }
 
 
 
 
 FILES:${PN} += " \
-                /home/gisled/* \
+                /home/root/* \
                 "
