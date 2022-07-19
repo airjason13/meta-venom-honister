@@ -16,4 +16,12 @@ do_deploy:append() {
         echo "# Enable OV5647 Image Sensor" >>$CONFIG
         echo "dtoverlay=ov5647" >>$CONFIG
     fi
+    if [ "${IMX519}" = "1" ]; then
+        echo "# Enable OVIMX519 Image Sensor" >>$CONFIG
+        echo "dtoverlay=imx519" >>$CONFIG
+    fi
+    if [ "${DISABLE_TOUCHSCREEN}" = "1" ]; then
+        echo "# Disable touch screen" >>$CONFIG
+        echo "disable_touchscreen=1" >>$CONFIG
+    fi
 }

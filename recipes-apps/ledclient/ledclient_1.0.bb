@@ -58,6 +58,8 @@ do_install() {
     install -m 755 ext/probe_g_mass.sh ${D}/${bindir}
     install -m 755 ext/provision.sh ${D}/${bindir}
     install -m 755 ext/fdisk-mmcblk0p2.sh ${D}/${bindir}
+    install -m 755 ext/bt_discoverable.sh ${D}/${bindir}
+    install -m 755 ext/rfcomm-server-sdp.py ${D}/${bindir}
     cp -r ext/piusb.bin ${D}/home/root/
     cp -r ext/pyflask_machine_option/* ${D}/home/root/led_machine_option/
     cp -r ext/py1602_server/* ${D}/home/root/i2c_lcd_server/
@@ -81,6 +83,7 @@ pkg_postinst_${PN} () {
 DEPENDS += "ffmpeg libsdl2 libusb1 "
 RDEPENDS:${PN} += "libubootenv ffmpeg libsdl2 libusb1 "
 RDEPENDS:${PN} += "python3-core"
+RDEPENDS:${PN} += "python-core"
 INSANE_SKIP:${PN} = "ldflags"
 
 
