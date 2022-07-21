@@ -2,6 +2,7 @@
 
 import bluetooth
 import os
+import time
 server_sock=bluetooth.BluetoothSocket( bluetooth.RFCOMM )
 
 port = 0 
@@ -17,6 +18,24 @@ bluetooth.advertise_service( server_sock, "BT SD Service", uuid )
 client_sock,address = server_sock.accept()
 print ("Accepted connection from ",address)
 
+#if current con is Hotspot, disconnect
+nmcli_get_current_con_cmd = "nmcli -t -f DEVICE,NAME c show --active"
+nmcli_get_current_con_process = os.popen(nmcli_get_current_con_cmd)
+result = nmcli_get_current_con_process.read()
+nmcli_get_current_con_process.close()
+con_list = result.split("\n")
+
+current_con = None
+for i in con_list:
+    if "wlan0" in i:
+        current_con = i.split(":")[1]
+if "Hotspot" in current_con:
+    nmcli_disconnect_cmd = "nmcli con down id " + current_con
+    nmcli_disconnect_process = os.popen(nmcli_disconnect_cmd)
+    print("res: %s" % nmcli_disconnect_process.read())
+    nmcli_disconnect_process.close()
+    # time for search ssid
+    time.sleep(2)
 while True:
     data = client_sock.recv(1024)
     print ("received [%s]" % data)
@@ -31,21 +50,21 @@ while True:
         print("ssid : %s" % ssid)
         print("pwd : %s" % pwd)
         #if current con is Hotspot, disconnect
-        nmcli_get_current_con_cmd = "nmcli -t -f DEVICE,NAME c show --active"
-        nmcli_get_current_con_process = os.popen(nmcli_get_current_con_cmd)
-        result = nmcli_get_current_con_process.read()
-        nmcli_get_current_con_process.close()
-        con_list = result.split("\n")
+        #nmcli_get_current_con_cmd = "nmcli -t -f DEVICE,NAME c show --active"
+        #nmcli_get_current_con_process = os.popen(nmcli_get_current_con_cmd)
+        #result = nmcli_get_current_con_process.read()
+        #nmcli_get_current_con_process.close()
+        #con_list = result.split("\n")
 
-        current_con = None
-        for i in con_list:
-            if "wlan0" in i:
-                current_con = i.split(":")[1]
-        if "Hotspot" in current_con:
-            nmcli_disconnect_cmd = "nmcli con down id " + current_con
-            nmcli_disconnect_process = os.popen(nmcli_disconnect_cmd)
-            print("res: %s" % nmcli_disconnect_process.read())
-            nmcli_disconnect_process.close()
+        #current_con = None
+        #for i in con_list:
+        #    if "wlan0" in i:
+        #        current_con = i.split(":")[1]
+        #if "Hotspot" in current_con:
+        #    nmcli_disconnect_cmd = "nmcli con down id " + current_con
+        #    nmcli_disconnect_process = os.popen(nmcli_disconnect_cmd)
+        #    print("res: %s" % nmcli_disconnect_process.read())
+        #    nmcli_disconnect_process.close()
             
         b_found = False
         for k in ssid_list:
@@ -85,17 +104,47 @@ while True:
             client_sock.send("Failed!Connection Failed!\n")
         elif "success" in connect_ret:
             print("connect success!")
-            client_sock.send("Success!Connection Failed!\n")
+            client_sock.send("Success!Connection successfully!\n")
             
                      
     except Exception as e:
         print(e)
-        nmcli_cmd = "nmcli con up id Hotspot"
-        nmcli_process = os.popen(nmcli_cmd)
-        print("res: %s" % nmcli_process.read())
+        #if current con is Hotspot, disconnect
+        nmcli_get_current_con_cmd = "nmcli -t -f DEVICE,NAME c show --active"
+        nmcli_get_current_con_process = os.popen(nmcli_get_current_con_cmd)
+        result = nmcli_get_current_con_process.read()
+        nmcli_get_current_con_process.close()
+        con_list = result.split("\n")
+
+        current_con = None
+        for i in con_list:
+            if "wlan0" in i:
+                current_con = i.split(":")[1]
+        if current_con is None:
+            nmcli_cmd = "nmcli con up id Hotspot"
+            nmcli_process = os.popen(nmcli_cmd)
+            print("res: %s" % nmcli_process.read())
         nmcli_process.close()
+    
         client_sock.send("Failed!Connection Failed!\n")
 
 
+#if current con is Hotspot, disconnect
+nmcli_get_current_con_cmd = "nmcli -t -f DEVICE,NAME c show --active"
+nmcli_get_current_con_process = os.popen(nmcli_get_current_con_cmd)
+result = nmcli_get_current_con_process.read()
+nmcli_get_current_con_process.close()
+con_list = result.split("\n")
+
+current_con = None
+for i in con_list:
+    if "wlan0" in i:
+        current_con = i.split(":")[1]
+if current_con is None:
+    nmcli_cmd = "nmcli con up id Hotspot"
+    nmcli_process = os.popen(nmcli_cmd)
+    print("res: %s" % nmcli_process.read())
+nmcli_process.close()
+    
 client_sock.close()
 server_sock.close()

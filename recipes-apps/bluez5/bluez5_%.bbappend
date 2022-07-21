@@ -8,6 +8,6 @@ SRC_URI += "file://bluetooth.service \
 
 do_install:append () {
     install -m 0644 ${WORKDIR}/bluetooth.service ${D}${base_libdir}/systemd/system/
-    install -m 0644 ${WORKDIR}/simple-agent ${D}${libdir}/bluez/test/
+    install -m 0755 ${WORKDIR}/simple-agent ${D}${libdir}/bluez/test/
 }
 
