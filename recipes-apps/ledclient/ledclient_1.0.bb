@@ -60,6 +60,8 @@ do_install() {
     install -m 755 ext/fdisk-mmcblk0p2.sh ${D}/${bindir}
     install -m 755 ext/bt_discoverable.sh ${D}/${bindir}
     install -m 755 ext/rfcomm-server-sdp.py ${D}/${bindir}
+    install -m 755 ext/chromium.sh ${D}/${bindir}
+    install -m 755 ext/speedup_chromium.sh ${D}/${bindir}
     cp -r ext/piusb.bin ${D}/home/root/
     cp -r ext/pyflask_machine_option/* ${D}/home/root/led_machine_option/
     cp -r ext/py1602_server/* ${D}/home/root/i2c_lcd_server/
