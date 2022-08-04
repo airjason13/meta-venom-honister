@@ -1,5 +1,5 @@
 modprobe g_mass_storage \
-file=/piusb.bin \
+file=/home/root/piusb.bin \
 removable=1 \
 idVendor=0x9527 \
 idProduct=0x5678 \
