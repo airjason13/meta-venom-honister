@@ -8,6 +8,7 @@ else
     fdisk-mmcblk0p2.sh
     #sed -i '/raspberrypi4-64/ c\${HOSTNAME_PREFIX}' /etc/hostname    
     sed  -i "s|raspberrypi4-64|${HOSTNAME_PREFIX}|"   /etc/hostname    
-    touch ${PROVISION_FILE}
+    generate_machine_info.sh
+	touch ${PROVISION_FILE}
 fi
 

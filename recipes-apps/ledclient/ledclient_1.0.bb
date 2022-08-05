@@ -62,6 +62,8 @@ do_install() {
     install -m 755 ext/rfcomm-server-sdp.py ${D}/${bindir}
     install -m 755 ext/chromium.sh ${D}/${bindir}
     install -m 755 ext/speedup_chromium.sh ${D}/${bindir}
+    install -m 755 ext/mount_piusb.sh ${D}/${bindir}
+    install -m 755 ext/generate_machine_info.sh ${D}/${bindir}
     cp -r ext/piusb.bin ${D}/home/root/
     cp -r ext/pyflask_machine_option/* ${D}/home/root/led_machine_option/
     cp -r ext/py1602_server/* ${D}/home/root/i2c_lcd_server/
@@ -75,6 +77,7 @@ do_install() {
     install -m 755 ext/set_always_display_on.desktop ${D}${sysconfdir}/xdg/autostart/set_always_display_on.desktop
     install -m 755 ext/provision.desktop ${D}${sysconfdir}/xdg/autostart/provision.desktop
     install -m 755 ext/probe_g_mass.desktop ${D}${sysconfdir}/xdg/autostart/probe_g_mass.desktop
+    install -m 755 ext/mount_piusb.desktop ${D}${sysconfdir}/xdg/autostart/mount_piusb.desktop
 }
 
 pkg_postinst_${PN} () {
