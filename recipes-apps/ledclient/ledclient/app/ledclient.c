@@ -4149,6 +4149,10 @@ int get_machine_role(char *role_tmp)
 int main(int argc, char **argv)
 {
     int flags;
+    if((argc == 2)&&(!strcmp(argv[1], "-v"))){
+        printf("%s\n", LEDCLIENT_VERSION);
+        return 0;
+    }
     //char role[256] = {0};  
     VideoState *is;
     log_info("Jason show ledclient!\n");

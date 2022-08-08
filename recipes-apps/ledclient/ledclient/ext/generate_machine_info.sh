@@ -3,6 +3,9 @@
 cpu_sn_p_file='/tmp/piusb/box_cpu_serial_number'
 eth_mac_p_file='/tmp/piusb/box_eth_mac_number'
 wlan_mac_p_file='/tmp/piusb/box_wlan_mac_number'
+ledclient_version_file='/tmp/piusb/ledclient_version'
+ledserver_version_file='/tmp/piusb/ledserver_version'
+
 
 #check piusb mounted, if not mounted, mount it
 mkdir -p /tmp/piusb
@@ -58,4 +61,24 @@ else
 fi
 
 
+#read ledclient version
+ledclient_version=$(ledclient -v)
+echo ledclient_version:$ledclient_version
+echo $ledclient_version > $ledclient_version_file
 
+#read ledserver version
+pyledserver_version_file="/home/root/pyLedServer/global_def.py"
+while IFS= read -r line
+do 
+    if [[ $line == *"version ="* ]]; then
+        echo $line
+        ledserver_version_line=$line
+        break
+    fi
+done < "$pyledserver_version_file"
+echo $ledserver_version_line
+IFS=' '
+read -r -a array <<< "$ledserver_version_line"
+ledserver_version=$(echo ${array[2]} | sed 's/"//g')
+echo ledserver_version=$ledserver_version
+echo $ledserver_version > $ledserver_version_file
