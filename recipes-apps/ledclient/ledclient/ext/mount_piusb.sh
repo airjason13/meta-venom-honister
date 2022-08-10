@@ -3,6 +3,8 @@ mkdir -p /tmp/piusb
 mount /home/root/piusb.bin /tmp/piusb
 machine_type=Client
 machine_type_file="/tmp/piusb/machine_type"
+need_reboot='false'
+
 if [[ -f $machine_type_file ]]; then
     echo "got file"
     line=$(cat $machine_type_file)
@@ -51,8 +53,15 @@ if [[ $led_role == $machine_type ]]; then
     echo "machine type setting ok!"
 else
     echo $machine_type > $led_role_file
+    need_reboot='true'
+fi
+
+
+
+
+if [[ $need_reboot == 'true' ]]; then
     sync
     sync
     sync
     reboot
-fi
+fi 

@@ -20,6 +20,22 @@ do_deploy:append() {
         echo "# Enable OVIMX519 Image Sensor" >>$CONFIG
         echo "dtoverlay=imx519" >>$CONFIG
     fi
+    if [ "${I2C3}" = "1" ]; then
+        echo "# Enable I2C3" >>$CONFIG
+        echo "dtoverlay=i2c3" >>$CONFIG
+    fi
+    if [ "${I2C4}" = "1" ]; then
+        echo "# Enable I2C4" >>$CONFIG
+        echo "dtoverlay=i2c4" >>$CONFIG
+    fi
+    if [ "${I2C5}" = "1" ]; then
+        echo "# Enable I2C5" >>$CONFIG
+        echo "dtoverlay=i2c5" >>$CONFIG
+    fi
+    if [ "${I2C6}" = "1" ]; then
+        echo "# Enable I2C6" >>$CONFIG
+        echo "dtoverlay=i2c6" >>$CONFIG
+    fi
     if [ "${DISABLE_TOUCHSCREEN}" = "1" ]; then
         echo "# Disable touch screen" >>$CONFIG
         echo "disable_touchscreen=1" >>$CONFIG

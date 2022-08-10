@@ -78,6 +78,8 @@ do_install() {
     install -m 755 ext/provision.desktop ${D}${sysconfdir}/xdg/autostart/provision.desktop
     install -m 755 ext/probe_g_mass.desktop ${D}${sysconfdir}/xdg/autostart/probe_g_mass.desktop
     install -m 755 ext/mount_piusb.desktop ${D}${sysconfdir}/xdg/autostart/mount_piusb.desktop
+    install -m 755 ext/swversion ${D}${sysconfdir}
+    install -m 755 ext/gisled_default_connection ${D}${sysconfdir}
 }
 
 pkg_postinst_${PN} () {
