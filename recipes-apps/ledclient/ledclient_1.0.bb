@@ -67,6 +67,7 @@ do_install() {
     cp -r ext/piusb.bin ${D}/home/root/
     cp -r ext/pyflask_machine_option/* ${D}/home/root/led_machine_option/
     cp -r ext/py1602_server/* ${D}/home/root/i2c_lcd_server/
+    cp -r ext/illuminance.py ${D}/home/root/
     cp -r ext/default_cabinets_params/.cabinet_params_config_* ${D}/home/root/.cabinets_params/
     install -m 755 ext/led_role.conf ${D}/home/root/
     install -m 755 ext/led_role_option.desktop ${D}${sysconfdir}/xdg/autostart/led_role_option.desktop

@@ -36,6 +36,10 @@ do_deploy:append() {
         echo "# Enable I2C6" >>$CONFIG
         echo "dtoverlay=i2c6" >>$CONFIG
     fi
+    if [ "${DS3231}" = "1" ]; then
+        echo "# Enable DS3231" >>$CONFIG
+        echo "dtoverlay=i2c-rtc,ds3231" >>$CONFIG
+    fi
     if [ "${DISABLE_TOUCHSCREEN}" = "1" ]; then
         echo "# Disable touch screen" >>$CONFIG
         echo "disable_touchscreen=1" >>$CONFIG
