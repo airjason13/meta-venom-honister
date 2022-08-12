@@ -87,6 +87,9 @@ modprobe v4l2loopback video_nr=3,4,5,6
 #for monitor temperature
 b_measure_temp.sh &
 
+#launch flask-filemnager
+launch_flask-filemanager.sh &
+
 echo "ROLE:"$ROLE
 if [[ $ROLE == *$CLIENT_TAG* ]];then
     echo "Let's set client env"

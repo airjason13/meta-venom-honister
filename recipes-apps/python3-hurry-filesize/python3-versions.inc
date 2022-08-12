@@ -1,0 +1,1 @@
+PREFERRED_VERSION_python3-hurry-filesize = "0.9"

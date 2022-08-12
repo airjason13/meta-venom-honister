@@ -1,0 +1,7 @@
+PREFERRED_VERSION_python3-flask-fontawesome = "0.1.5"
+PREFERRED_VERSION_python3-flask = "2.2.2"
+PREFERRED_VERSION_python3-werkzeug = "2.2.2"
+PREFERRED_VERSION_python3-markupsafe = "2.1.1"
+PREFERRED_VERSION_python3-jinja2 = "3.1.2"
+PREFERRED_VERSION_python3-itsdangerous = "2.1.2"
+PREFERRED_VERSION_python3-click = "8.1.3"
