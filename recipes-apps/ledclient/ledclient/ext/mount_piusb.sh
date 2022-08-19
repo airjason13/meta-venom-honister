@@ -1,4 +1,6 @@
 #!/bin/sh
+fatlabel /home/root/piusb.bin gisled
+
 mkdir -p /tmp/piusb
 mount /home/root/piusb.bin /tmp/piusb
 machine_type=Client
