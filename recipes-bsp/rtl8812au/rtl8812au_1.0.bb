@@ -1,0 +1,20 @@
+SUMMARY = "rtl8812au wifi module"
+LICENSE = "MIT"
+LIC_FILES_CHKSUM = "file://${WORKDIR}/LICENSE;md5=e4ac654ba9b61686c2dc854a1128a323"
+SRC_URI = " \
+		file://88XXau.ko \	
+		file://LICENSE \	
+	"
+
+
+do_install() {
+	install -d ${D}/home/root/rtl8812au_module/
+	install -d ${D}/home/root/rtl88XXau_module/
+	cp -r ${WORKDIR}/88XXau.ko ${D}/home/root/rtl8812au_module/
+	install -m 644 ${WORKDIR}/88XXau.ko ${D}/home/root/rtl88XXau_module/
+}
+
+FILES:${PN} = " \
+  /home/root/* \
+  "
+INHIBIT_PACKAGE_STRIP = "1"
