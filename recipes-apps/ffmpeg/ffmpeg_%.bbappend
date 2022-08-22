@@ -15,6 +15,8 @@ DEPENDS += "freetype"
 PACKAGECONFIG[libwebp] = "--enable-libwebp,--disable-libwebp,libwebp"
 PACKAGECONFIG[libzmq] = "--enable-libzmq,--disable-libzmq,zeromq"
 PACKAGECONFIG[freetype] = "--enable-libfreetype,--disable-libfreetype,freetype"
+PACKAGECONFIG[libdrm] = "--enable-libdrm,--disable-libdrm,libdrm"
+PACKAGECONFIG[libaom] = "--enable-libaom,--disable-libaom,aom"
 #PACKAGECONFIG[mmal] = "--enable-mmal,--disable-mmal"
 #PACKAGECONFIG[omx-rpi] = "--enable-omx-rpi,--disable-omx-rpi"
 
