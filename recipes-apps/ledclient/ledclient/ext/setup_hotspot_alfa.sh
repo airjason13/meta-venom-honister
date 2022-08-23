@@ -41,4 +41,5 @@ else
 	nmcli con modify Hotspot_Alfa ipv4.addresses 192.168.1.9/24
 	nmcli con modify Hotspot_Alfa ipv4.gateway 192.168.1.9
 	nmcli con up Hotspot_Alfa
+    start_route_wlan_alfa.sh
 fi

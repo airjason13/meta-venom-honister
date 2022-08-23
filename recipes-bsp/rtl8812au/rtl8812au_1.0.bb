@@ -9,9 +9,7 @@ SRC_URI = " \
 
 do_install() {
 	install -d ${D}/home/root/rtl8812au_module/
-	install -d ${D}/home/root/rtl88XXau_module/
 	cp -r ${WORKDIR}/88XXau.ko ${D}/home/root/rtl8812au_module/
-	install -m 644 ${WORKDIR}/88XXau.ko ${D}/home/root/rtl88XXau_module/
 }
 
 FILES:${PN} = " \
