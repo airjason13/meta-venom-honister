@@ -31,13 +31,14 @@ if [ -f "$FILE" ];then
 	echo UUID=$UUID
 	nmcli con up uuid $UUID
 else
-    rm /etc/NetworkManager/system-connections/Hotspot_Alfa*.nmconnection
+    # rm /etc/NetworkManager/system-connections/Hotspot_Alfa*.nmconnection
+    nmcli con del Hotspot_Alfa
 	#nmcli con add type wifi ifname wlan0 con-name Hotspot autoconnect yes ssid LED-Pi-Server
 	echo "SSID="$SSID
 	nmcli con add type wifi ifname $ALFA_WIFI_ADAPTER con-name Hotspot_Alfa autoconnect yes ssid $SSID
 	nmcli con modify Hotspot_Alfa 802-11-wireless.mode ap 802-11-wireless.band a ipv4.method shared
 	nmcli con modify Hotspot_Alfa wifi-sec.key-mgmt wpa-psk
-	nmcli con modify Hotspot_Alfa wifi-sec.psk "12345678"
+	nmcli con modify Hotspot_Alfa wifi-sec.psk "54098493"
 	nmcli con modify Hotspot_Alfa ipv4.addresses 192.168.1.9/24
 	nmcli con modify Hotspot_Alfa ipv4.gateway 192.168.1.9
 	nmcli con up Hotspot_Alfa
