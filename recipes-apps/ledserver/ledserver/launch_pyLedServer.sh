@@ -10,4 +10,8 @@ python2 /usr/bin/rfcomm-server-sdp.py &
 
 
 cd /home/root/pyLedServer
-python3 main.py
+while :
+do
+	python3 main.py
+	sleep 2
+done	
