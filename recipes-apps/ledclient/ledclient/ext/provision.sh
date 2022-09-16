@@ -10,7 +10,11 @@ if [ -f "$PROVISION_FILE" ];then
    echo "provisioned" 
 else
     fdisk-mmcblk0p2.sh
-    sed  -i "s|raspberrypi4-64|${HOSTNAME_PREFIX}|"   /etc/hostname    
+    while read line; do
+        if [[ $line == *"raspberry4"* ]];then
+            sed  -i "s|raspberrypi4-64|${HOSTNAME_PREFIX}|"   /etc/hostname  
+        fi
+    done < /etc/hostname  
     generate_machine_info.sh 
     # hw check machine type
     lsusb | grep 1a40:0101 > /dev/null
