@@ -41,6 +41,7 @@ do_install() {
     install -m 755 ext/launch_led_client.sh ${D}/${bindir}
     install -m 755 ext/launch_led_aio_client.sh ${D}/${bindir}
     install -m 755 ext/set_always_display_on.sh ${D}/${bindir}
+    install -m 755 ext/gen_mac_with_sn.py ${D}/${bindir}
     install -m 755 ext/set_br.sh ${D}/${bindir}
     install -m 755 ext/set_automount.sh ${D}/${bindir}
     install -m 755 ext/set_panel_autohide.sh ${D}/${bindir}
