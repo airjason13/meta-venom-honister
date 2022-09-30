@@ -102,6 +102,7 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
 	int i = 0;
 	int write_len = 0;
     bool config_err = true;
+    unsigned char *fake_pixel_buf = malloc(channel_count);
     if(pico == NULL){
         return -ENODEV;
     }
@@ -129,34 +130,50 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
 	log_debug("pico = 0x%x\n", pico);*/
 	switch(params->layout_type){
 		case 0:
+            //220928 enhanece with cabinet height out of frame height
             //0310 test limit ok
             if((start_x < 0) || (start_y < 0)){
                 log_debug("case 0 params config error!");
                 break;
             }
-            if((start_y - height + 1) > frame_height){
+            // 
+            /*if((start_y - height + 1) > frame_height){
                 log_debug("case 0 params config error!");
                 break;
-            }
+            }*/
+            //cabinet height out of frame height
+            /*if((start_y + height + 1) >= frame_height){
+                log_debug("case 0 params config error!");
+                break; 
+            }*/
             if((start_x + width) > frame_width){
                 log_debug("case 0 params config error!");
                 break; 
             }
             config_err = false;
+            
+            memset(fake_pixel_buf, 0, channel_count);
 			for(y = 0; y < height; y++){
-	            if(y % 2 == 0){ //first line
-					memcpy(buf + offset, 
-							pFrame->data[0] + ((start_y + y)*pFrame->linesize[0]) + start_x*channel_count, 
-							width*channel_count);
-					offset += width*channel_count;
-				}else{ //second line
-					for(i = 0 ; i < width; i ++){
-						memcpy(buf + offset, 
-								pFrame->data[0] + ((start_y + y)*pFrame->linesize[0]) + (start_x + width - i -1)*channel_count, 
-								channel_count);
-						offset += channel_count;
-					}
-				}
+                if(start_y + y >= frame_height){
+					    for(i = 0 ; i < width; i ++){
+						    memcpy(buf + offset, fake_pixel_buf, channel_count);
+						    offset += channel_count;
+					    } 
+                }else{
+	                if(y % 2 == 0){ //first line
+					    memcpy(buf + offset, 
+							    pFrame->data[0] + ((start_y + y)*pFrame->linesize[0]) + start_x*channel_count, 
+							    width*channel_count);
+					    offset += width*channel_count;
+				    }else{ //second line
+					    for(i = 0 ; i < width; i ++){
+						    memcpy(buf + offset, 
+								    pFrame->data[0] + ((start_y + y)*pFrame->linesize[0]) + (start_x + width - i -1)*channel_count, 
+								    channel_count);
+						    offset += channel_count;
+					    }
+				    }
+                }
 			}
 			break;
 		case 1:
@@ -230,10 +247,11 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
                 log_debug("case 3 params config error!");
                 break;
             }
-            if(start_y + 1 > frame_height){
+            //cabinet height out of frame height
+            /*if(start_y + 1 >= frame_height){
                 log_debug("case 3 params config error!");
                 break;
-            }
+            }*/
             if((start_x - width + 1) < 0){
                 log_debug("case 3 params config error!");
                 break;
@@ -241,19 +259,27 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
             config_err = false;
             
 			for(y = 0; y < height; y++){
-				if(y % 2 == 0){ // first line
-					for(i = 0; i < width; i++){
-						memcpy(buf + offset,
-								pFrame->data[0] + ((start_y - y)*pFrame->linesize[0]) + (start_x -i)*channel_count,
-								channel_count);
+                //cabinet height out of frame height
+                if((start_y - y + 1) > frame_height){
+					for(i = 0 ; i < width; i ++){
+						memcpy(buf + offset, fake_pixel_buf, channel_count);
 						offset += channel_count;
-					}
-				}else{ //second line
-					memcpy(buf + offset, 
-							pFrame->data[0] + ((start_y - y)*pFrame->linesize[0]) + (start_x - width + 1)*channel_count,
-							width*channel_count);
-					offset += width*channel_count;
-				}
+					} 
+                }else{
+				    if(y % 2 == 0){ // first line
+					    for(i = 0; i < width; i++){
+						    memcpy(buf + offset,
+								    pFrame->data[0] + ((start_y - y)*pFrame->linesize[0]) + (start_x -i)*channel_count,
+								    channel_count);
+						    offset += channel_count;
+					    }
+				    }else{ //second line
+					    memcpy(buf + offset, 
+							    pFrame->data[0] + ((start_y - y)*pFrame->linesize[0]) + (start_x - width + 1)*channel_count,
+							    width*channel_count);
+					    offset += width*channel_count;
+				    }
+                }
 			}
 			break;
         case 4: 
