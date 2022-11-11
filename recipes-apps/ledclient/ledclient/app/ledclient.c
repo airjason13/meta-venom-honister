@@ -2199,7 +2199,7 @@ void fps_counter(void){
         write(fps_fifo_fd, fifo_buf, strlen(fifo_buf));
         close(fps_fifo_fd);
     }    
-	log_info("led fps = %d\n", led_fps);
+	//log_info("aaaled fps = %d\n", led_fps);
 	sprintf(buf, "LED FPS=%d", led_fps);
     if(strstr(role, "AIO")){
 
@@ -2212,7 +2212,7 @@ void fps_counter(void){
 int check_pico_count = 0;
 void check_pico(void){
     int iret_reset_usb_hub = 0;
-    log_debug("check_pico\n");
+    //log_debug("check_pico\n");
     if( access( "/sys/class/net/enp1s0u1u1u4", F_OK ) < 0){
         picousb_close(led_params.pico_handle);
         led_params.pico_handle = NULL;
@@ -4108,8 +4108,15 @@ void alive_report_test(char *server_ip, char *buf)
 {
 	//log_info("buf = %s\n", buf);
 	char send_buf[512] = {0};
-	sprintf(send_buf, "version:%s", LEDCLIENT_VERSION);
+	sprintf(send_buf, "version:%s,fps:%d", LEDCLIENT_VERSION, led_fps);
 	send_alive_report(server_ip, CLIENT_ALIVEREPORT_PORT, send_buf);
+        
+    //check reboot cmd 
+    if(strstr(buf, "reboot")){
+        //got reboot cmd
+        usleep(2000);
+        system("reboot");
+    }
 }
 
 

@@ -87,11 +87,11 @@ void *udp_cmd_thread(void *data){
             return;
         }
         msgbuf[nbytes] = '\0';
-        log_debug("recv %d bytes : %s\n" , nbytes, msgbuf);
+        //log_debug("recv %d bytes : %s\n" , nbytes, msgbuf);
 		/*Check cmd id*/
 		for(int i = CMD_CALLBACK_START; i<CMD_CALLBACK_MAX; i ++){
 			if(strstr(msgbuf, ucps->udp_cmd_handle[i].cmd_name)){
-				log_debug("got cmd %s\n", ucps->udp_cmd_handle[i].cmd_name);
+				//log_debug("got cmd %s\n", ucps->udp_cmd_handle[i].cmd_name);
 				cmd_id = i;
 				break;
 			}
@@ -99,11 +99,11 @@ void *udp_cmd_thread(void *data){
 		if(cmd_id != -1){
 			memset(reply_buf, 0, 1024);
 			cb_ret = ucps->udp_cmd_handle[cmd_id].cmd_callback(msgbuf, reply_buf);
-			log_debug("cb_ret = %d\n", cb_ret);
+			//log_debug("cb_ret = %d\n", cb_ret);
 		}else{
 			continue;
 		}
-		log_debug("reply_buf = %s\n", reply_buf);
+		//log_debug("reply_buf = %s\n", reply_buf);
 		//marked for test error handle
 		if(sendto(fd, reply_buf, strlen(reply_buf), 0, (struct sockaddr *)     &addr, addrlen) < 0){
 			log_error("Could not send datagram!\n");

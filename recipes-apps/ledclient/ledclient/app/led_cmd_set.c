@@ -200,7 +200,7 @@ int set_cabinet_params(char *data, char *reply_buf){
 }
 
 int set_frame_brightness(char *data, char *reply_buf){
-	log_debug("data = %s\n", data);
+	//log_debug("data = %s\n", data);
 	int seq_id = 0;
 	char cmd[1024];
 	char param[1024];
@@ -211,7 +211,7 @@ int set_frame_brightness(char *data, char *reply_buf){
     }else{
 	 	sprintf(reply_buf,"cmd_seq_id:%d;cmd=%s;reply:%s", seq_id, cmd, REPLY_OK_TAG);
     }
-    log_debug("param = %s\n", param);
+    //log_debug("param = %s\n", param);
     return strlen(reply_buf); 
 }
 

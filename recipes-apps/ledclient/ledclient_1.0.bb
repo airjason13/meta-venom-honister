@@ -36,6 +36,7 @@ do_install() {
     install -m 755 ext/hwrevision ${D}/${sysconfdir}/
     install -m 755 ext/launch_led_role_option.sh ${D}/${bindir}
     install -m 755 ext/set_led_env.sh ${D}/${bindir}
+    install -m 755 ext/dnsmasq.service.no_run ${D}/home/root/
     install -m 755 ext/launch_led_player.sh ${D}/${bindir}
     install -m 755 ext/launch_i2c_lcd_server.sh ${D}/${bindir}
     install -m 755 ext/launch_led_client.sh ${D}/${bindir}

@@ -100,6 +100,20 @@ if [[ $ROLE == *$CLIENT_TAG* ]];then
     else
         touch /home/root/client_now	    
     fi
+    # check dnsmasq
+    if cmp -s "/lib/systemd/system/dnsmasq.service" "/home/root/dnsmasq.service.no_run"
+    then
+	    echo "file_identical"
+    else
+    	echo "file different"
+	    cp /home/root/dnsmasq.service.no_run /lib/systemd/system/dnsmasq.service
+        sync
+        sync
+        sync
+        reboot
+    fi
+    systemctl stop dnsmasq.service    
+    systemctl disable dnsmasq.service    
     echo "1. set_br"
     set_br.sh 
     #turn the wifi off

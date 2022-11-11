@@ -182,14 +182,14 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
                 log_debug("case 1 params config error!");
                 break;
             }
-            if((start_y + 1 ) > frame_height){
+            /*if((start_y + 1 ) > frame_height){
                 log_debug("case 1 params config error!");
                 break;
-            }
-            if((start_x + width) > frame_width){
+            }*/
+            /*if((start_x + width) > frame_width){
                 log_debug("case 1 params config error!");
                 break; 
-            }
+            }*/
             config_err = false;
 			for(y = 0; y < height; y++){
                 if(y % 2 == 0){
@@ -218,10 +218,10 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
                 log_debug("case 2 params config error!");
                 break;
             }
-            if((start_y + height - 1) > frame_height){
+            /*if((start_y + height - 1) > frame_height){
                 log_debug("case 2 params config error!");
                 break;
-            }
+            }*/
             
             config_err = false;
 			for(y = 0; y < height; y++){
@@ -364,7 +364,9 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
                 break;
             }
             config_err = false;
-            for(x = width;x > 0;x--){
+            #if 1
+            //for(x = width;x > 0;x--){
+            for(x = 0;x < width;x++){
                 if(x % 2 == 0){
                     for(y = 0; y < height; y++){
                         memcpy(buf + offset,
@@ -381,7 +383,42 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
                     } 
                 }
             }
+            #else
+			for(y = 0; y < height; y++){
+                //cabinet height out of frame height
+                if((start_y - y + 1) > frame_height){
+					for(i = 0 ; i < width; i ++){
+						memcpy(buf + offset, fake_pixel_buf, channel_count);
+						offset += channel_count;
+					} 
+                }else{
+				    if(y % 2 == 0){ // first line
+					    memcpy(buf + offset, 
+							    pFrame->data[0] + ((start_y - y)*pFrame->linesize[0]) + (start_x - width + 1)*channel_count,
+							    width*channel_count);
+					    offset += width*channel_count;
+					    /*for(i = 0; i < width; i++){
+						    memcpy(buf + offset,
+								    pFrame->data[0] + ((start_y - y)*pFrame->linesize[0]) + (start_x -i)*channel_count,
+								    channel_count);
+						    offset += channel_count;
+					    }*/
+				    }else{ //second line
+					    for(i = 0; i < width; i++){
+						    memcpy(buf + offset,
+								    pFrame->data[0] + ((start_y - y)*pFrame->linesize[0]) + (start_x -i)*channel_count,
+								    channel_count);
+						    offset += channel_count;
+					    }
+					    /*memcpy(buf + offset, 
+							    pFrame->data[0] + ((start_y - y)*pFrame->linesize[0]) + (start_x - width + 1)*channel_count,
+							    width*channel_count);
+					    offset += width*channel_count;*/
+				    }
+                }
+			}
             
+            #endif
             break;
         case 7: //confirm @1115
             //0310 test limit ok
@@ -440,6 +477,8 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
             write_len = -ENODEV;
         }
         free(tmp_buf);
+	    //free(buf);
+	    free(fake_pixel_buf);
         log_debug(" id : %d, write_len : %d, params config error!\n", params->port_id, write_len);
         return write_len;
     }
@@ -463,5 +502,6 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
         write_len = -ENODEV;
     }
 	free(buf);
+	free(fake_pixel_buf);
 	return write_len;
 }
