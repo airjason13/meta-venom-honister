@@ -2489,7 +2489,10 @@ static int video_thread(void *arg)
                         log_debug("want to release picousb ok");
 	                }    
                     //add @20221122
-                    log_debug("reinit pico");
+                    char cmd_log[1024];
+                    sprintf(cmd_log, "echo pico need re-init with ledclient pid: %d >> /home/root/pico_reinit.dat", getpid());
+                    system(cmd_log);
+                    log_debug("reinit pico at pid : %d", getpid());
                     led_params.pico_handle = picousb_init();
 
 	                if(led_params.pico_handle == NULL){
