@@ -2213,7 +2213,9 @@ int check_pico_count = 0;
 void check_pico(void){
     int iret_reset_usb_hub = 0;
     //log_debug("check_pico\n");
-    if( access( "/sys/class/net/enp1s0u1u1u4", F_OK ) < 0){
+    //if( access( "/sys/class/net/enp1s0u1u1u4", F_OK ) < 0) {
+    if((access("/sys/class/net/enp1s0u1u1", F_OK ) < 0) &&
+        (access("/sys/class/net/enp1s0u1u1u4", F_OK) < 0)){// for davicom usb dongle
         picousb_close(led_params.pico_handle);
         led_params.pico_handle = NULL;
     }
@@ -2478,12 +2480,36 @@ static int video_thread(void *arg)
 				iret = transfer_framergb_to_pico(frameRGB, &(led_params.cab_params[i]), 3, is->viddec.avctx->width, is->viddec.avctx->height, led_params.pico_handle, input_filename);
 				if(iret < 0){
 					log_debug("transfer_framergb_to_pico error : %d\n", iret);
-                    exit(0);//dirty
+                    //exit(0);//dirty
                     if(led_params.pico_handle != NULL){
+                        log_debug("want to release picousb");
+                        //double free here??
                         picousb_close(led_params.pico_handle);
                         led_params.pico_handle = NULL;
+                        log_debug("want to release picousb ok");
+	                }    
+                    //add @20221122
+                    log_debug("reinit pico");
+                    led_params.pico_handle = picousb_init();
 
+	                if(led_params.pico_handle == NULL){
+                        picousb_close(led_params.pico_handle);
+                        led_params.pico_handle = NULL;
+		                log_fatal("No Pico Found!\n");
+	    	            lcd_send_command(0, 1, "NoPicoFound!");
+                        insert_lcd_content("No Pico", "Check", TAG_LCD_ERROR, SUB_TAG_NOPICO);
+	                }else{
+	                    picousb_out_transfer(led_params.pico_handle, "Hello", 5);
+                        //unsigned char buf[16];
+                        picousb_in_transfer(led_params.pico_handle, led_params.pico_version, 16);
+                        log_debug("%s\n", led_params.pico_version);
+                        if(strstr(role, "AIO")){
+                        }else{
+                            refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_VERSION, NULL, led_params.pico_version);
+                        }
                     }
+                    log_debug("reinit pico ok!");
+                        
                     i = 0xff;
 				}
 			}
@@ -4185,6 +4211,7 @@ int main(int argc, char **argv)
 	
     /* initial pico*/
 	log_info("Init pico usb!\n");
+    pico_reset();
 	//handle_pico0 = picousb_init();
 	led_params.pico_handle = picousb_init();
 
@@ -4295,7 +4322,7 @@ int main(int argc, char **argv)
     if(strstr(role, "AIO")){
         //timer_t pico_check_tid = jset_timer(1, 0, 10, 0, &(check_pico), 99);
     }else{
-        timer_t pico_check_tid = jset_timer(1, 0, 10, 0, &(check_pico), 99);
+        //timer_t pico_check_tid = jset_timer(1, 0, 10, 0, &(check_pico), 99);//tmp marked
     }
     /*check hdmi status*/
     timer_t detect_screen_tid = jset_timer(1, 0, 3, 0, &(check_hdmi_status), 99);

@@ -94,7 +94,12 @@ struct libusb_device_handle *picousb_init(void)
 	int r = -1;
 	char str1[256], str2[256];
 
-	printf("pico usb init!\n");
+    //reset pico
+	log_debug("usb hub reset!\n");
+    reset_usb_hub(); 
+	
+    log_debug("pico usb init!\n");
+    
 	// Init libusb
     r = libusb_init(NULL);
 
@@ -237,7 +242,6 @@ struct libusb_device_handle *picousb_init(void)
             return NULL;
         }
     }
-
     e = libusb_claim_interface(handle, 0);
     if(e < 0)
     {
@@ -250,7 +254,7 @@ struct libusb_device_handle *picousb_init(void)
         printf("\nClaimed Interface\n");
 
     active_config(dev_expected, hDevice_expected);
-
+    log_debug("active ok!");
 	return handle;
 }
 
@@ -269,7 +273,7 @@ int picousb_out_transfer(struct libusb_device_handle *h, unsigned char *data, in
 {
 	int transferred = -1;
 	int e = -1;
-	e = libusb_bulk_transfer(h, BULK_EP_OUT, data, len, &transferred, 0);
+	e = libusb_bulk_transfer(h, BULK_EP_OUT, data, len, &transferred, 1000);
     if(e == 0 && transferred == len){
 		return transferred;
     }else{
@@ -283,7 +287,7 @@ int picousb_in_transfer(struct libusb_device_handle *h, unsigned char *data, int
 {
 	int transferred = -1;
 	int e = -1;
-	e = libusb_bulk_transfer(h, BULK_EP_IN, data, len, &transferred, 0);
+	e = libusb_bulk_transfer(h, BULK_EP_IN, data, len, &transferred, 1000);
     if(e == 0 ){
 		return transferred;
     }else{
@@ -361,7 +365,7 @@ int reset_usb_hub(void){
 
     /* close */
     pclose(fp);
-    usleep(100000);
+    usleep(2000000);
     fp = popen("/usr/sbin/uhubctl -l 1-1 -a 1", "r");
     if (fp == NULL) {
         log_debug("Failed to run command\n" );
@@ -370,7 +374,14 @@ int reset_usb_hub(void){
 
     /* close */
     pclose(fp);
-    usleep(100000);
+    usleep(2000000);
     return 0;
     
 }
+
+void pico_reset(void){
+    reset_usb_hub();
+    system("usb-reset 0000:0001");
+    usleep(200000);
+}
+

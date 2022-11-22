@@ -489,10 +489,11 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
         buf[i] = g_GammaLut[buf[i]];
     }
 	if(pico != NULL){
+        log_debug("ready to write pico!\n");
         write_len = picousb_out_transfer(pico, buf, buf_size);
         if(write_len < 0){
-            //int iret_reset_usb = reset_usb_device(pico);
-            //log_debug("reset pico error : %d\n", iret_reset_usb); 
+            int iret_reset_usb = reset_usb_device(pico);
+            log_debug("reset pico error : %d\n", iret_reset_usb); 
             //pico = NULL;
             //free(pico);
             //pico = picousb_init();
@@ -500,6 +501,10 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
     }else{
         log_error("no pico");
         write_len = -ENODEV;
+        if(write_len < 0){
+            int iret_reset_usb = reset_usb_device(pico);
+            log_debug("reset pico error : %d\n", iret_reset_usb);
+        } 
     }
 	free(buf);
 	free(fake_pixel_buf);
