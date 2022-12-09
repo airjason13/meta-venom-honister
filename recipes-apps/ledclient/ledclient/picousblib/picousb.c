@@ -352,12 +352,32 @@ int probe_pico(void){
     return 0;
 }
 
-int reset_usb_hub(void){
+int reset_usb_hub(void)
+{
     FILE *fp;
     char path[1024];
-
+    bool pico_link = false;
+    
+    fp = popen("/usr/sbin/uhubctl", "r");
+    if (fp == NULL) {
+        log_debug("Failed to run command\n" );
+        return -EINVAL;
+    }
+    char buf[256];
+    while(fgets(buf, 255, fp) != NULL){
+        /* find pico link to pi4 directly, ready to reset hub and pico*/
+        if(strstr(buf, "0000:0001")){
+            pico_link = true;
+            break;
+        }
+    }
+    pclose(fp);
+    if(pico_link == false){
+        log_debug("pico does not link to pi4 directly!");
+        return -ENODEV;
+    }
     /* Open the command for reading. */
-    fp = popen("/usr/sbin/uhubctl -l 1-1 -a 0", "r");
+    fp = popen("/usr/sbin/uhubctl -l 1-1 -p 3 -a 0", "r");
     if (fp == NULL) {
         log_debug("Failed to run command\n" );
         return -EINVAL;
@@ -366,7 +386,8 @@ int reset_usb_hub(void){
     /* close */
     pclose(fp);
     usleep(2000000);
-    fp = popen("/usr/sbin/uhubctl -l 1-1 -a 1", "r");
+    fp = popen("/usr/sbin/uhubctl -l 1-1 -p 3 -a 1", "r");
+    //fp = popen("/usr/sbin/uhubctl -l 1-1 -a 1", "r");
     if (fp == NULL) {
         log_debug("Failed to run command\n" );
         return -EINVAL;
@@ -379,9 +400,58 @@ int reset_usb_hub(void){
     
 }
 
-void pico_reset(void){
-    reset_usb_hub();
-    system("usb-reset 0000:0001");
-    usleep(200000);
+void pico_reset(void)
+{
+    FILE *fp;
+    bool pico_link = false;
+    fp = popen("/usr/sbin/uhubctl", "r");
+    if (fp == NULL) {
+        log_debug("Failed to run command\n" );
+        return -EINVAL;
+    }
+    char buf[256];
+    while(fgets(buf, 255, fp) != NULL){
+        /* find pico link to pi4 directly, ready to reset hub and pico*/
+        if(strstr(buf, "0000:0001")){
+            pico_link = true;
+            break;
+        }
+    }
+    pclose(fp);
+    if(pico_link == true){
+        reset_usb_hub();
+        system("usb-reset 0000:0001");
+        usleep(200000);
+    }else{
+        log_debug("pico does not link to pi4 directly!");
+    }
 }
+
+// return 0 ==> pico directly link to pi4
+//return -1 ==> pico not directly link to pi4
+int pico_link_to_pi(void)
+{
+    FILE *fp;
+    bool pico_link = false;
+    fp = popen("/usr/sbin/uhubctl", "r");
+    if (fp == NULL) {
+        log_debug("Failed to run command\n" );
+        return -EINVAL;
+    }
+    char buf[256];
+    while(fgets(buf, 255, fp) != NULL){
+        /* find pico link to pi4 directly, ready to reset hub and pico*/
+        if(strstr(buf, "0000:0001")){
+            pico_link = true;
+            break;
+        }
+    }
+    pclose(fp);
+    if(pico_link == true){
+        return 0;
+    }else{
+        return -1;
+    }
+}
+
 

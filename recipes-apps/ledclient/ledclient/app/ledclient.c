@@ -2480,7 +2480,10 @@ static int video_thread(void *arg)
 				iret = transfer_framergb_to_pico(frameRGB, &(led_params.cab_params[i]), 3, is->viddec.avctx->width, is->viddec.avctx->height, led_params.pico_handle, input_filename);
 				if(iret < 0){
 					log_debug("transfer_framergb_to_pico error : %d\n", iret);
-                    //exit(0);//dirty
+                    if(pico_link_to_pi() < 0){
+                        log_debug("pico does not link to pi4 directly, we cannot reset pico directly!");
+                        exit(0);//dirty
+                    }
                     if(led_params.pico_handle != NULL){
                         log_debug("want to release picousb");
                         //double free here??

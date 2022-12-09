@@ -2,6 +2,7 @@
 #define _PICOUSB_H_
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 #include "libusb.h"
 #include "errno.h"
 #include "utildbg.h"

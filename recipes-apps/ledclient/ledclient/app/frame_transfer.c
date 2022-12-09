@@ -377,7 +377,7 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
                 }else{
                     for(y = 0; y < height; y++){
                         memcpy(buf + offset,
-                                pFrame->data[0] + (start_y - height + y)*pFrame->linesize[0] + (start_x - x)*channel_count,
+                                pFrame->data[0] + (start_y - height + y + 1)*pFrame->linesize[0] + (start_x - x)*channel_count,
                                 channel_count);
                         offset += channel_count;
                     } 
@@ -439,7 +439,7 @@ int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, in
                 if(x % 2 == 0){
                     for(y = 0; y < height; y++){
                         memcpy(buf + offset,
-                                pFrame->data[0] + (start_y + y)*pFrame->linesize[0] + (start_x + x)*channel_count,
+                                pFrame->data[0] + (start_y + y + 1)*pFrame->linesize[0] + (start_x + x)*channel_count,
                                 channel_count);
                         offset += channel_count;
                     }

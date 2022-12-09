@@ -9,15 +9,26 @@ do
     # only davicom udb dongle could work.
     # Sometimes the microsnow eth hub could not send the TX packet after power seq 
 	if [ -e /sys/class/net/enp1s0u1u1 ];then
-	    echo "power on usb hub"
-	    uhubctl -l 2 -a 0
+	    echo "power off usb hub"
+	    uhubctl -l 1-1 -p 3 -a 0
 	    echo "power on usb hub A"
 	    sleep 2
-	    uhubctl -l 2 -a 1
+	    uhubctl -l 1-1 -p 3 -a 1
 	    sleep 4
-        sync
+            sync
 	    echo "power seq end"
-    fi
+	elif [ -e /sys/class/net/enp1s0u1u1u4 ];then
+	    echo "power off usb hub"
+        # if only power off the hub 1-1 port 1, the power will be immediately on, 
+        # so we power off the hub 1-1
+	    uhubctl -l 1-1 -a 0
+	    echo "power on usb hub A"
+	    sleep 4
+	    uhubctl -l 1-1 -a 1
+	    sleep 4
+            sync
+	    echo "power seq end"
+        fi
 	(( COUNT ++ ))
 	if [ -e /sys/class/net/enp1s0u1u1u4 ];then
 		echo "find enp1s0u1u1u4"
