@@ -10,6 +10,11 @@ TESTER_TAG='Tester'
 #for auto-mount test
 udiskie &
 
+export DISPLAY=:0
+
+xrandr_add_fhd.sh
+
+x0vncserver -SecurityTypes None &
 
 if [ -e /home/root/server_now ];then
     sudo rm /home/root/server_now
@@ -79,20 +84,29 @@ else
     echo "gen a default config file as Client"
 fi     
 
-insmod /home/root/rtl8812au_module/88XXau.ko
+####++++move to role actions below++++######
+# insmod /home/root/rtl8812au_module/88XXau.ko
 
-#modprobe v4l2loopback
-modprobe v4l2loopback video_nr=3,4,5,6
+# modprobe v4l2loopback
+# modprobe v4l2loopback video_nr=3,4,5,6
+####----move to role actions below----######
 
 #for monitor temperature
 b_measure_temp.sh &
 
+####++++move to role actions below++++######
 #launch flask-filemnager
-launch_flask-filemanager.sh &
-
+#launch_flask-filemanager.sh &
+####----move to role actions below----######
+launch_i2c_lcd_server.sh &
+sleep 3
 echo "ROLE:"$ROLE
 if [[ $ROLE == *$CLIENT_TAG* ]];then
     echo "Let's set client env"
+
+    python3 /home/root/i2c_lcd_server/lcd_show.py 0:0:LEDCLIENT
+    python3 /home/root/i2c_lcd_server/lcd_show.py 0:1:SETUP_ENV_1
+
     if [[ $ROLE == *$RA_TAG* ]];then
         ra_client.py &
     	check_client_peripheral_devices.sh &
@@ -115,10 +129,14 @@ if [[ $ROLE == *$CLIENT_TAG* ]];then
     systemctl stop dnsmasq.service    
     systemctl disable dnsmasq.service    
     echo "1. set_br"
+    python3 /home/root/i2c_lcd_server/lcd_show.py 0:0:LEDCLIENT
+    python3 /home/root/i2c_lcd_server/lcd_show.py 0:1:SETUP_ENV_2
     set_br.sh 
     #turn the wifi off
     nmcli radio wifi off 
     echo "2. check ip and launch ledclient"
+    python3 /home/root/i2c_lcd_server/lcd_show.py 0:0:LEDCLIENT
+    python3 /home/root/i2c_lcd_server/lcd_show.py 0:1:SETUP_ENV_3
     sudo launch_led_client.sh
 elif [[ $ROLE == *$PLAYER_TAG* ]];then
     touch /home/root/player_now
@@ -128,6 +146,11 @@ elif [[ $ROLE == *$PLAYER_TAG* ]];then
     run-filemanager.sh &
     launch_led_player.sh
 elif [[ $ROLE == *$AIO_TAG* ]];then
+    insmod /home/root/rtl8812au_module/88XXau.ko
+    #modprobe v4l2loopback
+    modprobe v4l2loopback video_nr=3,4,5,6
+    launch_flask-filemanager.sh &
+
     touch /home/root/aio_now
     echo "AIO Now"
     nmcli con add type ethernet ifname eth0 con-name eth0
@@ -147,7 +170,10 @@ elif [[ $ROLE == *$AIO_TAG* ]];then
     
 elif [[ $ROLE == *$SERVER_TAG* ]];then
     echo "Server Now"
-    #ifconfig eth0 192.168.0.3
+    insmod /home/root/rtl8812au_module/88XXau.ko
+    #modprobe v4l2loopback
+    modprobe v4l2loopback video_nr=3,4,5,6
+    launch_flask-filemanager.sh &
     nmcli con add type ethernet ifname eth0 con-name eth0
     nmcli con mod eth0 ipv4.addresses 192.168.0.3/24
     nmcli con mod eth0 ipv4.gateway 192.168.0.3

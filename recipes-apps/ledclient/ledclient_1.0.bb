@@ -29,6 +29,7 @@ do_install() {
     install -d ${D}/${sysconfdir}
     install -d ${D}/${sysconfdir}/xdg/autostart/
     install -d ${D}/home/root/i2c_lcd_server/
+    install -d ${D}/home/root/pyzmq_client_req/
     install -d ${D}/home/root/led_machine_option/
     install -d ${D}/home/root/led_machine_option/templates/
     install -d ${D}/home/root/.cabinets_params/
@@ -37,6 +38,7 @@ do_install() {
     install -m 755 ext/launch_led_role_option.sh ${D}/${bindir}
     install -m 755 ext/set_led_env.sh ${D}/${bindir}
     install -m 755 ext/dnsmasq.service.no_run ${D}/home/root/
+    install -m 755 ext/xrandr_add_fhd.sh ${D}/${bindir}
     install -m 755 ext/launch_led_player.sh ${D}/${bindir}
     install -m 755 ext/launch_i2c_lcd_server.sh ${D}/${bindir}
     install -m 755 ext/launch_led_client.sh ${D}/${bindir}
@@ -71,12 +73,13 @@ do_install() {
     cp -r ext/piusb.bin ${D}/home/root/
     cp -r ext/pyflask_machine_option/* ${D}/home/root/led_machine_option/
     cp -r ext/py1602_server/* ${D}/home/root/i2c_lcd_server/
+    cp -r ext/pyzmq_client_req/* ${D}/home/root/pyzmq_client_req/
     cp -r ext/illuminance.py ${D}/home/root/
     cp -r ext/default_cabinets_params/.cabinet_params_config_* ${D}/home/root/.cabinets_params/
     install -m 755 ext/led_role.conf ${D}/home/root/
     install -m 755 ext/led_role_option.desktop ${D}${sysconfdir}/xdg/autostart/led_role_option.desktop
-    install -m 755 ext/i2c_lcd.desktop ${D}${sysconfdir}/xdg/autostart/i2c_lcd.desktop
     install -m 755 ext/set_led_env.desktop ${D}${sysconfdir}/xdg/autostart/set_led_env.desktop
+    install -m 755 ext/i2c_lcd.desktop ${D}${sysconfdir}/xdg/autostart/i2c_lcd.desktop
     install -m 755 ext/set_panel_autohide.desktop ${D}${sysconfdir}/xdg/autostart/set_panel_autohide.desktop
     install -m 755 ext/set_automount.desktop ${D}${sysconfdir}/xdg/autostart/set_panel_automount.desktop
     install -m 755 ext/set_always_display_on.desktop ${D}${sysconfdir}/xdg/autostart/set_always_display_on.desktop
