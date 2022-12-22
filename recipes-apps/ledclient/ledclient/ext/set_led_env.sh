@@ -174,6 +174,8 @@ elif [[ $ROLE == *$SERVER_TAG* ]];then
     #modprobe v4l2loopback
     modprobe v4l2loopback video_nr=3,4,5,6
     launch_flask-filemanager.sh &
+    nmcli con del eth0
+    rm /etc/NetworkManager/system-connections/*
     nmcli con add type ethernet ifname eth0 con-name eth0
     nmcli con mod eth0 ipv4.addresses 192.168.0.3/24
     nmcli con mod eth0 ipv4.gateway 192.168.0.3
