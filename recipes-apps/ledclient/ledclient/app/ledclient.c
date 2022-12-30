@@ -1840,8 +1840,8 @@ static int get_video_frame(VideoState *is, AVFrame *frame)
        
         if ((is->frame_drops_early != is->frame_drops_early_pre) || (is->frame_drops_late != is->frame_drops_late_pre)){
             log_debug("frame drops early : %d, frame drops late : %d", is->frame_drops_early, is->frame_drops_late);
-            is->frame_drops_early_pre = is->frame_drops_early_pre;
-            is->frame_drops_late_pre = is->frame_drops_late_pre;
+            is->frame_drops_early_pre = is->frame_drops_early;
+            is->frame_drops_late_pre = is->frame_drops_late;
         }
         frame->sample_aspect_ratio = av_guess_sample_aspect_ratio(is->ic, is->video_st, frame);
 
