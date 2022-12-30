@@ -24,6 +24,7 @@ if __name__ == '__main__':
     ledclient_pid = os.popen("pgrep ledclient").read()
     log.debug("ledclient_pid : %s" % ledclient_pid)
     # sock = zmq.Context().socket(zmq.REQ)
+    try_connect_count=0
     while True:
         log.debug("try to connect")
         try:
@@ -66,6 +67,12 @@ if __name__ == '__main__':
             sock.disconnect("tcp://192.168.0.2:9527")
             sock.close()
             context.term()
+
+        try_connect_count += 1
+        if try_connect_count > 3:
+            log.debug("Cannot connect to pyzmq server. kill ledclient")
+            kill_ledclient()
+            try_connect_count = 0
         time.sleep(2)
         
     

@@ -44,4 +44,8 @@ do_deploy:append() {
         echo "# Disable touch screen" >>$CONFIG
         echo "disable_touchscreen=1" >>$CONFIG
     fi
+    if [ "${HDMI_SAFE}" = "1" ]; then
+        echo "# Enable HDMI SAFE MODE" >>$CONFIG
+        echo "hdmi_safe=1" >>$CONFIG
+    fi
 }

@@ -77,8 +77,8 @@ if [ -e /sys/class/net/enp1s0u1u1u4 ];then
 	fi
 	python3 /home/root/i2c_lcd_server/lcd_show.py 0:0:LEDCLIENT
 	python3 /home/root/i2c_lcd_server/lcd_show.py 0:1:SETUP_ENV_2_3
-    	ifconfig eth0 up
-    	ifconfig enp1s0u1u1u4 up
+    	#ifconfig eth0 up
+    	#ifconfig enp1s0u1u1u4 up
 	echo "enp1s0u1u1u4 exists" >> /home/root/br_tmp.txt
 	pkill dnsmasq #for sure that all client request ip from server
 	python3 /home/root/i2c_lcd_server/lcd_show.py 0:0:LEDCLIENT
@@ -86,6 +86,8 @@ if [ -e /sys/class/net/enp1s0u1u1u4 ];then
 	brctl addbr br0
     	nmcli con add con-name eth0 type ethernet ifname eth0 ip4 0.0.0.0/24 gw4 0.0.0.0 ipv4.method manual
     	nmcli con add con-name enp1s0u1u1u4 type ethernet ifname enp1s0u1u1u4 ip4 0.0.0.0/24 gw4 0.0.0.0 ipv4.method manual
+    	ifconfig eth0 up
+    	ifconfig enp1s0u1u1u4 up
 	python3 /home/root/i2c_lcd_server/lcd_show.py 0:0:LEDCLIENT
 	python3 /home/root/i2c_lcd_server/lcd_show.py 0:1:SETUP_ENV_2_3_2
     	nmcli con up eth0
@@ -98,6 +100,8 @@ if [ -e /sys/class/net/enp1s0u1u1u4 ];then
 	python3 /home/root/i2c_lcd_server/lcd_show.py 0:0:LEDCLIENT
 	python3 /home/root/i2c_lcd_server/lcd_show.py 0:1:SETUP_ENV_2_4
 	gen_mac_with_sn.py
+	ifconfig eth0 0.0.0.0
+	ifconfig enp1s0u1u1u4 0.0.0.0
 	udhcpc -i br0 &
 elif [ -e /sys/class/net/enp1s0u1u1 ];then
     if [ -e /sys/class/net/br0 ];then

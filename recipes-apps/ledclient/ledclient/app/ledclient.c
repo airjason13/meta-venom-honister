@@ -283,6 +283,8 @@ typedef struct VideoState {
     struct SwrContext *swr_ctx;
     int frame_drops_early;
     int frame_drops_late;
+    int frame_drops_early_pre;
+    int frame_drops_late_pre;
 
     enum ShowMode {
         SHOW_MODE_NONE = -1, SHOW_MODE_VIDEO = 0, SHOW_MODE_WAVES, SHOW_MODE_RDFT, SHOW_MODE_NB
@@ -1768,6 +1770,7 @@ display:
             av_bprint_init(&buf, 0, AV_BPRINT_SIZE_AUTOMATIC);
             /*av_bprintf(&buf,
                       "%7.2f %s:%7.3f fd=%4d aq=%5dKB vq=%5dKB sq=%5dB f=%"PRId64"/%"PRId64"   \r",
+                      "%7.2f %s:%7.3f fd=%4d aq=%5dKB vq=%5dKB sq=%5dB f=%"PRId64"/%"PRId64"   \r",
                       get_master_clock(is),
                       (is->audio_st && is->video_st) ? "A-V" : (is->video_st ? "M-V" : (is->audio_st ? "M-A" : "   ")),
                       av_diff,
@@ -1834,16 +1837,24 @@ static int get_video_frame(VideoState *is, AVFrame *frame)
 
         if (frame->pts != AV_NOPTS_VALUE)
             dpts = av_q2d(is->video_st->time_base) * frame->pts;
-
+       
+        if ((is->frame_drops_early != is->frame_drops_early_pre) || (is->frame_drops_late != is->frame_drops_late_pre)){
+            log_debug("frame drops early : %d, frame drops late : %d", is->frame_drops_early, is->frame_drops_late);
+            is->frame_drops_early_pre = is->frame_drops_early_pre;
+            is->frame_drops_late_pre = is->frame_drops_late_pre;
+        }
         frame->sample_aspect_ratio = av_guess_sample_aspect_ratio(is->ic, is->video_st, frame);
 
         if (framedrop>0 || (framedrop && get_master_sync_type(is) != AV_SYNC_VIDEO_MASTER)) {
             if (frame->pts != AV_NOPTS_VALUE) {
                 double diff = dpts - get_master_clock(is);
+                log_debug("dpts = %lu, diff = %lu", dpts, diff);
                 if (!isnan(diff) && fabs(diff) < AV_NOSYNC_THRESHOLD &&
                     diff - is->frame_last_filter_delay < 0 &&
                     is->viddec.pkt_serial == is->vidclk.serial &&
                     is->videoq.nb_packets) {
+                    log_debug("frame_drops_early");
+                    log_debug("dpts = %lu, diff = %lu", dpts, diff);
                     is->frame_drops_early++;
                     av_frame_unref(frame);
                     got_picture = 0;
