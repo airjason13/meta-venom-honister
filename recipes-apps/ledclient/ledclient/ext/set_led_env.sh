@@ -202,6 +202,6 @@ elif [[ $ROLE == *$TESTER* ]];then
     echo "Tester Now"
     nmcli radio wifi on 
     setup_hotspot_tester.sh &
-    run-filemanager.sh &
+    # run-filemanager.sh &
     launch_pyLedTester.sh 
 fi  
