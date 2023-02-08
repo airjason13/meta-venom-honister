@@ -12,7 +12,7 @@ $(LIB): $(OBJS)
 
 $(OBJS): $(SRCS)
 	$(CC) -DDEBUG -D_REENTRANT -Wall -lpthread -c $^
-	echo "error CFLAGS :" $(CFLAGS)
+	echo "CFLAGS :" $(CFLAGS)
 	#echo " CC $(CFLAGS) $(OBJS)"
 
 

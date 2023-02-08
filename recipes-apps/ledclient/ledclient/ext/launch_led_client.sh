@@ -2,7 +2,7 @@
 IP_ARM='192.168.0.3'
 IP_X86='192.168.0.2'
 no_ip_count=0
-no_ip_count_max=30
+no_ip_count_max=15
 ledclient_res=0
 python3 /home/root/i2c_lcd_server/lcd_show.py 0:0:LEDCLIENT
 python3 /home/root/i2c_lcd_server/lcd_show.py 0:1:CONNECTING
