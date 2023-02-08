@@ -7,9 +7,6 @@ LCDCLILIB = lcdclilib
 UTILDBGLIB = utildbglib
 JTIMERLIB = jtimerlib
 CABINETUTILSLIB = cabinetutilslib
-#GPIOLIB = gpiolib
-#TCPSERVERLIB = tcpserverlib
-#UDPSOCKETLIB = udpsocketlib
 
 APP_DIR := $(MAKE_DIR)/$(APP)
 COMPAT_DIR := $(MAKE_DIR)/
@@ -19,9 +16,6 @@ LCDCLILIB_DIR := $(MAKE_DIR)/$(LCDCLILIB)
 UTILDBGLIB_DIR := $(MAKE_DIR)/$(UTILDBGLIB)
 JTIMERLIB_DIR := $(MAKE_DIR)/$(JTIMERLIB)
 CABINETUTILSLIB_DIR := $(MAKE_DIR)/$(CABINETUTILSLIB)
-#GPIOLIB_DIR := $(MAKE_DIR)/$(GPIOLIB)
-#TCPSERVERLIB_DIR := $(MAKE_DIR)/$(TCPSERVERLIB)
-#UDPSOCKETLIB_DIR := $(MAKE_DIR)/$(UDPSOCKETLIB)
 
 INC_SRCH_PATH := -I$(MAKE_DIR)
 INC_SRCH_PATH += -I$(MAKE_DIR)/recipe-sysroot/usr/include/SDL2/
@@ -61,9 +55,6 @@ LDFLAGS += -lpicousb
 LDFLAGS += -ludputils
 LDFLAGS += -llcdcli
 LDFLAGS += -ljtimer
-#LDFLAGS += -lgpio 
-#LDFLAGS += -ltcpserver 
-#LDFLAGS += -ludpsocket 
 LDFLAGS += -lavdevice -lavfilter -lavresample -lpostproc -lswscale -lavformat -lavcodec -lswresample -lavutil -lpthread -lm -lrt -lSDL2 -lusb-1.0
 LDFLAGS += -lutildbg
 
@@ -77,9 +68,6 @@ all:
 	$(MAKE) -C $(LCDCLILIB_DIR) -f $(LCDCLILIB).mk
 	$(MAKE) -C $(UTILDBGLIB_DIR) -f $(UTILDBGLIB).mk
 	$(MAKE) -C $(JTIMERLIB_DIR) -f $(JTIMERLIB).mk
-#	$(MAKE) -C $(GPIOLIB_DIR) -f $(GPIOLIB).mk
-#	$(MAKE) -C $(TCPSERVERLIB_DIR) -f $(TCPSERVERLIB).mk
-#	$(MAKE) -C $(UDPSOCKETLIB_DIR) -f $(UDPSOCKETLIB).mk
 	$(MAKE) -C $(APP_DIR) -f $(APP).mk
 	
 .PHONY: clean
@@ -90,7 +78,4 @@ clean:
 	$(MAKE) -C $(LCDCLILIB_DIR) -f $(LCDCLILIB).mk clean
 	$(MAKE) -C $(JTIMERLIB_DIR) -f $(JTIMERLIB).mk clean
 	$(MAKE) -C $(CABINETUTILSLIB_DIR) -f $(CABINETUTILSLIB).mk clean
-#	$(MAKE) -C $(GPIOLIB_DIR) -f $(GPIOLIB).mk clean
-#	$(MAKE) -C $(TCPSERVERLIB_DIR) -f $(TCPSERVERLIB).mk clean
-#	$(MAKE) -C $(UDPSOCKETLIB_DIR) -f $(UDPSOCKETLIB).mk clean
 	$(MAKE) -C $(APP_DIR) -f $(APP).mk clean
