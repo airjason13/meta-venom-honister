@@ -16,6 +16,10 @@ int set_lcd_active(bool enable)
 
 int lcd_send_command(int x, int y, char* cmd)
 {
+#if 1
+    return 0;
+#else
+#endif
 	int fd;
 	struct sockaddr_un addr;
 	int ret;

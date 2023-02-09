@@ -59,7 +59,6 @@
 #include <SDL_thread.h>
 
 #include "cmdutils.h"
-//#include "picousb.h"  //move to ledlayout.h
 #include "ledlayout.h"
 #include "udpmr.h"
 #include "udpbr.h"
@@ -70,7 +69,6 @@
 #include "ledclient_version.h"
 #include "jtimer.h"
 #include "lcdcli.h"
-#include "picousb.h"
 #include <assert.h>
 #include "frame_transfer.h"
 #include "lcd_info.h"
@@ -80,8 +78,6 @@
 int led_fps = 0;
 bool HDMI_status = false;//add by jason
 
-struct libusb_device_handle *handle_pico0 = NULL;
-struct libusb_device_handle *handle_pico1 = NULL;
 
 const char program_name[] = "ledclient";
 const int program_birth_year = 2021;
@@ -427,7 +423,6 @@ static const struct TextureFormatEntry {
 
 ledparams_t led_params;
 char led_layout[LED_PANELS] = { 1, 1, 1, 1, 3, 3, 3, 3};
-int pico_lost_count = 0;
 char role[256] = {0};  
 
 
@@ -1369,6 +1364,8 @@ static void do_exit(VideoState *is)
 
 static void sigterm_handler(int sig)
 {
+    //add for smi
+    smi_terminate(sig);
     exit(123);
 }
 
@@ -1839,7 +1836,7 @@ static int get_video_frame(VideoState *is, AVFrame *frame)
             dpts = av_q2d(is->video_st->time_base) * frame->pts;
        
         if ((is->frame_drops_early != is->frame_drops_early_pre) || (is->frame_drops_late != is->frame_drops_late_pre)){
-            log_debug("frame drops early : %d, frame drops late : %d", is->frame_drops_early, is->frame_drops_late);
+            //log_debug("frame drops early : %d, frame drops late : %d", is->frame_drops_early, is->frame_drops_late);
             is->frame_drops_early_pre = is->frame_drops_early;
             is->frame_drops_late_pre = is->frame_drops_late;
         }
@@ -1848,13 +1845,13 @@ static int get_video_frame(VideoState *is, AVFrame *frame)
         if (framedrop>0 || (framedrop && get_master_sync_type(is) != AV_SYNC_VIDEO_MASTER)) {
             if (frame->pts != AV_NOPTS_VALUE) {
                 double diff = dpts - get_master_clock(is);
-                log_debug("dpts = %lu, diff = %lu", dpts, diff);
+                //log_debug("dpts = %lu, diff = %lu", dpts, diff);
                 if (!isnan(diff) && fabs(diff) < AV_NOSYNC_THRESHOLD &&
                     diff - is->frame_last_filter_delay < 0 &&
                     is->viddec.pkt_serial == is->vidclk.serial &&
                     is->videoq.nb_packets) {
-                    log_debug("frame_drops_early");
-                    log_debug("dpts = %lu, diff = %lu", dpts, diff);
+                    //log_debug("frame_drops_early");
+                    //log_debug("dpts = %lu, diff = %lu", dpts, diff);
                     is->frame_drops_early++;
                     av_frame_unref(frame);
                     got_picture = 0;
@@ -2220,151 +2217,9 @@ void fps_counter(void){
 	led_fps = 0;
 }
 
-int check_pico_count = 0;
-void check_pico(void){
-    int iret_reset_usb_hub = 0;
-    //log_debug("check_pico\n");
-    //if( access( "/sys/class/net/enp1s0u1u1u4", F_OK ) < 0) {
-    if((access("/sys/class/net/enp1s0u1u1", F_OK ) < 0) &&
-        (access("/sys/class/net/enp1s0u1u1u4", F_OK) < 0)){// for davicom usb dongle
-        picousb_close(led_params.pico_handle);
-        led_params.pico_handle = NULL;
-    }
-    if(led_params.pico_handle == NULL){
-        if((check_pico_count % 3) == 0){
-            iret_reset_usb_hub = reset_usb_hub();
-            log_debug("probe_pico = %d\n", iret_reset_usb_hub);
-        }
-        check_pico_count ++;
-        led_params.pico_handle = picousb_init();
-        pico_lost_count += 1;
-        char pico_lost_str[256] = {0};
-        char reset_br_cmd[256] = {0};
-        FILE *fp;
-        sprintf(pico_lost_str, "/bin/touch /home/root/pico_lost%d", pico_lost_count);
-        fp = popen(pico_lost_str, "r");
-        if (fp == NULL) {
-            log_debug("Failed to run command\n" );
-        }
-        pclose(fp);
-        system("sync");
-        /*sprintf(reset_br_cmd, "/usr/bin/set_br.sh");
-        fp = popen(reset_br_cmd, "r");
-        if (fp == NULL) {
-            log_debug("Failed to run command reset_br_cmd \n" );
-        } */
-        /* close */
-        pclose(fp);
-        exit(0);
-    }
-}
-/********************************************************
-* Write RGB Red to Pico TEST
-**********************************************************/
-int write_framergb_to_pico_test_red(AVFrame *pFrame, int channel_count, int start_x, int start_y,int width, int height ,int id_num, int layout_config){
-	
-	unsigned int buf_size = (width*height*channel_count) + 4;
-	unsigned char *buf = malloc(buf_size);
-	int write_len = 0;
-	char color = 0x00;
-	sprintf(buf, "id%d:", id_num);
-	for(int i = 0; i < 2880; i++){
-		if((i%3) == 0){
-			color = 0x80;
-		}else{
-			color = 0x00;
-		}
-		memset(buf + 4 + i, color, 1);
-	}
-	if(led_params.pico_handle != NULL){
-		write_len = picousb_out_transfer(led_params.pico_handle, buf, buf_size);
-		log_debug("write_len = %d\n", write_len);
-	}else{
-		log_error("no pico");
-	}
-	return 0;
-
-}
-/********************************************************
-* Write RGB to Pico TEST
-**********************************************************/
-int write_framergb_to_pico_test_gray(AVFrame *pFrame, int channel_count, int start_x, int start_y,int width, int height ,int id_num, int layout_config){
-	
-	unsigned int buf_size = (width*height*channel_count) + 4;
-	unsigned char *buf = malloc(buf_size);
-	int write_len = 0;
-	sprintf(buf, "id%d:", id_num);
-	memset(buf + 4, 0x80, 2880);
-
-	if(led_params.pico_handle != NULL){
-		write_len = picousb_out_transfer(led_params.pico_handle, buf, buf_size);
-		log_debug("write_len = %d\n", write_len);
-	}else{
-		log_error("no pico");
-	}
-	return 0;
-
-}
 
 
-/********************************************************
-* Write RGB to Pico
-**********************************************************/
-int write_framergb_to_pico(AVFrame *pFrame, int channel_count, int start_x, int start_y,int width, int height ,int id_num, int layout_config){
-    int y;
-	int offset = 0;
-	int write_len = 0;
-	//int channel = 3; //rgb channels
-	unsigned int buf_size = (width*height*channel_count) + 4;
-	unsigned char *buf = malloc(buf_size);
-	if(buf == NULL){
-		return -1;//ENOMEM		
-	}
-	sprintf(buf, "id%d:", id_num);
-	//log_info("id_num = %d, layout_config = %d\n", id_num, layout_config);
-	//printf("start_x = %d\n", start_x);
-	//printf("start_y = %d\n", start_y);
-	//printf("pFrame->linesize[0] = %d\n", pFrame->linesize[0]);
-	offset += 4;
-    //Write piexl data
-    for(y = start_y; y < (start_y + height); y++){
-		if(layout_config == 1){
-			if((y - start_y) % 2 == 0){
-				memcpy(buf + offset, pFrame->data[0] + y*pFrame->linesize[0] + start_x*channel_count, width*channel_count);
-			}else{
-				for(int i = start_x ; i < (start_x + width) ; i++){
-					memcpy(buf + offset + ((i-start_x)*channel_count), pFrame->data[0] + y*pFrame->linesize[0] + (width - i - 1)*channel_count, channel_count);
-				}
-			}
-		}else if(layout_config == 3){
-			if((y - start_y) % 2 == 0){
-				memcpy(buf + offset, pFrame->data[0] + y*pFrame->linesize[0] + start_x*channel_count, width*channel_count);
-			}else{
-				for(int i = start_x ; i < (start_x + width) ; i++){
-				//for(int i = 0 ; i < width ; i++){
-					memcpy(buf + offset + ((i-start_x)*channel_count), pFrame->data[0] + y*pFrame->linesize[0] + (width - i - 1)*channel_count, channel_count);
-				}
-			}
-		}
-		offset += width*3;
-	}
-	/*wrtie buf to pico	*/
-	if(led_params.pico_handle != NULL){
-		if( offset != picousb_out_transfer(led_params.pico_handle, buf, buf_size)){
-			printf("error id_num : %d, offset = %d, buf_size = %d\n", id_num, offset, buf_size);
-			free(buf);
-			return -1;
-		}else{
-			free(buf);
-		}
-	}else{
-		free(buf);
-		log_error("No Pico!\n");
-	}
 
-	//printf("id_num : %d, offset = %d\n", id_num, offset);
-	return offset;
-}
 /********************************************************
 * Test Write RGB to File
 **********************************************************/
@@ -2450,8 +2305,10 @@ static int video_thread(void *arg)
     	//log_debug("is->viddec.avctx->width = %d\n", is->viddec.avctx->width);
     	//log_debug("is->viddec.avctx->height = %d\n", is->viddec.avctx->height);
         if(sws_ctx == NULL){
+            /*sws_ctx = sws_getContext(is->viddec.avctx->width, is->viddec.avctx->height, is->viddec.avctx->pix_fmt, 
+                                        is->viddec.avctx->width, is->viddec.avctx->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);*/
             sws_ctx = sws_getContext(is->viddec.avctx->width, is->viddec.avctx->height, is->viddec.avctx->pix_fmt, 
-                                        is->viddec.avctx->width, is->viddec.avctx->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
+                                        is->viddec.avctx->width, is->viddec.avctx->height, AV_PIX_FMT_RGB32, SWS_BILINEAR, NULL, NULL, NULL);
 			if(sws_ctx == NULL){
 				log_error("sws_ctx initial failed!\n");
 			}
@@ -2485,51 +2342,11 @@ static int video_thread(void *arg)
 			    //SaveFrame(frameRGB, 1920, 1080, i);
 			    SaveFrame(frameRGB, is->viddec.avctx->width, is->viddec.avctx->height, i);
             }
-#endif			
-			//transfer RGB frame to pico
-			for(i = 0; i < 8; i++){
-				iret = transfer_framergb_to_pico(frameRGB, &(led_params.cab_params[i]), 3, is->viddec.avctx->width, is->viddec.avctx->height, led_params.pico_handle, input_filename);
-				if(iret < 0){
-					log_debug("transfer_framergb_to_pico error : %d\n", iret);
-                    if(pico_link_to_pi() < 0){
-                        log_debug("pico does not link to pi4 directly, we cannot reset pico directly!");
-                        exit(0);//dirty
-                    }
-                    if(led_params.pico_handle != NULL){
-                        log_debug("want to release picousb");
-                        //double free here??
-                        picousb_close(led_params.pico_handle);
-                        led_params.pico_handle = NULL;
-                        log_debug("want to release picousb ok");
-	                }    
-                    //add @20221122
-                    char cmd_log[1024];
-                    sprintf(cmd_log, "echo pico need re-init with ledclient pid: %d >> /home/root/pico_reinit.dat", getpid());
-                    system(cmd_log);
-                    log_debug("reinit pico at pid : %d", getpid());
-                    led_params.pico_handle = picousb_init();
+#endif	
+		
+			//transfer RGB frame to smi
+            rpi_start_smi();            
 
-	                if(led_params.pico_handle == NULL){
-                        picousb_close(led_params.pico_handle);
-                        led_params.pico_handle = NULL;
-		                log_fatal("No Pico Found!\n");
-	    	            lcd_send_command(0, 1, "NoPicoFound!");
-                        insert_lcd_content("No Pico", "Check", TAG_LCD_ERROR, SUB_TAG_NOPICO);
-	                }else{
-	                    picousb_out_transfer(led_params.pico_handle, "Hello", 5);
-                        //unsigned char buf[16];
-                        picousb_in_transfer(led_params.pico_handle, led_params.pico_version, 16);
-                        log_debug("%s\n", led_params.pico_version);
-                        if(strstr(role, "AIO")){
-                        }else{
-                            refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_VERSION, NULL, led_params.pico_version);
-                        }
-                    }
-                    log_debug("reinit pico ok!");
-                        
-                    i = 0xff;
-				}
-			}
 			led_fps ++;
         } 
 #if CONFIG_AVFILTER
@@ -4205,7 +4022,7 @@ int main(int argc, char **argv)
     }
     //char role[256] = {0};  
     VideoState *is;
-    log_info("Jason show ledclient!\n");
+    log_info("Jason show lcsmi!\n");
     get_machine_role(role);
     log_debug("role = %s\n", role);
     
@@ -4226,26 +4043,11 @@ int main(int argc, char **argv)
         lcd_start_routine();	
     }
 	
-    /* initial pico*/
-	log_info("Init pico usb!\n");
-    pico_reset();
-	//handle_pico0 = picousb_init();
-	led_params.pico_handle = picousb_init();
-
-	if(led_params.pico_handle == NULL){
-		log_fatal("No Pico Found!\n");
-		lcd_send_command(0, 1, "NoPicoFound!");
-        insert_lcd_content("No Pico", "Check", TAG_LCD_ERROR, SUB_TAG_NOPICO);
-        sleep(8); 
-	}else{
-	    picousb_out_transfer(led_params.pico_handle, "Hello", 5);
-        //unsigned char buf[16];
-        picousb_in_transfer(led_params.pico_handle, led_params.pico_version, 16);
-        log_debug("%s\n", led_params.pico_version);
-        if(strstr(role, "AIO")){
-        }else{
-            refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_VERSION, NULL, led_params.pico_version);
-        }
+    //init smi
+    int smi_ret = init_rpi_smi();
+    if (smi_ret < 0){
+        smi_terminate(0);
+        exit(0);
     }
 
 
@@ -4272,21 +4074,6 @@ int main(int argc, char **argv)
 					led_params.cab_params[i].start_y);
 		log_debug("led_params.cab_params[%d].layout_type = %d", i,
 					led_params.cab_params[i].layout_type);
-        
-        //write to pico the width & height of one port
-        if(i == 0){
-            char cmd_buf[64] = {0};
-            char reply_buf[64] = {0};
-            sprintf(cmd_buf,"cmd:set_port_res,%d,%d", led_params.cab_params[i].cabinet_width, led_params.cab_params[i].cabinet_height);
-            int iret = picousb_set_cmd(led_params.pico_handle, cmd_buf, reply_buf);
-            log_debug("iret = %d, recv_buf = %s\n", iret, reply_buf);
-            /*sprintf(tmp_buf,"cmd:set_port_res,%d,%d", led_params.cab_params[i].cabinet_width, led_params.cab_params[i].cabinet_height);
-            picousb_out_transfer(led_params.pico_handle, tmp_buf, 64);
-            memset(tmp_buf, 0, 64);
-            picousb_in_transfer(led_params.pico_handle, tmp_buf, 64);
-            log_debug("tmp_buf = %s", tmp_buf);*/
-            
-        }
         
 	}
 
@@ -4335,12 +4122,6 @@ int main(int argc, char **argv)
 	timer_t fps_counter_tid = jset_timer(1, 0, 1, 0, &(fps_counter), 99);
 	//log_info("fps_counter_tid = %d\n", fps_counter_tid);
 
-    /*check pico timer*/
-    if(strstr(role, "AIO")){
-        //timer_t pico_check_tid = jset_timer(1, 0, 10, 0, &(check_pico), 99);
-    }else{
-        //timer_t pico_check_tid = jset_timer(1, 0, 10, 0, &(check_pico), 99);//tmp marked
-    }
     /*check hdmi status*/
     timer_t detect_screen_tid = jset_timer(1, 0, 3, 0, &(check_hdmi_status), 99);
 		

@@ -12,6 +12,7 @@ SRC_URI += "file://app/ \
             file://utildbglib \
             file://lcdclilib \
             file://jtimerlib \
+            file://smilib \
             file://cabinetutilslib \
             file://include/ \
             file://Makefile \
