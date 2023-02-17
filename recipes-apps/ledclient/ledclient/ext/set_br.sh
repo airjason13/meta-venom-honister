@@ -1,6 +1,6 @@
 #!/bin/sh
 
-COUNT_MAX=30
+COUNT_MAX=5
 COUNT=0
 
 python3 /home/root/i2c_lcd_server/lcd_show.py 0:0:LEDCLIENT
@@ -26,7 +26,7 @@ do
         # so we power off the hub 1-1
 	    uhubctl -l 1-1 -a 0
 	    echo "power on usb hub A"
-	    sleep 4
+	    sleep 8
 	    uhubctl -l 1-1 -a 1
 	    sleep 4
             sync

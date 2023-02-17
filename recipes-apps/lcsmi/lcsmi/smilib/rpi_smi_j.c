@@ -14,7 +14,7 @@
 //#define SMI_TIMING 	12, 19, 34, 19
 
 #define LED_D0_PIN	8
-#define LED_NCHANS	8
+#define LED_NCHANS	16//8
 #define LED_NBITS	24
 #define LED_PREBITS	4
 #define LED_POSTBITS	4

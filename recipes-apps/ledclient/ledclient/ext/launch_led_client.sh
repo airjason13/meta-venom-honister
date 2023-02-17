@@ -16,9 +16,10 @@ do
 	if [[ $br0_ip == 192.168.0.* ]];then
 		no_ip_count=0
 		# start pyzmq_client_req in background
-		pkill -f pyzmq_client_req.py
+        # if numbers of client goes too much(> 10), the response will be lost a lot
+		#pkill -f pyzmq_client_req.py
 
-		python3 /home/root/pyzmq_client_req/pyzmq_client_req.py &
+		#python3 /home/root/pyzmq_client_req/pyzmq_client_req.py &
 
 		echo "Abr0 ip:"$br0_ip >> /home/root/.ledclient_network.log
 		sleep 1

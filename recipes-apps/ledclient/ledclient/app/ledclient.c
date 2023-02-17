@@ -74,7 +74,7 @@
 #include <assert.h>
 #include "frame_transfer.h"
 #include "lcd_info.h"
-
+#include <time.h>
 //#define WRITE_FRAME_TO_DISK     1
 
 int led_fps = 0;
@@ -2439,14 +2439,12 @@ static int video_thread(void *arg)
     avpicture_fill((AVPicture *)frameRGB, buffer, AV_PIX_FMT_RGB24, 1920, 1080);
 
 #endif
-
     for (;;) {
         ret = get_video_frame(is, frame);
         if (ret < 0)
             goto the_end;
         if (!ret)
             continue;
-
     	//log_debug("is->viddec.avctx->width = %d\n", is->viddec.avctx->width);
     	//log_debug("is->viddec.avctx->height = %d\n", is->viddec.avctx->height);
         if(sws_ctx == NULL){

@@ -2185,7 +2185,7 @@ static int video_thread(void *arg)
         
         //test smi
         //printf("start smi!\n");
-        set_test_buffer(0x00000030);
+        set_test_buffer(0x00000000);
         rpi_start_smi();
 
 #if CONFIG_AVFILTER

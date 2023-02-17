@@ -17,7 +17,7 @@ if __name__ == '__main__':
             for line in lines:
                 if "GISTLED" in line:
                     sn_str = line.strip("\n")
-            mac_addr = "00:60:2f" + ":" + sn_str[8:10] + ":" + sn_str[14:16] + ":" + sn_str[17:19]
+            mac_addr = "00:60:2f" + ":" + sn_str[8:10] + ":" + sn_str[14:16] + ":" + sn_str[16:18]
             # print("mac_addr = ", mac_addr)
             cmd = "ifconfig br0 hw ether " + mac_addr
             print(cmd)
