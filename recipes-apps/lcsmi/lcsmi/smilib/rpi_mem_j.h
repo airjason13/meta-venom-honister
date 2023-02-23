@@ -65,7 +65,9 @@ typedef enum {
 
 typedef struct {
 	int fd, h, size;
-	void *bus, *virt, *phys;
+	void *bus, *virt, *phys, *real_virt;
+	//void *bus, *phys, *real_virt;
+    //unsigned long *virt;
 	//void *bus, *phys;
 	//unsigned int *virt;
 }MEM_MAP;

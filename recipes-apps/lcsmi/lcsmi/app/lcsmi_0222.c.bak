@@ -74,9 +74,9 @@
 #include "frame_transfer.h"
 #include "lcd_info.h"
 #include "rpi_smi_j.h"
-#define WRITE_FRAME_TO_DISK     0
+//#define WRITE_FRAME_TO_DISK     1
 
-int led_fps = 0;
+
 
 #include <assert.h>
 
@@ -246,7 +246,6 @@ typedef struct VideoState {
     Decoder auddec;
     Decoder viddec;
     Decoder subdec;
-    Decoder smidec;
 
     int audio_stream;
 
@@ -324,8 +323,6 @@ typedef struct VideoState {
     int last_video_stream, last_audio_stream, last_subtitle_stream;
 
     SDL_cond *continue_read_thread;
-    SDL_mutex *smi_decode_mutex;
-    
 } VideoState;
 
 /* options specified by the user */
@@ -2154,59 +2151,6 @@ static int decoder_start(Decoder *d, int (*fn)(void *), const char *thread_name,
     return 0;
 }
 
-
-#define SMI_DECODE_MUTEX    1
-int smi_trigger = 0;
-int decoder_trigger = 0;
-
-
-static int smi_thread(void *arg)
-{
-    VideoState *is = arg;
-    int icled_bits_per_pixel = get_icled_bits_per_pixel();
-    int smi_go_trigger = 0;
-    for(;;){
-        
-        usleep(10);
-#if SMI_DECODE_MUTEX
-        SDL_LockMutex(is->smi_decode_mutex);
-        //printf("AAA smi_trigger = %d\n", smi_trigger); 
-        //printf("AAA decoder_trigger = %d\n", decoder_trigger); 
-        if(smi_trigger == 0){
-            usleep(10);
-            decoder_trigger = 1;
-            SDL_UnlockMutex(is->smi_decode_mutex);
-            continue;
-        }
-        printf("ready to shoot smi!\n");
-        SDL_UnlockMutex(is->smi_decode_mutex);
-#endif
-        //test smi
-        //printf("start smi!\n");
-        /*if(icled_bits_per_pixel == BITS_PER_PIXEL_48){
-            int ret = set_test_buffer_48bit(0x000000000000ffff);
-            if(ret < 0){
-                log_debug("set_test_buffer error!\n");
-            }
-        }*/
-        
-        //rpi_start_smi();
-        //printf("GG\n");
-#if SMI_DECODE_MUTEX
-        SDL_LockMutex(is->smi_decode_mutex);
-        decoder_trigger = 1;
-        smi_trigger = 0;        
-        //printf("EEE smi_trigger = %d\n", smi_trigger); 
-        //printf("EEE decoder_trigger = %d\n", decoder_trigger); 
-        SDL_UnlockMutex(is->smi_decode_mutex);
-#endif        
-        rpi_start_smi();
-        printf("GG\n");
-        //printf("GG2\n");
-        usleep(10);
-    }
-}
-
 static int video_thread(void *arg)
 {
     VideoState *is = arg;
@@ -2215,7 +2159,6 @@ static int video_thread(void *arg)
     unsigned char *buffer = NULL;
     int numBytes;
     int swscale_pix_fmt = 0;
-    struct SwsContext *sws_ctx = NULL;
     double pts;
     double duration;
     int ret;
@@ -2232,10 +2175,6 @@ static int video_thread(void *arg)
     int last_vfilter_idx = 0;
 #endif
 
-#if SMI_DECODE_MUTEX
-    is->smi_decode_mutex = SDL_CreateMutex();
-#endif
-    
     if (!frame)
         return AVERROR(ENOMEM);
 
@@ -2263,8 +2202,6 @@ static int video_thread(void *arg)
         avpicture_fill((AVPicture *)frameRGB, buffer, AV_PIX_FMT_RGB32, 1920, 1080);
         swscale_pix_fmt = AV_PIX_FMT_RGB32;
     }
-    swscale_pix_fmt = AV_PIX_FMT_RGB32;
-    //swscale_pix_fmt = AV_PIX_FMT_RGBA64;
     // test smi initial buffer
         
     if(icled_bits_per_pixel == BITS_PER_PIXEL_48){
@@ -2273,86 +2210,23 @@ static int video_thread(void *arg)
             log_debug("set_test_buffer error!\n");
         }
     }
-    decoder_trigger = 1;
     for (;;) {
-
-#if SMI_DECODE_MUTEX
-        SDL_LockMutex(is->smi_decode_mutex);
-        //printf("BBB smi_trigger = %d\n", smi_trigger); 
-        //printf("BBB decoder_trigger = %d\n", decoder_trigger); 
-        if(decoder_trigger != 1){
-            usleep(10);
-            SDL_UnlockMutex(is->smi_decode_mutex);
-            usleep(10);
-            continue;
-        }
-        
-        SDL_UnlockMutex(is->smi_decode_mutex);
-        usleep(10);
-#endif
         ret = get_video_frame(is, frame);
         if (ret < 0)
             goto the_end;
-        if (!ret){
-#if SMI_DECODE_MUTEX
-            SDL_LockMutex(is->smi_decode_mutex);
-            decoder_trigger = 1;
-            printf("CCC smi_trigger = %d\n", smi_trigger); 
-            printf("CCC decoder_trigger = %d\n", decoder_trigger); 
-            SDL_UnlockMutex(is->smi_decode_mutex);
-#endif
+        if (!ret)
             continue;
-        }
-        printf("DDD smi_trigger = %d\n", smi_trigger); 
-        printf("DDD decoder_trigger = %d\n", decoder_trigger); 
         
-        if(sws_ctx == NULL){
-            sws_ctx = sws_getContext(is->viddec.avctx->width, is->viddec.avctx->height, is->viddec.avctx->pix_fmt,
-                                        is->viddec.avctx->width, is->viddec.avctx->height, swscale_pix_fmt, SWS_BILINEAR, NULL, NULL, NULL);
-            log_debug("sws_ctx create!\n");
-            if(sws_ctx == NULL){
-                log_error("sws_ctx initial failed!\n");
+        //test smi
+        //printf("start smi!\n");
+        if(icled_bits_per_pixel == BITS_PER_PIXEL_48){
+            int ret = set_test_buffer_48bit(0x000000000000ffff);
+            if(ret < 0){
+                log_debug("set_test_buffer error!\n");
             }
-            //refresh resolution in lcd content
-            //sprintf(lcd_content_buf, "%dx%d", is->viddec.avctx->width, is->viddec.avctx->height);
-            //refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_FPS, NULL, lcd_content_buf);
-        }else{
-            //Convert the image from its native format to RGB
-            //log_debug("ready to scale\n");
-            int scale_ret = sws_scale(sws_ctx, (uint8_t const *)frame->data, frame->linesize, 0, is->viddec.avctx->height, frameRGB->data, frameRGB->linesize);    
-            //log_debug("scale ok\n");
-            if(scale_ret < 0){
-                log_error("scale_ret = %d\n", scale_ret);
-                /*re-initial sws_ctx*/
-                sws_freeContext(sws_ctx);
-                sws_ctx = NULL;
-                sws_ctx = sws_getContext(is->viddec.avctx->width, is->viddec.avctx->height, is->viddec.avctx->pix_fmt, 
-                                        is->viddec.avctx->width, is->viddec.avctx->height, swscale_pix_fmt, SWS_BILINEAR, NULL, NULL, NULL);
-                if(sws_ctx == NULL){
-                    log_error("sws_ctx re-initial failed!\n");
-                }else{
-                    log_info("sws_ctx re-initial ok!\n");
-                }
-                //refresh resolution in lcd content
-                //refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_FPS, NULL, lcd_content_buf);
-            }
-#if WRITE_FRAME_TO_DISK       // Save the frame to disk
-            int i = 0;
-            if(++i <= 600){
-                //log_debug("ready to SaveFrame!\n"); 
-                SaveFrame(frameRGB, is->viddec.avctx->width, is->viddec.avctx->height, i);
-                //log_debug("SaveFrame ok!\n"); 
-            }
-#endif
-    
-        
         }
-#if SMI_DECODE_MUTEX
-        SDL_LockMutex(is->smi_decode_mutex);
-        decoder_trigger = 0;
-        smi_trigger = 1;
-        SDL_UnlockMutex(is->smi_decode_mutex);
-#endif
+        rpi_start_smi();
+
 #if CONFIG_AVFILTER
         if (   last_w != frame->width
             || last_h != frame->height
@@ -2891,11 +2765,6 @@ static int stream_component_open(VideoState *is, int stream_index)
         if ((ret = decoder_init(&is->viddec, avctx, &is->videoq, is->continue_read_thread)) < 0)
             goto fail;
         if ((ret = decoder_start(&is->viddec, video_thread, "video_decoder", is)) < 0)
-            goto out;
-        //add smi_transfer thread
-        if ((ret = decoder_init(&is->smidec, avctx, &is->videoq, is->continue_read_thread)) < 0)
-            goto fail;
-        if ((ret = decoder_start(&is->smidec, smi_thread, "smi_transfer", is)) < 0)
             goto out;
         is->queue_attachments_req = 1;
         break;

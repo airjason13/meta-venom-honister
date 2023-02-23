@@ -86,21 +86,18 @@ void *map_uncached_mem(MEM_MAP *mp, int size){
 		(mp->bus = lock_vc_mem(mp->fd, mp->h)) != 0 && 
 		(mp->virt = map_segment(BUS_PHYS_ADDR(mp->bus), mp->size)) != 0
 		? mp->virt : 0;
-	//unlock_vc_mem(mp->fd, mp->h);
-	//printf("mp->h = 0x%08x\n", mp->h);
-	//printf("mp->size = 0x%08x\n", mp->size);
-	//printf("mp->bus = 0x%08x\n", mp->bus);
 	mp->phys = BUS_PHYS_ADDR(mp->bus);
-	//printf("mp->phys = 0x%08x\n", mp->phys);
-	//printf("mp->virt = 0x%08x\n", mp->virt);
-	printf("1. mp->virt = %p\n", mp->virt);
-	mp->virt = (unsigned long)mp->virt & 0x7fffffffff;
-	//mp->virt = mp->bus;//(unsigned long)mp->virt & 0x7fffffffff;
-	printf("2.mp->virt = %p\n", mp->virt);
+    printf("map_uncached_mem!\n");
+	printf("1. mp->bus = %p\n", mp->bus);
+	printf("2. mp->virt = %p\n", mp->virt);
+#if 0
+    mp->virt = (void*)((unsigned int)(mp->virt)&(~0xf0000000));
+#else// work but not stable
 
-	//printf("map uncached mem : %08x\n", ret);
-	//printf("BUS_PHYS_ADDR(mp->bus) : %08x\n", BUS_PHYS_ADDR(mp->bus));
+    mp->real_virt = mp->virt;
+	mp->virt = (unsigned long)mp->virt & 0x7fffffffff;
+#endif
 	//printf("mp->virt value : 0x%08x\n", *(unsigned long*)mp->virt);
-	//printf("VC mem handle : %u, phys %p, virt %p\n", mp->h, mp->bus, mp->virt);
+	printf("VC mem handle : %u, phys %p, virt %p\n", mp->h, mp->bus, mp->virt);
 	return (ret);
 }

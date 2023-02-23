@@ -10,12 +10,13 @@
 
 #define SHOW_DEBUG_MEM	false//true
 
-#define SMI_TIMING 	10, 15, 30, 15
-//#define SMI_TIMING 	12, 19, 34, 19
+#define APA104_SMI_TIMING 	10, 15, 30, 15
+#define AOS_SMI_TIMING 	    8, 10, 28, 10
 
 #define LED_D0_PIN	8
 #define LED_NCHANS	16//8
-#define LED_NBITS	24
+#define LED_NBITS_24	24
+#define LED_NBITS_48	48
 #define LED_PREBITS	4
 #define LED_POSTBITS	4
 #define BIT_NPULSES	3	//how many pulses in one bit
@@ -26,6 +27,19 @@
 
 int chan_ledcount= 960;
 int rgb_data[CHAN_MAXLEDS][LED_NCHANS];
+unsigned long ul_rgb_data[CHAN_MAXLEDS][LED_NCHANS];
+
+
+//move to header
+/*#define BITS_PER_PIXEL_24    0
+#define BITS_PER_PIXEL_48    1
+
+#define ICLED_SMI_TIMING_TYPE_APA104    0
+#define ICLED_SMI_TIMING_TYPE_AOS       1*/
+
+int i_icled_bits_per_pixel = BITS_PER_PIXEL_48;
+int i_icled_smi_timing_type = ICLED_SMI_TIMING_TYPE_AOS;
+
 
 // DMA channels and data requests
 #define DMA_CHAN_A		10
@@ -88,7 +102,8 @@ MEM_MAP gpio_regs, dma_regs, clk_regs, pwm_regs, smi_regs, kclk_regs, vc_mem;
 
 
 
-#define LED_DLEN		(LED_NBITS * BIT_NPULSES)  //24*3
+#define LED_DLEN_24BITS		(LED_NBITS_24 * BIT_NPULSES)  //24*3
+#define LED_DLEN_48BITS		(LED_NBITS_48 * BIT_NPULSES)  //24*3
 
 #if LED_NCHANS > 8
 #define TXDATA_T		unsigned short
@@ -96,12 +111,22 @@ MEM_MAP gpio_regs, dma_regs, clk_regs, pwm_regs, smi_regs, kclk_regs, vc_mem;
 #define TXDATA_T		unsigned char
 #endif
 
-#define LED_TX_OSET(n) 		(LED_PREBITS + (LED_DLEN * (n)))  // 4 + (24*3)*n 
+#define LED_TX_OSET_24BIT(n) 		(LED_PREBITS + (LED_DLEN_24BITS * (n)))  // 4 + (24*3)*n 
+#define LED_TX_OSET_48BIT(n) 		(LED_PREBITS + (LED_DLEN_48BITS * (n)))  // 4 + (48*3)*n 
 
-#define TX_BUFF_LEN(n) 		(LED_TX_OSET(n) + LED_POSTBITS)   // 4 + (24*3)*n + 4
-#define TX_BUFF_SIZE(n)		(TX_BUFF_LEN(n) * sizeof(TXDATA_T))  
+#define TX_BUFF_LEN_24BIT(n) 		(LED_TX_OSET_24BIT(n) + LED_POSTBITS)   // 4 + (24*3)*n + 4
+#define TX_BUFF_LEN_48BIT(n) 		(LED_TX_OSET_48BIT(n) + LED_POSTBITS)   // 4 + (48*3)*n + 4
 
-#define VC_MEM_SIZE		(PAGE_SIZE + TX_BUFF_SIZE(CHAN_MAXLEDS))
+#define TX_BUFF_SIZE_8CHAN_24BIT(n)		(TX_BUFF_LEN_24BIT(n) * sizeof(unsigned short))  
+#define TX_BUFF_SIZE_16CHAN_24BIT(n)		(TX_BUFF_LEN_24BIT(n) * sizeof(TXDATA_T))  
+
+#define TX_BUFF_SIZE_8CHAN_48BIT(n)		(TX_BUFF_LEN_48BIT(n) * sizeof(unsigned short))  
+#define TX_BUFF_SIZE_16CHAN_48BIT(n)		(TX_BUFF_LEN_48BIT(n) * sizeof(TXDATA_T))  
+
+#define VC_MEM_SIZE_8CHAN_24BIT		    (PAGE_SIZE + TX_BUFF_SIZE_8CHAN_24BIT(CHAN_MAXLEDS))
+#define VC_MEM_SIZE_8CHAN_48BIT		    (PAGE_SIZE + TX_BUFF_SIZE_8CHAN_48BIT(CHAN_MAXLEDS))
+#define VC_MEM_SIZE_16CHAN_24BIT		(PAGE_SIZE + TX_BUFF_SIZE_16CHAN_24BIT(CHAN_MAXLEDS))
+#define VC_MEM_SIZE_16CHAN_48BIT		(PAGE_SIZE + TX_BUFF_SIZE_16CHAN_48BIT(CHAN_MAXLEDS))
 
 volatile SMI_CS_REG *smi_cs;
 volatile SMI_L_REG *smi_l;
@@ -128,12 +153,16 @@ TXDATA_T tx_test_data[tx_test_len];
 
 
 TXDATA_T *txdata;
-TXDATA_T tx_buffer[TX_BUFF_LEN(CHAN_MAXLEDS)];
+TXDATA_T tx_buffer_24bit[TX_BUFF_LEN_24BIT(CHAN_MAXLEDS)];
+TXDATA_T tx_buffer_48bit[TX_BUFF_LEN_48BIT(CHAN_MAXLEDS)];
+
+int smi_start = 0;
+pthread_mutex_t smi_lock;
 
 
 void rgb_txdata(int *rgbs, TXDATA_T *txd){
 	int i, n, msk;
-	for (n=0; n<LED_NBITS; n++){
+	for (n=0; n<LED_NBITS_24; n++){
 		msk = n==0? 0x8000: n==8 ? 0x800000 : n==16 ? 0x80 : msk>>1;
 		txd[0] = (TXDATA_T)0xffff;
 		txd[1] = txd[2] = 0;
@@ -146,6 +175,39 @@ void rgb_txdata(int *rgbs, TXDATA_T *txd){
 	}
 }
 
+
+void ul_rgb_txdata(unsigned long *ulrgbs, TXDATA_T *txd){
+	unsigned long i, n, msk;
+	for (n=0; n<LED_NBITS_48; n++){
+		msk = n==0? 0x800000000000: n==16 ? 0x80000000 : n==32 ? 0x8000 : msk>>1;
+		//printf("n = %d, msk = 0x%lx\n",n , msk);
+		txd[0] = (TXDATA_T)0xffff;
+		txd[1] = txd[2] = 0;
+		for (i = 0; i < LED_NCHANS; i++){
+			if(ulrgbs[i] & msk){
+				txd[1] |= (1<<i);
+			}
+		}
+		txd += BIT_NPULSES;
+	}
+}
+
+void *map_segment_ul(void *addr, int size){
+	int fd;
+	void *mem;
+	size = PAGE_ROUNDUP(size);
+
+	if ((fd = open("/dev/mem", O_RDWR|O_SYNC|O_CLOEXEC)) < 0){
+		printf("Error: can't open /dev/mem!\n");
+	}
+	mem = mmap(0, size, PROT_WRITE|PROT_READ, MAP_SHARED, fd, (unsigned long)addr);
+	printf("Map %p --> %p\n", (void *)addr, mem);
+	//printf("*(unsigned int*)mem = %08x\n", *(unsigned int*)mem);
+	if (mem == MAP_FAILED){
+		printf("Error, can't map memory!\n");
+	}
+	return mem;
+}
 
 void *map_segment(void *addr, int size){
 	int fd;
@@ -175,6 +237,7 @@ void *map_periph(MEM_MAP *mp, void *phys, int size){
 	mp->size = PAGE_ROUNDUP(size);
 	mp->bus = (void *)((uint32_t)phys - RPI4_REG_PHY_ADDR + BUS_REG_BASE);
 	mp->virt = map_segment(phys, mp->size);
+    mp->real_virt = NULL;
 	return (mp->virt);
 }
 
@@ -187,7 +250,11 @@ void unmap_periph_mem(MEM_MAP *mp){
 			free_vc_mem(mp->fd, mp->h);
 			close_mbox(mp->fd);
 		}else{
-			unmap_segment(mp->virt, mp->size);
+            if(mp->real_virt != NULL){
+			    unmap_segment(mp->real_virt, mp->size);
+            }else{
+			    unmap_segment(mp->virt, mp->size);
+            }
 			
 		}
 
@@ -308,7 +375,7 @@ void set_gpio_smi_mode(void){
 
 void setup_smi_dma(MEM_MAP *mp, int nsamp){
 	//unsigned int test_len = 0x10000;
-	//printf("setup_smi_dma!\n");
+	printf("nsamp = %d\n", nsamp);
 	//printf("mp->virt = %08x\n", mp->virt);
 	DMA_CB *cbs=mp->virt;
 	txdata = (TXDATA_T *)(cbs + 1);
@@ -326,25 +393,12 @@ void setup_smi_dma(MEM_MAP *mp, int nsamp){
 	//printf("mp->virt = %p\n", mp->virt);
 	//printf("mp->phys = %p\n", mp->phys);
 	//printf("mp->bus = %p\n", mp->bus);
-#if 0
-	for(int i = 0; i < 6; i ++){
-		printf("mp->virt @%x:%08x\n", (unsigned int*)mp->virt +i*4, *(unsigned int *)(mp->virt + 4*i));
-	}
-	printf("ti : %08x\n", DMA_DEST_DREQ | (DMA_SMI_DREQ << 16) | DMA_CB_SRCE_INC | DMA_WAIT_RESP);
-	*(unsigned long*)mp->virt = DMA_DEST_DREQ | (DMA_SMI_DREQ << 16) | DMA_CB_SRCE_INC | DMA_WAIT_RESP;
-	//cbs[0].tfr_len = nsamp * sizeof(TXDATA_T);
-	//cbs[0].srce_ad = MEM_BUS_ADDR(mp, txdata);
-	//cbs[0].dest_ad = REG_BUS_ADDR(smi_regs, SMI_D);
-#else
+    // DMA_WAIT_RESP will cause the signal hang 
 	//cbs[0].ti = DMA_DEST_DREQ | (DMA_SMI_DREQ << 16) | DMA_CB_SRCE_INC | DMA_WAIT_RESP;
 	cbs[0].ti = DMA_DEST_DREQ | (DMA_SMI_DREQ << 16) | DMA_CB_SRCE_INC ;
 	cbs[0].tfr_len = nsamp * sizeof(TXDATA_T);
-	//cbs[0].tfr_len = nsamp * sizeof(TXDATA_T) + 4;
-	//cbs[0].tfr_len = test_len;//nsamp * sizeof(TXDATA_T);
 	cbs[0].srce_ad = MEM_BUS_ADDR(mp, txdata);
 	cbs[0].dest_ad = REG_BUS_ADDR(smi_regs, SMI_D);
-#endif	
-	//printf("end of setup smi dma!\n");
 }
 
 void start_dma(MEM_MAP *mp, int chan, DMA_CB *cbp, unsigned int csval){
@@ -367,19 +421,22 @@ void rpi_start_dma(MEM_MAP *mp){
 }
 
 
-void start_smi(MEM_MAP *mp){
+void start_smi(MEM_MAP *mp){ 
+    //printf("smi_cs->done = %d, smi_cs->active = %d\n", smi_cs->done, smi_cs->active);
+    //printf("smi_cs->start = %d, smi_cs->write = %d\n", smi_cs->start, smi_cs->write);
+    /*while(smi_cs->start == 0){
+        printf("smi is still working!\n");
+    }*/
 	//DMA_CB *cbs = mp->virt;
 	//start_dma(mp, DMA_CHAN, &cbs[0], 0);
-	//usleep(1000*90);
-    //stop_dma(DMA_CHAN);
-	//usleep(1000*90);
+	
+    usleep(10);
 	smi_cs->start = 1;
-    //stop_dma(DMA_CHAN);
 }
 
 void stop_smi(){
-	//stop_dma(DMA_CHAN);
-	//usleep(1000*90);
+	stop_dma(DMA_CHAN);
+	usleep(10);
 	smi_cs->start = 0;
 	usleep(10);
 }
@@ -404,32 +461,85 @@ void swap_bytes(void *data, int len){
 void smi_terminate(int sig){
 	int i;
 	printf("closing\n");
+    pthread_mutex_lock(&smi_lock);
 	if(gpio_regs.virt){
 		for(i = 0; i < LED_NCHANS; i++){
 			gpio_mode(LED_D0_PIN+i, GPIO_IN);
 		}
 	}
+	printf("closing---1\n");
 	if(smi_regs.virt){
 		*REG32(smi_regs, SMI_CS) =0;
 	}
+	printf("closing---2\n");
 	stop_dma(DMA_CHAN);
+	printf("closing---3\n");
 	unmap_periph_mem(&vc_mem);
+	printf("closing---4\n");
 	unmap_periph_mem(&smi_regs);
+	printf("closing---5\n");
 	unmap_periph_mem(&dma_regs);
+	printf("closing---6\n");
 	unmap_periph_mem(&gpio_regs);
-	//exit(0);
+	printf("closing---end\n");
+    pthread_mutex_unlock(&smi_lock);
+    pthread_mutex_destroy(&smi_lock);
+    exit(0);
 }
 
 
-int init_rpi_smi(void){
+int get_icled_timing_type(void){
+    return i_icled_smi_timing_type;
+}
+
+int get_icled_bits_per_pixel(void){
+    return i_icled_bits_per_pixel;
+}
+
+int init_rpi_smi(int led_timing_type, int bits_per_pixel){
+    if(pthread_mutex_init(&smi_lock, NULL) != 0){
+        printf("\nmutex smi_lock init failed!\n");
+        exit(0);
+    }
 	map_devices(); 
+    i_icled_smi_timing_type = led_timing_type;
+    i_icled_bits_per_pixel = bits_per_pixel;
 	signal(SIGINT, smi_terminate);
-	init_smi(LED_NCHANS>8 ? SMI_16_BITS : SMI_8_BITS, SMI_TIMING);	
+    if(i_icled_smi_timing_type == ICLED_SMI_TIMING_TYPE_AOS){
+	    init_smi(LED_NCHANS>8 ? SMI_16_BITS : SMI_8_BITS, AOS_SMI_TIMING);	
+    }else if(i_icled_smi_timing_type == ICLED_SMI_TIMING_TYPE_APA104){
+	    init_smi(LED_NCHANS>8 ? SMI_16_BITS : SMI_8_BITS, APA104_SMI_TIMING);	 
+    }
 	set_gpio_smi_mode();
 	usleep(1000);
     printf("set gpio mode ok!\n");
-	map_uncached_mem(&vc_mem, VC_MEM_SIZE);
-	setup_smi_dma(&vc_mem, TX_BUFF_LEN(chan_ledcount));
+#if LED_NCHAN <= 8
+    
+    if(i_icled_bits_per_pixel == BITS_PER_PIXEL_48){
+	    map_uncached_mem(&vc_mem, VC_MEM_SIZE_8CHAN_48BIT);
+	    setup_smi_dma(&vc_mem, TX_BUFF_LEN_48BIT(chan_ledcount));
+        printf("init dma len = %d\n", TX_BUFF_LEN_48BIT(chan_ledcount));
+    }else if(i_icled_bits_per_pixel == BITS_PER_PIXEL_24){
+	    map_uncached_mem(&vc_mem, VC_MEM_SIZE_8CHAN_24BIT);
+	    setup_smi_dma(&vc_mem, TX_BUFF_LEN_24BIT(chan_ledcount));
+    }else{
+	    map_uncached_mem(&vc_mem, VC_MEM_SIZE_8CHAN_24BIT);
+	    setup_smi_dma(&vc_mem, TX_BUFF_LEN_24BIT(chan_ledcount));
+    }
+#else
+    if(i_icled_bits_per_pixel == BITS_PER_PIXEL_48){
+	    map_uncached_mem(&vc_mem, VC_MEM_SIZE_16CHAN_48BIT);
+	    setup_smi_dma(&vc_mem, TX_BUFF_LEN_48BIT(chan_ledcount));
+        printf("init dma len = %d\n", TX_BUFF_LEN_48BIT(chan_ledcount));
+    }else if(i_icled_bits_per_pixel == BITS_PER_PIXEL_24){
+	    map_uncached_mem(&vc_mem, VC_MEM_SIZE_16CHAN_24BIT);
+	    setup_smi_dma(&vc_mem, TX_BUFF_LEN_24BIT(chan_ledcount));
+    }else{
+	    map_uncached_mem(&vc_mem, VC_MEM_SIZE_16CHAN_24BIT);
+	    setup_smi_dma(&vc_mem, TX_BUFF_LEN_24BIT(chan_ledcount));
+    }
+    
+#endif
     printf("setup smi dma ok!\n");
     return 0;
 }
@@ -443,26 +553,45 @@ int rpi_set_smi_chan_led_count(int led_count){
 	chan_ledcount = led_count;
     return 0;   
 }
+int set_test_buffer_48bit(unsigned long color){
+    if(i_icled_bits_per_pixel != BITS_PER_PIXEL_48){
+        return -EINVAL;
+    }
+	for(int m = 0; m < LED_NCHANS; m ++){
+		for(int q = 0; q < CHAN_MAXLEDS; q ++){
+			ul_rgb_data[q][m] = color;
+		}
+	}
+    if(i_icled_bits_per_pixel == BITS_PER_PIXEL_48){
+	    for(int n = 0; n < chan_ledcount; n++){
+		    ul_rgb_txdata(ul_rgb_data[n], &tx_buffer_48bit[LED_TX_OSET_48BIT(n)]);
+	    }
+#if LED_NCHAN <= 8
+	    swap_bytes(tx_buffer_48bit, TX_BUFF_SIZE_8CHAN_48BIT(chan_ledcount));
+#endif
+	    memcpy(txdata, tx_buffer_48bit, TX_BUFF_SIZE_16CHAN_48BIT(chan_ledcount));
+    }
+    return 0;
+}
 
 
-void set_test_buffer(int color){
+int set_test_buffer_24bit(int color){
+    if(i_icled_bits_per_pixel != BITS_PER_PIXEL_48){
+        return -EINVAL;
+    }
 	for(int m = 0; m < LED_NCHANS; m ++){
 		for(int q = 0; q < CHAN_MAXLEDS; q ++){
 			rgb_data[q][m] = color;
 		}
 	}
-    
 	for(int n = 0; n < chan_ledcount; n++){
-		rgb_txdata(rgb_data[n], &tx_buffer[LED_TX_OSET(n)]);
+		rgb_txdata(ul_rgb_data[n], &tx_buffer_24bit[LED_TX_OSET_24BIT(n)]);
 	}
 #if LED_NCHAN <= 8
-	swap_bytes(tx_buffer, TX_BUFF_SIZE(chan_ledcount));
+	swap_bytes(tx_buffer_24bit, TX_BUFF_SIZE_8CHAN_24BIT(chan_ledcount));
 #endif
-	memcpy(txdata, tx_buffer, TX_BUFF_SIZE(chan_ledcount));
-    /*rpi_start_dma(&vc_mem);
-	usleep(1000*90);
-	stop_dma(DMA_CHAN);
-	usleep(1000*90);*/
+	memcpy(txdata, tx_buffer_24bit, TX_BUFF_SIZE_16CHAN_24BIT(chan_ledcount));
+    return 0;
 }
 
 /***************************************************************
@@ -471,146 +600,110 @@ return : always zero
 purpose : trigger the smi and dma
 ***************************************************************/
 #define TEST_RGB    0
-int rpi_start_smi(void){
-    stop_smi();
+int rpi_test_smi_rgb_buffer(void){
+    //stop_smi();
 #if TEST_RGB
     int color_shift = 0;
-    int k = 0;
+    int k = 0x00000000ffff;
     
-	for(int m = 0; m < LED_NCHANS; m ++){
-		for(int q = 0; q < CHAN_MAXLEDS; q ++){
-			rgb_data[q][m] = k << color_shift;
-		}
-	}
-	/*for (int z=0; z< 8; z ++ ){
-		printf("rgb data = 0x%08x\n", *(unsigned int*)(rgb_data + z*4));
-	}*/
-	/*k++;
-	if(k > 0x80){
-		k = 0;	
-		color_shift += 8;
-		if(color_shift >= 24){
-			color_shift = 0;
-		}
-	}*/
-	for(int n = 0; n < chan_ledcount; n++){
-		rgb_txdata(rgb_data[n], &tx_buffer[LED_TX_OSET(n)]);
-	}
-	//usleep(10);
-	//memcpy(txdata, tx_buffer, TX_BUFF_SIZE(chan_ledcount));
-
+    if(i_icled_bits_per_pixel == BITS_PER_PIXEL_48){
+	    for(int m = 0; m < LED_NCHANS; m ++){
+		    for(int q = 0; q < CHAN_MAXLEDS; q ++){
+			    ul_rgb_data[q][m] = k << color_shift;
+		    }
+	    }
+	    for(int n = 0; n < chan_ledcount; n++){
+		    ul_rgb_txdata(ul_rgb_data[n], &tx_buffer_48BIT[LED_TX_OSET(n)]);
+	    }
+    }else if(i_icled_bits_per_pixel == BITS_PER_PIXEL_24){
+	    for(int m = 0; m < LED_NCHANS; m ++){
+		    for(int q = 0; q < CHAN_MAXLEDS; q ++){
+			    rgb_data[q][m] = k << color_shift;
+		    }
+	    }
+	    for(int n = 0; n < chan_ledcount; n++){
+		    rgb_txdata(rgb_data[n], &tx_buffer_24BIT[LED_TX_OSET(n)]);
+	    }
+    }else{
+	    for(int m = 0; m < LED_NCHANS; m ++){
+		    for(int q = 0; q < CHAN_MAXLEDS; q ++){
+			    rgb_data[q][m] = k << color_shift;
+		    }
+	    }
+	    for(int n = 0; n < chan_ledcount; n++){
+		    rgb_txdata(ul_rgb_data[n], &tx_buffer_48BIT[LED_TX_OSET(n)]);
+	    } 
+    }
 #endif
-	//memcpy(txdata, tx_buffer, TX_BUFF_SIZE(chan_ledcount));
-    rpi_start_dma(&vc_mem);
-	usleep(1000);
-	//stop_dma(DMA_CHAN); //-->wrong wave 
-    
-    start_smi(&vc_mem);
-	//stop_dma(DMA_CHAN);
-	//usleep(1000*90);
+}
+
+int rpi_start_smi(void){
     //stop_smi();
+    pthread_mutex_lock(&smi_lock);
+    //printf("rpi_start_smi!\n");
+    rpi_start_dma(&vc_mem);
+	smi_l->len = 0;
+        
+	smi_l->len = TX_BUFF_LEN_48BIT(chan_ledcount)*sizeof(TXDATA_T);
+    start_smi(&vc_mem);
+#if 0
+    printf("at init\n");
+    /*printf("smi_cs->enable = %d, smi_cs->done = %d\n", smi_cs->enable, smi_cs->done);
+    printf("smi_cs->active = %d, smi_cs->start = %d\n", smi_cs->active, smi_cs->start);
+    printf("smi_cs->clear = %d, smi_cs->write = %d\n", smi_cs->clear, smi_cs->write);
+    printf("smi_dcs->enable = %d, smi_dcs->start = %d\n", smi_dcs->enable, smi_dcs->start);
+    printf("smi_dcs->done = %d, smi_dcs->write = %d\n", smi_dcs->done, smi_dcs->write);*/
+	printf("cs : 0x%08x\n",*REG32(smi_regs, SMI_CS));
+	printf("l : 0x%08x\n",*REG32(smi_regs, SMI_L));
+	printf("DSW0 : 0x%08x\n",*REG32(smi_regs, SMI_DSW0));
+	printf("DMC : 0x%08x\n",*REG32(smi_regs, SMI_DMC));
+	printf("dcs : 0x%08x\n",*REG32(smi_regs, SMI_DCS));
+	printf("FD : 0x%08x\n",*REG32(smi_regs, SMI_FD));
+    usleep(1000*20);
+    printf("at start\n");
+    /*printf("smi_cs->enable = %d, smi_cs->done = %d\n", smi_cs->enable, smi_cs->done);
+    printf("smi_cs->active = %d, smi_cs->start = %d\n", smi_cs->active, smi_cs->start);
+    printf("smi_cs->clear = %d, smi_cs->write = %d\n", smi_cs->clear, smi_cs->write);
+    printf("smi_dcs->enable = %d, smi_dcs->start = %d\n", smi_dcs->enable, smi_dcs->start);
+    printf("smi_dcs->done = %d, smi_dcs->write = %d\n", smi_dcs->done, smi_dcs->write);*/
+	printf("cs : 0x%08x\n",*REG32(smi_regs, SMI_CS));
+	printf("l : 0x%08x\n",*REG32(smi_regs, SMI_L));
+	printf("DSW0 : 0x%08x\n",*REG32(smi_regs, SMI_DSW0));
+	printf("DMC : 0x%08x\n",*REG32(smi_regs, SMI_DMC));
+	printf("dcs : 0x%08x\n",*REG32(smi_regs, SMI_DCS));
+	printf("FD : 0x%08x\n",*REG32(smi_regs, SMI_FD));
+    usleep(1000*20);
+    printf("at end\n");
+    /*printf("smi_cs->enable = %d, smi_cs->done = %d\n", smi_cs->enable, smi_cs->done);
+    printf("smi_cs->active = %d, smi_cs->start = %d\n", smi_cs->active, smi_cs->start);
+    printf("smi_cs->clear = %d, smi_cs->write = %d\n", smi_cs->clear, smi_cs->write);
+    printf("smi_dcs->enable = %d, smi_dcs->start = %d\n", smi_dcs->enable, smi_dcs->start);
+    printf("smi_dcs->done = %d, smi_dcs->write = %d\n", smi_dcs->done, smi_dcs->write);*/
+	//printf("cs : 0x%08x\n",*REG32(smi_regs, SMI_CS) & (0x40000000));
+	printf("cs : 0x%08x\n",*REG32(smi_regs, SMI_CS));
+	printf("l : 0x%08x\n",*REG32(smi_regs, SMI_L));
+	printf("DSW0 : 0x%08x\n",*REG32(smi_regs, SMI_DSW0));
+	printf("DMC : 0x%08x\n",*REG32(smi_regs, SMI_DMC));
+	printf("dcs : 0x%08x\n",*REG32(smi_regs, SMI_DCS));
+	printf("FD : 0x%08x\n",*REG32(smi_regs, SMI_FD));
+#else
+        
+    while(1){
+	    //printf("l : 0x%08x\n",*REG32(smi_regs, SMI_L));
+        usleep(1000*1);
+        unsigned int end_ret = *REG32(smi_regs, SMI_L);
+        if((end_ret % TX_BUFF_LEN_48BIT(chan_ledcount)*sizeof(TXDATA_T)) == 0){
+            usleep(1000*1);
+            break;
+        }
+        //printf("smi working!\n");
+    }
+    stop_smi();
+	smi_l->len = 0;
+    //printf("rpi_exit_smi!\n");
+    pthread_mutex_unlock(&smi_lock);
+#endif
     return 0;
 } 
 
-int main_test_code(int argc, char* argv[]){
-	int n, oset = 0;
-	map_devices();
-	printf("map devices ok!\n");
-	
-	signal(SIGINT, smi_terminate);
-	init_smi(LED_NCHANS>8 ? SMI_16_BITS : SMI_8_BITS, SMI_TIMING);	
-	set_gpio_smi_mode();
-	usleep(1000);
-	printf("VC_MEM_SIZE = %d\n", VC_MEM_SIZE);
-	map_uncached_mem(&vc_mem, VC_MEM_SIZE);
-	//memset(txdata, 0, VC_MEM_SIZE);
-#if TX_TEST
-		
-	oset = oset;
-	printf("ready to setup smi dma\n");
-	printf("sizeof(tx_test_data)/sizeof(TXDATA_T) = %d\n", sizeof(tx_test_data)/sizeof(TXDATA_T));
-	setup_smi_dma(&vc_mem, sizeof(tx_test_data)/sizeof(TXDATA_T));
-	int test_value = 0xa5;
-	printf("sizeof(tx_test_data) = %d\n", sizeof(tx_test_data));
-	for(int k = 0; k < sizeof(tx_test_data); k ++){
-		//tx_test_data[k] = 0xa5-(k);
-		if((k%2) == 0){
-			tx_test_data[k] = 0xff;
-		}else{
-			tx_test_data[k] = 0x88;
-		}
-	
-	}
-	for(int i = 0; i < 1000; i ++){
-	//init_smi(LED_NCHANS>8 ? SMI_16_BITS : SMI_8_BITS, SMI_TIMING);	
-	//map_uncached_mem(&vc_mem, VC_MEM_SIZE);
-	//setup_smi_dma(&vc_mem, sizeof(tx_test_data)/sizeof(TXDATA_T));
 
-	
-#if LED_NCHAN <= 8
-	swap_bytes(tx_test_data, sizeof(tx_test_data));
-#endif
-	
-	//memcpy(txdata, tx_test_data, sizeof(tx_test_data));
-	//usleep(10);
-	//printf("start smi\n");
-	memcpy(txdata, tx_test_data, sizeof(tx_test_data));
-	start_smi(&vc_mem); // 1. start DMA 2. start SMI
-	//memcpy(txdata, tx_test_data, sizeof(tx_test_data));
-	//printf("end smi\n");
-	//usleep(10);
-	//while(dma_active(DMA_CHAN)){
-	//	usleep(10);
-	//}
-	//usleep(CHASE_MSEC*100);
-	//*REG32(smi_regs, SMI_CS) = 0;
-	//stop_dma(DMA_CHAN);
-	//stop_smi();
-		//usleep(CHASE_MSEC*1000);
-	memcpy(txdata, tx_zero_data, sizeof(tx_zero_data));
-
-
-	}
-	//stop_smi();
-#else
-	setup_smi_dma(&vc_mem, TX_BUFF_LEN(chan_ledcount));
-	int color_shift = 0;
-	int k = 0;
-	while(1){
-		for(int m = 0; m < LED_NCHANS; m ++){
-			for(int q = 0; q < CHAN_MAXLEDS; q ++){
-				rgb_data[q][m] = k << color_shift;
-			}
-		}
-		/*for (int z=0; z< 8; z ++ ){
-			printf("rgb data = 0x%08x\n", *(unsigned int*)(rgb_data + z*4));
-		}*/
-		//break;
-		k++;
-		if(k > 0x80){
-			k = 0;	
-			color_shift += 8;
-			if(color_shift >= 24){
-				color_shift = 0;
-				//break;
-			}
-		}
-		for(n = 0; n < chan_ledcount; n++){
-			//rgb_txdata(n==oset%chan_ledcount ? on_rgbs : off_rgbs, &tx_buffer[LED_TX_OSET(n)]);
-			rgb_txdata(rgb_data[n], &tx_buffer[LED_TX_OSET(n)]);
-		}
-		
-		oset++;
-#if  LED_NCHAN <= 8
-		swap_bytes(tx_buffer, TX_BUFF_SIZE(chan_ledcount));
-#endif
-		memcpy(txdata, tx_buffer, TX_BUFF_SIZE(chan_ledcount));
-		start_smi(&vc_mem);
-		usleep(1000*3);
-		//usleep(CHASE_MSEC*1000);
-	}
-	//usleep(10);
-#endif
-	smi_terminate(0);
-	return 0;
-}
