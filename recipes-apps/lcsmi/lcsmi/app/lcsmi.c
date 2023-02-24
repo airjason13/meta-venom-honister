@@ -2178,7 +2178,7 @@ static int smi_thread(void *arg)
             SDL_UnlockMutex(is->smi_decode_mutex);
             continue;
         }
-        printf("ready to shoot smi!\n");
+        //printf("ready to shoot smi!\n");
         SDL_UnlockMutex(is->smi_decode_mutex);
 #endif
         //test smi
@@ -2201,7 +2201,7 @@ static int smi_thread(void *arg)
         SDL_UnlockMutex(is->smi_decode_mutex);
 #endif        
         rpi_start_smi();
-        printf("GG\n");
+        //printf("GG\n");
         //printf("GG2\n");
         usleep(10);
     }
@@ -2290,6 +2290,8 @@ static int video_thread(void *arg)
         SDL_UnlockMutex(is->smi_decode_mutex);
         usleep(10);
 #endif
+        // test schedule with gpio waveform
+        system("echo 1 > /sys/class/gpio/gpio26/value");
         ret = get_video_frame(is, frame);
         if (ret < 0)
             goto the_end;
@@ -2297,14 +2299,10 @@ static int video_thread(void *arg)
 #if SMI_DECODE_MUTEX
             SDL_LockMutex(is->smi_decode_mutex);
             decoder_trigger = 1;
-            printf("CCC smi_trigger = %d\n", smi_trigger); 
-            printf("CCC decoder_trigger = %d\n", decoder_trigger); 
             SDL_UnlockMutex(is->smi_decode_mutex);
 #endif
             continue;
         }
-        printf("DDD smi_trigger = %d\n", smi_trigger); 
-        printf("DDD decoder_trigger = %d\n", decoder_trigger); 
         
         if(sws_ctx == NULL){
             sws_ctx = sws_getContext(is->viddec.avctx->width, is->viddec.avctx->height, is->viddec.avctx->pix_fmt,
@@ -2349,6 +2347,7 @@ static int video_thread(void *arg)
         }
 #if SMI_DECODE_MUTEX
         SDL_LockMutex(is->smi_decode_mutex);
+        system("echo 0 > /sys/class/gpio/gpio26/value");
         decoder_trigger = 0;
         smi_trigger = 1;
         SDL_UnlockMutex(is->smi_decode_mutex);
@@ -3905,6 +3904,9 @@ int main(int argc, char **argv)
 
     signal(SIGINT , sigterm_handler); /* Interrupt (ANSI).    */
     signal(SIGTERM, sigterm_handler); /* Termination (ANSI).  */
+    signal(SIGABRT, sigterm_handler); /* ABRT (ANSI).  */
+    signal(SIGKILL, sigterm_handler); /* Kill (ANSI).  */
+    signal(SIGSEGV, sigterm_handler); /* Segmentation Fault (ANSI).  */
 
     show_banner(argc, argv, options);
 

@@ -23,7 +23,7 @@
 #define CHAN_MAXLEDS	1000
 #define CHASE_MSEC	100
 #define REQUEST_THRESH	2
-#define DMA_CHAN	6//10	//DMA channel to use?? 7~15 DMA CHAN is DMA lite(64k only)
+#define DMA_CHAN	5//6//10	//DMA channel to use?? 7~15 DMA CHAN is DMA lite(64k only)
 
 int chan_ledcount= 960;
 int rgb_data[CHAN_MAXLEDS][LED_NCHANS];
@@ -158,7 +158,7 @@ TXDATA_T tx_buffer_48bit[TX_BUFF_LEN_48BIT(CHAN_MAXLEDS)];
 
 int smi_start = 0;
 pthread_mutex_t smi_lock;
-
+int smi_quit = 0;
 
 void rgb_txdata(int *rgbs, TXDATA_T *txd){
 	int i, n, msk;
@@ -243,11 +243,18 @@ void *map_periph(MEM_MAP *mp, void *phys, int size){
 
 
 void unmap_periph_mem(MEM_MAP *mp){
+    unsigned int iret = 0;
 	if(mp){
 		if(mp->fd){
-			unmap_segment(mp->virt, mp->size);
-			unlock_vc_mem(mp->fd, mp->h);
-			free_vc_mem(mp->fd, mp->h);
+            if(mp->real_virt != NULL){
+			    unmap_segment(mp->real_virt, mp->size);
+            }else{
+			    unmap_segment(mp->virt, mp->size);
+            }
+			iret = unlock_vc_mem(mp->fd, mp->h);
+            printf("unlock vc mem iret = 0x%x\n", iret);
+			iret = free_vc_mem(mp->fd, mp->h);
+            printf("free vc mem iret = 0x%x\n", iret);
 			close_mbox(mp->fd);
 		}else{
             if(mp->real_virt != NULL){
@@ -461,6 +468,7 @@ void swap_bytes(void *data, int len){
 void smi_terminate(int sig){
 	int i;
 	printf("closing\n");
+    smi_quit = 1;
     pthread_mutex_lock(&smi_lock);
 	if(gpio_regs.virt){
 		for(i = 0; i < LED_NCHANS; i++){
@@ -640,6 +648,10 @@ int rpi_test_smi_rgb_buffer(void){
 int rpi_start_smi(void){
     //stop_smi();
     pthread_mutex_lock(&smi_lock);
+    if(smi_quit == 1){
+        printf("smi_quit!\n");
+        return -1;
+    }
     //printf("rpi_start_smi!\n");
     rpi_start_dma(&vc_mem);
 	smi_l->len = 0;
@@ -687,8 +699,13 @@ int rpi_start_smi(void){
 	printf("dcs : 0x%08x\n",*REG32(smi_regs, SMI_DCS));
 	printf("FD : 0x%08x\n",*REG32(smi_regs, SMI_FD));
 #else
-        
+    int i = 0;    
     while(1){
+        i ++;
+        if(i > 50){
+            printf("break with smi hang!\n");
+            break;
+        }
 	    //printf("l : 0x%08x\n",*REG32(smi_regs, SMI_L));
         usleep(1000*1);
         unsigned int end_ret = *REG32(smi_regs, SMI_L);

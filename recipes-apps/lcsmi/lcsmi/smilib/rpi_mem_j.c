@@ -4,7 +4,7 @@
 int open_mbox(void){
 	int fd;
 	if((fd = open("/dev/vcio", 0)) < 0){
-		//printf("Error: can't open VC mailbox\n");
+		printf("Error: can't open VC mailbox\n");
 	}
 	return (fd);
 }
@@ -17,12 +17,12 @@ void close_mbox(int fd){
 
 void disp_vc_msg(VC_MSG *msgp){
 	int i;
-	//printf("VC msg len=%X, req=%X, tag=%X, dlen=%x, data",
-	//		       msgp->len, msgp->req, msgp->tag, msgp->blen, msgp->dlen);
+	printf("VC msg len=%X, req=%X, tag=%X, dlen=%x, data",
+			       msgp->len, msgp->req, msgp->tag, msgp->blen, msgp->dlen);
 	for(i = 0; i < msgp->blen/4;i ++){
-		//printf("%08X ", msgp->uints[i]);
+		printf("%08X ", msgp->uints[i]);
 	}
-//	printf("\n");
+	printf("\n");
 
 }
 
@@ -47,7 +47,7 @@ unsigned int msg_mbox(int fd, VC_MSG *msgp){
 	}else
 		ret = msgp->uints[0];
 
-#if DEBUG
+#if 1
 	disp_vc_msg(msgp);
 #endif
 	return (ret);
@@ -57,7 +57,7 @@ unsigned int alloc_vc_mem(int fd, unsigned int size, VC_ALLOC_FLAGS flags){
 	unsigned int u32_ret = 0;
 	VC_MSG msg={.tag=0x3000c, .blen=12, .dlen=12,
 		.uints={PAGE_ROUNDUP(size), PAGE_SIZE, flags}};
-	u32_ret = msg_mbox(fd, &msg);
+	//u32_ret = msg_mbox(fd, &msg);
 	//printf("alloc_vc_mem ret = 0x%x\n", msg_mbox(fd, &msg));
 	return msg_mbox(fd, &msg);
 }
@@ -81,11 +81,35 @@ unsigned int free_vc_mem(int fd, int h){
 void *map_uncached_mem(MEM_MAP *mp, int size){
 	void *ret;
 	mp->size = PAGE_ROUNDUP(size);
+    printf("mp->size = 0x%08x\n", mp->size);
 	mp->fd = open_mbox();
+#if 0
 	ret = (mp->h = alloc_vc_mem(mp->fd, mp->size, DMA_MEM_FLAGS)) > 0 &&
 		(mp->bus = lock_vc_mem(mp->fd, mp->h)) != 0 && 
 		(mp->virt = map_segment(BUS_PHYS_ADDR(mp->bus), mp->size)) != 0
 		? mp->virt : 0;
+#else
+    printf("ready to alloc vc mem!\n");
+	mp->h = alloc_vc_mem(mp->fd, mp->size, DMA_MEM_FLAGS);
+    if(mp->h <= 0){
+        printf("alloc vc mem failed!\n");
+        return NULL;
+    }
+    mp->bus = lock_vc_mem(mp->fd, mp->h);
+    if(mp->bus == 0){
+        printf("lock vc mem failed!\n");
+        return NULL;
+    }
+	mp->virt = map_segment(BUS_PHYS_ADDR(mp->bus), mp->size);
+    if(mp->virt == 0){
+        printf("mmap failed!\n");
+        return 0;
+    }
+    
+    
+    
+    
+#endif
 	mp->phys = BUS_PHYS_ADDR(mp->bus);
     printf("map_uncached_mem!\n");
 	printf("1. mp->bus = %p\n", mp->bus);
