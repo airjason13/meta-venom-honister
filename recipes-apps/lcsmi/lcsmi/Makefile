@@ -20,6 +20,7 @@ SMILIB_DIR := $(MAKE_DIR)/$(SMILIB)
 CABINETUTILSLIB_DIR := $(MAKE_DIR)/$(CABINETUTILSLIB)
 
 INC_SRCH_PATH := -I$(MAKE_DIR)
+INC_SRCH_PATH += -I$(MAKE_DIR)/recipe-sysroot/usr/include/
 INC_SRCH_PATH += -I$(MAKE_DIR)/recipe-sysroot/usr/include/SDL2/
 INC_SRCH_PATH += -I$(MAKE_DIR)/recipe-sysroot/usr/include/libusb-1.0/
 INC_SRCH_PATH += -I$(MAKE_DIR)/include/

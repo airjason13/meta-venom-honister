@@ -26,8 +26,8 @@
 #define DMA_CHAN	5//6//10	//DMA channel to use?? 7~15 DMA CHAN is DMA lite(64k only)
 
 int chan_ledcount= 960;
-int rgb_data[CHAN_MAXLEDS][LED_NCHANS];
-unsigned long ul_rgb_data[CHAN_MAXLEDS][LED_NCHANS];
+int test_rgb_data[CHAN_MAXLEDS][LED_NCHANS];
+unsigned long test_ul_rgb_data[CHAN_MAXLEDS][LED_NCHANS];
 
 
 //move to header
@@ -561,18 +561,15 @@ int rpi_set_smi_chan_led_count(int led_count){
 	chan_ledcount = led_count;
     return 0;   
 }
-int set_test_buffer_48bit(unsigned long color){
+
+int rpi_set_smi_buffer_48bit(unsigned long ulrgbdata[1000][16]){
+
     if(i_icled_bits_per_pixel != BITS_PER_PIXEL_48){
         return -EINVAL;
     }
-	for(int m = 0; m < LED_NCHANS; m ++){
-		for(int q = 0; q < CHAN_MAXLEDS; q ++){
-			ul_rgb_data[q][m] = color;
-		}
-	}
     if(i_icled_bits_per_pixel == BITS_PER_PIXEL_48){
 	    for(int n = 0; n < chan_ledcount; n++){
-		    ul_rgb_txdata(ul_rgb_data[n], &tx_buffer_48bit[LED_TX_OSET_48BIT(n)]);
+		    ul_rgb_txdata(ulrgbdata[n], &tx_buffer_48bit[LED_TX_OSET_48BIT(n)]);
 	    }
 #if LED_NCHAN <= 8
 	    swap_bytes(tx_buffer_48bit, TX_BUFF_SIZE_8CHAN_48BIT(chan_ledcount));
@@ -583,7 +580,32 @@ int set_test_buffer_48bit(unsigned long color){
 }
 
 
+int set_test_buffer_48bit(unsigned long color){
+#if 1
+    if(i_icled_bits_per_pixel != BITS_PER_PIXEL_48){
+        return -EINVAL;
+    }
+	for(int m = 0; m < LED_NCHANS; m ++){
+		for(int q = 0; q < CHAN_MAXLEDS; q ++){
+			test_ul_rgb_data[q][m] = color;
+		}
+	}
+    if(i_icled_bits_per_pixel == BITS_PER_PIXEL_48){
+	    for(int n = 0; n < chan_ledcount; n++){
+		    ul_rgb_txdata(test_ul_rgb_data[n], &tx_buffer_48bit[LED_TX_OSET_48BIT(n)]);
+	    }
+#if LED_NCHAN <= 8
+	    swap_bytes(tx_buffer_48bit, TX_BUFF_SIZE_8CHAN_48BIT(chan_ledcount));
+#endif
+	    memcpy(txdata, tx_buffer_48bit, TX_BUFF_SIZE_16CHAN_48BIT(chan_ledcount));
+    }
+#endif
+    return 0;
+}
+
+
 int set_test_buffer_24bit(int color){
+#if 0
     if(i_icled_bits_per_pixel != BITS_PER_PIXEL_48){
         return -EINVAL;
     }
@@ -599,6 +621,7 @@ int set_test_buffer_24bit(int color){
 	swap_bytes(tx_buffer_24bit, TX_BUFF_SIZE_8CHAN_24BIT(chan_ledcount));
 #endif
 	memcpy(txdata, tx_buffer_24bit, TX_BUFF_SIZE_16CHAN_24BIT(chan_ledcount));
+#endif
     return 0;
 }
 
@@ -652,52 +675,13 @@ int rpi_start_smi(void){
         printf("smi_quit!\n");
         return -1;
     }
-    //printf("rpi_start_smi!\n");
+    printf("rpi_start_smi!\n");
     rpi_start_dma(&vc_mem);
 	smi_l->len = 0;
         
 	smi_l->len = TX_BUFF_LEN_48BIT(chan_ledcount)*sizeof(TXDATA_T);
     start_smi(&vc_mem);
 #if 0
-    printf("at init\n");
-    /*printf("smi_cs->enable = %d, smi_cs->done = %d\n", smi_cs->enable, smi_cs->done);
-    printf("smi_cs->active = %d, smi_cs->start = %d\n", smi_cs->active, smi_cs->start);
-    printf("smi_cs->clear = %d, smi_cs->write = %d\n", smi_cs->clear, smi_cs->write);
-    printf("smi_dcs->enable = %d, smi_dcs->start = %d\n", smi_dcs->enable, smi_dcs->start);
-    printf("smi_dcs->done = %d, smi_dcs->write = %d\n", smi_dcs->done, smi_dcs->write);*/
-	printf("cs : 0x%08x\n",*REG32(smi_regs, SMI_CS));
-	printf("l : 0x%08x\n",*REG32(smi_regs, SMI_L));
-	printf("DSW0 : 0x%08x\n",*REG32(smi_regs, SMI_DSW0));
-	printf("DMC : 0x%08x\n",*REG32(smi_regs, SMI_DMC));
-	printf("dcs : 0x%08x\n",*REG32(smi_regs, SMI_DCS));
-	printf("FD : 0x%08x\n",*REG32(smi_regs, SMI_FD));
-    usleep(1000*20);
-    printf("at start\n");
-    /*printf("smi_cs->enable = %d, smi_cs->done = %d\n", smi_cs->enable, smi_cs->done);
-    printf("smi_cs->active = %d, smi_cs->start = %d\n", smi_cs->active, smi_cs->start);
-    printf("smi_cs->clear = %d, smi_cs->write = %d\n", smi_cs->clear, smi_cs->write);
-    printf("smi_dcs->enable = %d, smi_dcs->start = %d\n", smi_dcs->enable, smi_dcs->start);
-    printf("smi_dcs->done = %d, smi_dcs->write = %d\n", smi_dcs->done, smi_dcs->write);*/
-	printf("cs : 0x%08x\n",*REG32(smi_regs, SMI_CS));
-	printf("l : 0x%08x\n",*REG32(smi_regs, SMI_L));
-	printf("DSW0 : 0x%08x\n",*REG32(smi_regs, SMI_DSW0));
-	printf("DMC : 0x%08x\n",*REG32(smi_regs, SMI_DMC));
-	printf("dcs : 0x%08x\n",*REG32(smi_regs, SMI_DCS));
-	printf("FD : 0x%08x\n",*REG32(smi_regs, SMI_FD));
-    usleep(1000*20);
-    printf("at end\n");
-    /*printf("smi_cs->enable = %d, smi_cs->done = %d\n", smi_cs->enable, smi_cs->done);
-    printf("smi_cs->active = %d, smi_cs->start = %d\n", smi_cs->active, smi_cs->start);
-    printf("smi_cs->clear = %d, smi_cs->write = %d\n", smi_cs->clear, smi_cs->write);
-    printf("smi_dcs->enable = %d, smi_dcs->start = %d\n", smi_dcs->enable, smi_dcs->start);
-    printf("smi_dcs->done = %d, smi_dcs->write = %d\n", smi_dcs->done, smi_dcs->write);*/
-	//printf("cs : 0x%08x\n",*REG32(smi_regs, SMI_CS) & (0x40000000));
-	printf("cs : 0x%08x\n",*REG32(smi_regs, SMI_CS));
-	printf("l : 0x%08x\n",*REG32(smi_regs, SMI_L));
-	printf("DSW0 : 0x%08x\n",*REG32(smi_regs, SMI_DSW0));
-	printf("DMC : 0x%08x\n",*REG32(smi_regs, SMI_DMC));
-	printf("dcs : 0x%08x\n",*REG32(smi_regs, SMI_DCS));
-	printf("FD : 0x%08x\n",*REG32(smi_regs, SMI_FD));
 #else
     int i = 0;    
     while(1){

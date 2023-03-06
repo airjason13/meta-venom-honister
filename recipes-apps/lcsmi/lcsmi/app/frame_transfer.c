@@ -89,6 +89,659 @@ int set_frame_gamma_value(float fvalue){
     return 0;
 }
 
+int framergb32_to_ledargb32(AVFrame *pFrame, struct cabinet_params *params, int channel_count, int frame_width, int frame_height, unsigned int rgbdata[1000][16]){
+	int offset = 0;
+	int width = params->cabinet_width;
+	int height = params->cabinet_height;
+	int start_x = params->start_x;
+	int start_y = params->start_y;
+	unsigned int buf_size = (width*height*channel_count);
+	//unsigned char *buf = malloc(buf_size);
+	unsigned char *buf = rgbdata;
+	int y = 0,x = 0;
+	int i = 0;
+	int write_len = 0;
+	bool config_err = true;
+	unsigned char *fake_pixel_buf = malloc(channel_count);
+	switch(params->layout_type){
+		case 0:
+            //220928 enhanece with cabinet height out of frame height
+            //0310 test limit ok
+            if((start_x < 0) || (start_y < 0)){
+                log_debug("case 0 params config error!");
+                break;
+            }
+            // 
+            /*if((start_y - height + 1) > frame_height){
+                log_debug("case 0 params config error!");
+                break;
+            }*/
+            //cabinet height out of frame height
+            /*if((start_y + height + 1) >= frame_height){
+                log_debug("case 0 params config error!");
+                break; 
+            }*/
+            if((start_x + width) > frame_width){
+                log_debug("case 0 params config error!");
+                break; 
+            }
+            config_err = false;
+            
+            memset(fake_pixel_buf, 0, channel_count);
+			for(y = 0; y < height; y++){
+                if(start_y + y >= frame_height){
+					    for(i = 0 ; i < width; i ++){
+						    memcpy(buf + offset, fake_pixel_buf, channel_count);
+						    offset += channel_count;
+					    } 
+                }else{
+	                if(y % 2 == 0){ //first line
+					    memcpy(buf + offset, 
+							    pFrame->data[0] + ((start_y + y)*pFrame->linesize[0]) + start_x*channel_count, 
+							    width*channel_count);
+					    offset += width*channel_count;
+				    }else{ //second line
+					    for(i = 0 ; i < width; i ++){
+						    memcpy(buf + offset, 
+								    pFrame->data[0] + ((start_y + y)*pFrame->linesize[0]) + (start_x + width - i -1)*channel_count, 
+								    channel_count);
+						    offset += channel_count;
+					    }
+				    }
+                }
+			}
+			break;
+		case 1:
+            //0304 test limit ok
+            if((start_x < 0) || ((start_y - height + 1) < 0)){
+                log_debug("case 1 params config error!");
+                break;
+            }
+            /*if((start_y + 1 ) > frame_height){
+                log_debug("case 1 params config error!");
+                break;
+            }*/
+            /*if((start_x + width) > frame_width){
+                log_debug("case 1 params config error!");
+                break; 
+            }*/
+            config_err = false;
+			for(y = 0; y < height; y++){
+                if(y % 2 == 0){
+					memcpy(buf + offset, 
+							pFrame->data[0] + ((start_y - y)*pFrame->linesize[0]) + start_x*channel_count, 
+							width*channel_count);
+					offset += width*channel_count; 
+                }else{
+					for(i = 0 ; i < width; i ++){
+						memcpy(buf + offset, 
+								pFrame->data[0] + ((start_y - y)*pFrame->linesize[0]) + (start_x + width - i -1)*channel_count, 
+								channel_count);
+						offset += channel_count;
+					}
+                    
+                }
+            }    
+			break;
+		case 2: 
+            //0304 test limit ok
+            if((start_x + 1 > frame_width)||(start_y < 0)){
+                log_debug("case 2 params config error!");
+                break;
+            }
+            if((start_x - width + 1) < 0){
+                log_debug("case 2 params config error!");
+                break;
+            }
+            /*if((start_y + height - 1) > frame_height){
+                log_debug("case 2 params config error!");
+                break;
+            }*/
+            
+            config_err = false;
+			for(y = 0; y < height; y++){
+	            if(y % 2 == 1){ 
+					memcpy(buf + offset, 
+							pFrame->data[0] + ((start_y + y)*pFrame->linesize[0]) + (start_x - width + 1)*channel_count, 
+							width*channel_count);
+					offset += width*channel_count;
+				}else{ 
+					for(i = 0 ; i < width; i ++){
+						memcpy(buf + offset, 
+								pFrame->data[0] + ((start_y + y)*pFrame->linesize[0]) + (start_x - i )*channel_count, 
+								channel_count);
+						offset += channel_count;
+					}
+				}
+			}
+            
+			break;
+		case 3:
+            //0310 test limit ok
+            if((start_x + 1 > frame_width)||((start_y - height + 1) < 0)){
+                log_debug("case 3 params config error!");
+                break;
+            }
+            //cabinet height out of frame height
+            /*if(start_y + 1 >= frame_height){
+                log_debug("case 3 params config error!");
+                break;
+            }*/
+            if((start_x - width + 1) < 0){
+                log_debug("case 3 params config error!");
+                break;
+            }
+            config_err = false;
+            
+			for(y = 0; y < height; y++){
+                //cabinet height out of frame height
+                if((start_y - y + 1) > frame_height){
+					for(i = 0 ; i < width; i ++){
+						memcpy(buf + offset, fake_pixel_buf, channel_count);
+						offset += channel_count;
+					} 
+                }else{
+				    if(y % 2 == 0){ // first line
+					    for(i = 0; i < width; i++){
+						    memcpy(buf + offset,
+								    pFrame->data[0] + ((start_y - y)*pFrame->linesize[0]) + (start_x -i)*channel_count,
+								    channel_count);
+						    offset += channel_count;
+					    }
+				    }else{ //second line
+					    memcpy(buf + offset, 
+							    pFrame->data[0] + ((start_y - y)*pFrame->linesize[0]) + (start_x - width + 1)*channel_count,
+							    width*channel_count);
+					    offset += width*channel_count;
+				    }
+                }
+			}
+			break;
+        case 4: 
+            //0310 test limit ok
+            if((start_x + 1 > frame_width)||(start_y < 0)){
+                log_debug("case 2 params config error!");
+                break;
+            }
+            if((start_x - width + 1) < 0){
+                log_debug("case 2 params config error!");
+                break;
+            }
+            if((start_y + height - 1) > frame_height){
+                log_debug("case 2 params config error!");
+                break;
+            }
+            config_err = false;
+            for(x = 0;x < width; x++){
+                if(x % 2 == 0){
+                    for(y = 0; y < height; y++){
+                        memcpy(buf + offset,
+                                pFrame->data[0] + (start_y + y)*pFrame->linesize[0] + (start_x - x)*channel_count,
+                                channel_count);
+                        offset += channel_count;
+                    }
+                }else{
+                    for(y = 0; y < height; y++){
+                        memcpy(buf + offset,
+                                pFrame->data[0] + (start_y + height - 1 - y)*pFrame->linesize[0] + (start_x - x)*channel_count,
+                                channel_count);
+                        offset += channel_count;
+                    } 
+                }
+            }
+            break;
+        case 5: //confirm @1115 
+            //0310 test limit ok
+            if((start_x < 0) || ((start_y - height + 1) < 0)){
+                log_debug("case 5 params config error!");
+                break;
+            }
+            if((start_y + 1 ) > frame_height){
+                log_debug("case 5 params config error!");
+                break;
+            }
+            if((start_x + width  ) > frame_width){
+                log_debug("case 5 params config error!");
+                break; 
+            }
+            config_err = false;
+            for(x = 0; x < width; x++){
+                if(x % 2 == 1){
+                    for(y = height; y > 0; y--){
+                        memcpy(buf + offset,
+                                pFrame->data[0] + (start_y - y + 1)*pFrame->linesize[0] + (start_x + x)*channel_count,
+                                channel_count);
+                        offset += channel_count;
+                    }
+                }else{
+                    for(y = 0; y < height; y++){
+                        memcpy(buf + offset,
+                                pFrame->data[0] + (start_y - y)*pFrame->linesize[0] + (start_x + x)*channel_count,
+                                channel_count);
+                        offset += channel_count;
+                    } 
+                }
+            }
+            break;
+        case 6: //confirm @1115
+            //0310 test limit ok
+            if((start_x + 1 > frame_width)||((start_y - height + 1) < 0)){
+                log_debug("case 6 params config error!");
+                break;
+            }
+            if((start_y + 1) > frame_height){
+                log_debug("case 6 params config error!");
+                break;
+            
+            }
+            if((start_x - width + 1) < 0){
+                log_debug("case 6 params config error!");
+                break;
+            }
+            config_err = false;
+            //for(x = width;x > 0;x--){
+            for(x = 0;x < width;x++){
+                if(x % 2 == 0){
+                    for(y = 0; y < height; y++){
+                        memcpy(buf + offset,
+                                pFrame->data[0] + (start_y - y)*pFrame->linesize[0] + (start_x - x)*channel_count,
+                                channel_count);
+                        offset += channel_count;
+                    }
+                }else{
+                    for(y = 0; y < height; y++){
+                        memcpy(buf + offset,
+                                pFrame->data[0] + (start_y - height + y + 1)*pFrame->linesize[0] + (start_x - x)*channel_count,
+                                channel_count);
+                        offset += channel_count;
+                    } 
+                }
+            }
+            break;
+        case 7: //confirm @1115
+            //0310 test limit ok
+            if((start_x < 0) || (start_y < 0)){
+                log_debug("case 7 params config error!");
+                break;
+            }
+            if((start_y + height ) > frame_height){
+                log_debug("case 7 params config error!");
+                break;
+            }
+            if((start_x + width ) > frame_width){
+                log_debug("case 7 params config error!");
+                break; 
+            }
+            config_err = false;
+            for(x = 0; x < width; x++){
+                if(x % 2 == 0){
+                    for(y = 0; y < height; y++){
+                        memcpy(buf + offset,
+                                pFrame->data[0] + (start_y + y + 1)*pFrame->linesize[0] + (start_x + x)*channel_count,
+                                channel_count);
+                        offset += channel_count;
+                    }
+                }else{
+                    for(y = 0; y < height; y++){
+                        memcpy(buf + offset,
+                                pFrame->data[0] + (start_y + height - y)*pFrame->linesize[0] + (start_x + x)*channel_count,
+                                channel_count);
+                        offset += channel_count;
+                    } 
+                }
+            }
+            break;
+	}
+
+	if((width == 0)||(height == 0)){
+		config_err = true;
+	}
+
+	if(config_err == true){
+    	// fill zero to buf while config error
+        log_fatal("config error!\n");
+        return 0;
+	}
+	for(i = 0; i < offset; i ++){
+		// frame_brightness : 0~100
+		// frame_br_divisor : 0~100
+		buf[i] =(char)((int)buf[i]*frame_brightness/(frame_br_divisor*100));
+		buf[i] = g_GammaLut[buf[i]];
+	}
+    
+    /*for(int j = 0;j < offset; j=j+4 ){
+        *(ulrgbdata[j] + params->port_id) = ((buf[1]*256) << 24) | ((buf[2]*256) << 16) | (buf[3]*256);
+    }*/
+	
+	return 0;
+}
+
+
+int framergb32_to_ledargb64(AVFrame *pFrame, struct cabinet_params *params, int channel_count, int frame_width, int frame_height, unsigned long ulrgbdata[1000][16]){
+	int offset = 0;
+	int width = params->cabinet_width;
+	int height = params->cabinet_height;
+	int start_x = params->start_x;
+	int start_y = params->start_y;
+	unsigned int buf_size = (width*height*channel_count);
+	unsigned char *buf = malloc(buf_size);
+	int y = 0,x = 0;
+	int i = 0;
+	int write_len = 0;
+	bool config_err = true;
+	unsigned char *fake_pixel_buf = malloc(channel_count);
+	switch(params->layout_type){
+		case 0:
+            //220928 enhanece with cabinet height out of frame height
+            //0310 test limit ok
+            if((start_x < 0) || (start_y < 0)){
+                log_debug("case 0 params config error!");
+                break;
+            }
+            // 
+            /*if((start_y - height + 1) > frame_height){
+                log_debug("case 0 params config error!");
+                break;
+            }*/
+            //cabinet height out of frame height
+            /*if((start_y + height + 1) >= frame_height){
+                log_debug("case 0 params config error!");
+                break; 
+            }*/
+            if((start_x + width) > frame_width){
+                log_debug("case 0 params config error!");
+                break; 
+            }
+            config_err = false;
+            
+            memset(fake_pixel_buf, 0, channel_count);
+			for(y = 0; y < height; y++){
+                if(start_y + y >= frame_height){
+					    for(i = 0 ; i < width; i ++){
+						    memcpy(buf + offset, fake_pixel_buf, channel_count);
+						    offset += channel_count;
+					    } 
+                }else{
+	                if(y % 2 == 0){ //first line
+					    memcpy(buf + offset, 
+							    pFrame->data[0] + ((start_y + y)*pFrame->linesize[0]) + start_x*channel_count, 
+							    width*channel_count);
+					    offset += width*channel_count;
+				    }else{ //second line
+					    for(i = 0 ; i < width; i ++){
+						    memcpy(buf + offset, 
+								    pFrame->data[0] + ((start_y + y)*pFrame->linesize[0]) + (start_x + width - i -1)*channel_count, 
+								    channel_count);
+						    offset += channel_count;
+					    }
+				    }
+                }
+			}
+			break;
+		case 1:
+            //0304 test limit ok
+            if((start_x < 0) || ((start_y - height + 1) < 0)){
+                log_debug("case 1 params config error!");
+                break;
+            }
+            /*if((start_y + 1 ) > frame_height){
+                log_debug("case 1 params config error!");
+                break;
+            }*/
+            /*if((start_x + width) > frame_width){
+                log_debug("case 1 params config error!");
+                break; 
+            }*/
+            config_err = false;
+			for(y = 0; y < height; y++){
+                if(y % 2 == 0){
+					memcpy(buf + offset, 
+							pFrame->data[0] + ((start_y - y)*pFrame->linesize[0]) + start_x*channel_count, 
+							width*channel_count);
+					offset += width*channel_count; 
+                }else{
+					for(i = 0 ; i < width; i ++){
+						memcpy(buf + offset, 
+								pFrame->data[0] + ((start_y - y)*pFrame->linesize[0]) + (start_x + width - i -1)*channel_count, 
+								channel_count);
+						offset += channel_count;
+					}
+                    
+                }
+            }    
+			break;
+		case 2: 
+            //0304 test limit ok
+            if((start_x + 1 > frame_width)||(start_y < 0)){
+                log_debug("case 2 params config error!");
+                break;
+            }
+            if((start_x - width + 1) < 0){
+                log_debug("case 2 params config error!");
+                break;
+            }
+            /*if((start_y + height - 1) > frame_height){
+                log_debug("case 2 params config error!");
+                break;
+            }*/
+            
+            config_err = false;
+			for(y = 0; y < height; y++){
+	            if(y % 2 == 1){ 
+					memcpy(buf + offset, 
+							pFrame->data[0] + ((start_y + y)*pFrame->linesize[0]) + (start_x - width + 1)*channel_count, 
+							width*channel_count);
+					offset += width*channel_count;
+				}else{ 
+					for(i = 0 ; i < width; i ++){
+						memcpy(buf + offset, 
+								pFrame->data[0] + ((start_y + y)*pFrame->linesize[0]) + (start_x - i )*channel_count, 
+								channel_count);
+						offset += channel_count;
+					}
+				}
+			}
+            
+			break;
+		case 3:
+            //0310 test limit ok
+            if((start_x + 1 > frame_width)||((start_y - height + 1) < 0)){
+                log_debug("case 3 params config error!");
+                break;
+            }
+            //cabinet height out of frame height
+            /*if(start_y + 1 >= frame_height){
+                log_debug("case 3 params config error!");
+                break;
+            }*/
+            if((start_x - width + 1) < 0){
+                log_debug("case 3 params config error!");
+                break;
+            }
+            config_err = false;
+            
+			for(y = 0; y < height; y++){
+                //cabinet height out of frame height
+                if((start_y - y + 1) > frame_height){
+					for(i = 0 ; i < width; i ++){
+						memcpy(buf + offset, fake_pixel_buf, channel_count);
+						offset += channel_count;
+					} 
+                }else{
+				    if(y % 2 == 0){ // first line
+					    for(i = 0; i < width; i++){
+						    memcpy(buf + offset,
+								    pFrame->data[0] + ((start_y - y)*pFrame->linesize[0]) + (start_x -i)*channel_count,
+								    channel_count);
+						    offset += channel_count;
+					    }
+				    }else{ //second line
+					    memcpy(buf + offset, 
+							    pFrame->data[0] + ((start_y - y)*pFrame->linesize[0]) + (start_x - width + 1)*channel_count,
+							    width*channel_count);
+					    offset += width*channel_count;
+				    }
+                }
+			}
+			break;
+        case 4: 
+            //0310 test limit ok
+            if((start_x + 1 > frame_width)||(start_y < 0)){
+                log_debug("case 2 params config error!");
+                break;
+            }
+            if((start_x - width + 1) < 0){
+                log_debug("case 2 params config error!");
+                break;
+            }
+            if((start_y + height - 1) > frame_height){
+                log_debug("case 2 params config error!");
+                break;
+            }
+            config_err = false;
+            for(x = 0;x < width; x++){
+                if(x % 2 == 0){
+                    for(y = 0; y < height; y++){
+                        memcpy(buf + offset,
+                                pFrame->data[0] + (start_y + y)*pFrame->linesize[0] + (start_x - x)*channel_count,
+                                channel_count);
+                        offset += channel_count;
+                    }
+                }else{
+                    for(y = 0; y < height; y++){
+                        memcpy(buf + offset,
+                                pFrame->data[0] + (start_y + height - 1 - y)*pFrame->linesize[0] + (start_x - x)*channel_count,
+                                channel_count);
+                        offset += channel_count;
+                    } 
+                }
+            }
+            break;
+        case 5: //confirm @1115 
+            //0310 test limit ok
+            if((start_x < 0) || ((start_y - height + 1) < 0)){
+                log_debug("case 5 params config error!");
+                break;
+            }
+            if((start_y + 1 ) > frame_height){
+                log_debug("case 5 params config error!");
+                break;
+            }
+            if((start_x + width  ) > frame_width){
+                log_debug("case 5 params config error!");
+                break; 
+            }
+            config_err = false;
+            for(x = 0; x < width; x++){
+                if(x % 2 == 1){
+                    for(y = height; y > 0; y--){
+                        memcpy(buf + offset,
+                                pFrame->data[0] + (start_y - y + 1)*pFrame->linesize[0] + (start_x + x)*channel_count,
+                                channel_count);
+                        offset += channel_count;
+                    }
+                }else{
+                    for(y = 0; y < height; y++){
+                        memcpy(buf + offset,
+                                pFrame->data[0] + (start_y - y)*pFrame->linesize[0] + (start_x + x)*channel_count,
+                                channel_count);
+                        offset += channel_count;
+                    } 
+                }
+            }
+            break;
+        case 6: //confirm @1115
+            //0310 test limit ok
+            if((start_x + 1 > frame_width)||((start_y - height + 1) < 0)){
+                log_debug("case 6 params config error!");
+                break;
+            }
+            if((start_y + 1) > frame_height){
+                log_debug("case 6 params config error!");
+                break;
+            
+            }
+            if((start_x - width + 1) < 0){
+                log_debug("case 6 params config error!");
+                break;
+            }
+            config_err = false;
+            //for(x = width;x > 0;x--){
+            for(x = 0;x < width;x++){
+                if(x % 2 == 0){
+                    for(y = 0; y < height; y++){
+                        memcpy(buf + offset,
+                                pFrame->data[0] + (start_y - y)*pFrame->linesize[0] + (start_x - x)*channel_count,
+                                channel_count);
+                        offset += channel_count;
+                    }
+                }else{
+                    for(y = 0; y < height; y++){
+                        memcpy(buf + offset,
+                                pFrame->data[0] + (start_y - height + y + 1)*pFrame->linesize[0] + (start_x - x)*channel_count,
+                                channel_count);
+                        offset += channel_count;
+                    } 
+                }
+            }
+            break;
+        case 7: //confirm @1115
+            //0310 test limit ok
+            if((start_x < 0) || (start_y < 0)){
+                log_debug("case 7 params config error!");
+                break;
+            }
+            if((start_y + height ) > frame_height){
+                log_debug("case 7 params config error!");
+                break;
+            }
+            if((start_x + width ) > frame_width){
+                log_debug("case 7 params config error!");
+                break; 
+            }
+            config_err = false;
+            for(x = 0; x < width; x++){
+                if(x % 2 == 0){
+                    for(y = 0; y < height; y++){
+                        memcpy(buf + offset,
+                                pFrame->data[0] + (start_y + y + 1)*pFrame->linesize[0] + (start_x + x)*channel_count,
+                                channel_count);
+                        offset += channel_count;
+                    }
+                }else{
+                    for(y = 0; y < height; y++){
+                        memcpy(buf + offset,
+                                pFrame->data[0] + (start_y + height - y)*pFrame->linesize[0] + (start_x + x)*channel_count,
+                                channel_count);
+                        offset += channel_count;
+                    } 
+                }
+            }
+            break;
+	}
+
+	if((width == 0)||(height == 0)){
+		config_err = true;
+	}
+
+	if(config_err == true){
+    	// fill zero to buf while config error
+        log_fatal("config error!\n");
+        return 0;
+	}
+	for(i = 0; i < offset; i ++){
+		// frame_brightness : 0~100
+		// frame_br_divisor : 0~100
+		buf[i] =(char)((int)buf[i]*frame_brightness/(frame_br_divisor*100));
+		buf[i] = g_GammaLut[buf[i]];
+	}
+    
+    for(int j = 0;j < offset; j=j+4 ){
+        *(ulrgbdata[j] + params->port_id) = ((buf[1]*256) << 24) | ((buf[2]*256) << 16) | (buf[3]*256);
+    }
+	
+	return 0;
+}
 
 int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, int channel_count, int frame_width, int frame_height, struct libusb_device_handle *pico, char *input_uri){
 	int offset = 0;

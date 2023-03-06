@@ -74,14 +74,17 @@
 #include "frame_transfer.h"
 #include "lcd_info.h"
 #include "rpi_smi_j.h"
+#include <bits/time.h>
+#include <sys/resource.h>
+
 #define WRITE_FRAME_TO_DISK     0
 
 int led_fps = 0;
 
 #include <assert.h>
 
-const char program_name[] = "ffplay";
-const int program_birth_year = 2003;
+const char program_name[] = "lcsmi";
+const int program_birth_year = 2023;
 
 #define MAX_QUEUE_SIZE (15 * 1024 * 1024)
 #define MIN_FRAMES 25
@@ -416,6 +419,9 @@ static const struct TextureFormatEntry {
 };
 
 ledparams_t led_params;
+int rgb_data[1000][16]; // max 1000 icleds per chan, 16 chans, for rgb32 color format
+unsigned long ul_rgb_data[1000][16]; // max 1000 icleds per chans, 16 chans, for argb64 color format
+
 
 #if CONFIG_AVFILTER
 static int opt_add_vfilter(void *optctx, const char *opt, const char *arg)
@@ -2159,6 +2165,21 @@ static int decoder_start(Decoder *d, int (*fn)(void *), const char *thread_name,
 int smi_trigger = 0;
 int decoder_trigger = 0;
 
+/*float yuvtorgb_total_time = 0;
+float yuvtorgb_avg_time = 0;
+float yuvtorgb_count = 0;*/
+unsigned long yuvtorgb_total_time = 0;
+unsigned long yuvtorgb_avg_time = 0;
+unsigned long yuvtorgb_count = 0;
+
+unsigned long thread_time_used(){
+    struct rusage ru;
+    struct timeval t;
+    getrusage(RUSAGE_THREAD, &ru);
+    t = ru.ru_utime;
+    return (unsigned long)t.tv_sec*1000 + t.tv_usec/1000;
+}
+
 
 static int smi_thread(void *arg)
 {
@@ -2170,8 +2191,6 @@ static int smi_thread(void *arg)
         usleep(10);
 #if SMI_DECODE_MUTEX
         SDL_LockMutex(is->smi_decode_mutex);
-        //printf("AAA smi_trigger = %d\n", smi_trigger); 
-        //printf("AAA decoder_trigger = %d\n", decoder_trigger); 
         if(smi_trigger == 0){
             usleep(10);
             decoder_trigger = 1;
@@ -2191,7 +2210,6 @@ static int smi_thread(void *arg)
         }*/
         
         //rpi_start_smi();
-        //printf("GG\n");
 #if SMI_DECODE_MUTEX
         SDL_LockMutex(is->smi_decode_mutex);
         decoder_trigger = 1;
@@ -2201,8 +2219,6 @@ static int smi_thread(void *arg)
         SDL_UnlockMutex(is->smi_decode_mutex);
 #endif        
         rpi_start_smi();
-        //printf("GG\n");
-        //printf("GG2\n");
         usleep(10);
     }
 }
@@ -2245,41 +2261,26 @@ static int video_thread(void *arg)
         return AVERROR(ENOMEM);
     }
 
-    
+    //use RGB32 for swscale
+    numBytes = avpicture_get_size(AV_PIX_FMT_RGB32, 1920, 1080);
+    buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
+    avpicture_fill((AVPicture *)frameRGB, buffer, AV_PIX_FMT_RGB32, 1920, 1080);
+    swscale_pix_fmt = AV_PIX_FMT_RGB32; 
+ 
+    // test smi initial buffer   
     int icled_bits_per_pixel = get_icled_bits_per_pixel();
-    if(icled_bits_per_pixel == BITS_PER_PIXEL_24){
-        numBytes = avpicture_get_size(AV_PIX_FMT_RGB32, 1920, 1080);
-        buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
-        avpicture_fill((AVPicture *)frameRGB, buffer, AV_PIX_FMT_RGB32, 1920, 1080);
-        swscale_pix_fmt = AV_PIX_FMT_RGB32;
-    }else if(icled_bits_per_pixel == BITS_PER_PIXEL_48){
-        numBytes = avpicture_get_size(AV_PIX_FMT_RGBA64, 1920, 1080);
-        buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
-        avpicture_fill((AVPicture *)frameRGB, buffer, AV_PIX_FMT_RGBA64, 1920, 1080);
-        swscale_pix_fmt = AV_PIX_FMT_RGBA64;
-    }else{
-        numBytes = avpicture_get_size(AV_PIX_FMT_RGB32, 1920, 1080);
-        buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
-        avpicture_fill((AVPicture *)frameRGB, buffer, AV_PIX_FMT_RGB32, 1920, 1080);
-        swscale_pix_fmt = AV_PIX_FMT_RGB32;
-    }
-    swscale_pix_fmt = AV_PIX_FMT_RGB32;
-    //swscale_pix_fmt = AV_PIX_FMT_RGBA64;
-    // test smi initial buffer
-        
-    if(icled_bits_per_pixel == BITS_PER_PIXEL_48){
+ 
+    /*if(icled_bits_per_pixel == BITS_PER_PIXEL_48){
         int ret = set_test_buffer_48bit(0x000000000000ffff);
         if(ret < 0){
             log_debug("set_test_buffer error!\n");
         }
-    }
+    }*/
     decoder_trigger = 1;
     for (;;) {
 
 #if SMI_DECODE_MUTEX
         SDL_LockMutex(is->smi_decode_mutex);
-        //printf("BBB smi_trigger = %d\n", smi_trigger); 
-        //printf("BBB decoder_trigger = %d\n", decoder_trigger); 
         if(decoder_trigger != 1){
             usleep(10);
             SDL_UnlockMutex(is->smi_decode_mutex);
@@ -2317,7 +2318,19 @@ static int video_thread(void *arg)
         }else{
             //Convert the image from its native format to RGB
             //log_debug("ready to scale\n");
+#if 0 //time profile fo swscale
+            unsigned long start = thread_time_used();
+            
             int scale_ret = sws_scale(sws_ctx, (uint8_t const *)frame->data, frame->linesize, 0, is->viddec.avctx->height, frameRGB->data, frameRGB->linesize);    
+            unsigned long end = thread_time_used();
+            yuvtorgb_total_time += (unsigned long)(end-start);    
+            yuvtorgb_count += 1;
+            yuvtorgb_avg_time = yuvtorgb_total_time/yuvtorgb_count;
+            printf("yuvtorgb RGB32 use %d ms, avg_time = %d\n", (unsigned long)(end-start), yuvtorgb_avg_time);
+#else
+            int scale_ret = sws_scale(sws_ctx, (uint8_t const *)frame->data, frame->linesize, 0, is->viddec.avctx->height, frameRGB->data, frameRGB->linesize);    
+            
+#endif
             //log_debug("scale ok\n");
             if(scale_ret < 0){
                 log_error("scale_ret = %d\n", scale_ret);
@@ -2342,9 +2355,40 @@ static int video_thread(void *arg)
                 //log_debug("SaveFrame ok!\n"); 
             }
 #endif
-    
-        
         }
+        
+        unsigned long frame_layout_start = thread_time_used();
+        
+        //got RGB32 Frame, ready to generate cabinet layout buffer
+        //for(int k = 0; k < 80; k ++){
+            for(int i = 0; i < LED_PANELS; i++){
+                if(icled_bits_per_pixel == BITS_PER_PIXEL_48){
+                    framergb32_to_ledargb64(frameRGB, &(led_params.cab_params[i]), 4, is->viddec.avctx->width, is->viddec.avctx->height, ul_rgb_data);
+                }else if(icled_bits_per_pixel == BITS_PER_PIXEL_24){
+                    framergb32_to_ledargb32(frameRGB, &(led_params.cab_params[i]), 4, is->viddec.avctx->width, is->viddec.avctx->height, rgb_data);
+                }
+                //printf("A ul_rgb_data[0][%d] = %ld\n", i, ul_rgb_data[0][i]); 
+            }
+        //}
+        unsigned long frame_layout_end = thread_time_used();
+        yuvtorgb_total_time += (unsigned long)(frame_layout_end-frame_layout_start);    
+        yuvtorgb_count += 1;
+        yuvtorgb_avg_time = yuvtorgb_total_time/yuvtorgb_count;
+        printf("yuvtorgb RGB32 use %d ms, avg_time = %d\n", (unsigned long)(frame_layout_end-frame_layout_start), yuvtorgb_avg_time);
+        // Debug memory
+        if(icled_bits_per_pixel == BITS_PER_PIXEL_48){
+            for(int j = 0; j < 16; j++){
+                printf("ul_rgb_data[0][%d] = %lx\n", j, ul_rgb_data[0][j]); 
+            }
+        }else if(icled_bits_per_pixel == BITS_PER_PIXEL_24){
+            for(int j = 0; j < 16; j++){
+                printf("rgb_data[0][%d] = %x\n", j, rgb_data[0][j]); 
+            }
+        }
+        /*log_debug("ready to set smi buffer!\n"); 
+        rpi_set_smi_buffer_48bit(ul_rgb_data);
+        log_debug("end to set smi buffer!\n"); */
+ 
 #if SMI_DECODE_MUTEX
         SDL_LockMutex(is->smi_decode_mutex);
         system("echo 0 > /sys/class/gpio/gpio26/value");
@@ -3883,9 +3927,45 @@ int main(int argc, char **argv)
     int flags;
     VideoState *is;
 
+    int enable_log_file = log_init(true, LOG_PREFIX_ID);
+    if(enable_log_file != 0){
+        log_fatal("ERROR!Can't enable log file\n");
+    }
+
+    log_debug("init frame_brightness");
+    init_frame_brightness();
+    log_debug("init frame_contrast");
+    init_frame_contrast();
+    log_debug("init frame_gamma");
+    init_frame_gamma();
+
+
     init_dynload();
 
+    for(int i = 0; i < LED_PANELS; i ++){
+        int ret = cabinet_params_init(i, &led_params.cab_params[i]);
+        if( ret < 0){
+            continue;
+        }
+        log_debug("led_params.cab_params : 0x%x\n", led_params.cab_params[i]);
+        log_debug("led_params.cab_params[%d].cabinet_width = %d", i,
+                    led_params.cab_params[i].cabinet_width);
+        log_debug("led_params.cab_params[%d].cabinet_height = %d", i,
+                    led_params.cab_params[i].cabinet_height);
+        log_debug("led_params.cab_params[%d].start_x = %d", i,
+                    led_params.cab_params[i].start_x);
+        log_debug("led_params.cab_params[%d].start_y = %d", i,
+                    led_params.cab_params[i].start_y);
+        log_debug("led_params.cab_params[%d].layout_type = %d", i,
+                    led_params.cab_params[i].layout_type);
+
+    }
+
+    
+    //48bits
     int smi_ret = init_rpi_smi(ICLED_SMI_TIMING_TYPE_AOS, BITS_PER_PIXEL_48);
+    //24bits 
+    //int smi_ret = init_rpi_smi(ICLED_SMI_TIMING_TYPE_AOS, BITS_PER_PIXEL_24);
     if(smi_ret < 0){
         smi_terminate(0);
         exit(0);
@@ -3908,7 +3988,7 @@ int main(int argc, char **argv)
     signal(SIGKILL, sigterm_handler); /* Kill (ANSI).  */
     signal(SIGSEGV, sigterm_handler); /* Segmentation Fault (ANSI).  */
 
-    show_banner(argc, argv, options);
+    //show_banner(argc, argv, options);
 
     parse_options(NULL, argc, argv, options, opt_input_file);
 

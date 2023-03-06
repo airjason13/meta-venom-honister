@@ -28,6 +28,7 @@ int init_rpi_smi(int led_timing_type, int bits_per_pixel);
 int rpi_set_smi_chan_led_count(int led_count);
 int rpi_start_smi(void);
 void smi_terminate(int sig);
+int rpi_set_smi_buffer_48bit(unsigned long ulrgbdata[1000][16]);
 int set_test_buffer_48bit(unsigned long color);
 int set_test_buffer_24bit(int color);
 #endif

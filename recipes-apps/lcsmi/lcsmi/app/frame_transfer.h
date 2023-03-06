@@ -12,6 +12,8 @@
 #include "ledlayout.h"
 #include "math.h"
 
+
+int framergb32_to_ledargb64(AVFrame *pFrame, struct cabinet_params *params, int channel_count, int frame_width, int frame_height, unsigned long ulrgbdata[1000][16]);
 int transfer_framergb_to_pico(AVFrame *pFrame, struct cabinet_params *params, int channel_count, int frame_width, int frame_height, struct libusb_device_handle *pico, char *input_uri);
 int set_frame_brightness_value(int value);
 int get_frame_brightness_value();

@@ -42,11 +42,11 @@ typedef enum{
 	e_vertstartdownrightendupleft,
 };
 
-#define LED_PANELS		8
-#define PER_PIXEL_PANEL	960
-#define LED_WIDTH		40
-#define LED_HEIGHT		24
-#define LED_CHANNELS	3
+#define LED_PANELS		        16//8
+#define PER_PIXEL_PANEL	        960
+#define LED_WIDTH		        40
+#define LED_HEIGHT		        24
+#define LED_COLOR_RGB_CHANNELS	3
 
 
 //int led_fps = 0;
