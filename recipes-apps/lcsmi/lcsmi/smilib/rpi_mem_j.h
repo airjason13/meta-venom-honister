@@ -6,7 +6,7 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-
+#include "utildbg.h"
 
 #define REG_BUS_ADDR(m, x) 	((unsigned int)(m.bus) + (unsigned int)(x))
 #define MEM_BUS_ADDR(mp, a) 	((unsigned int)a-(unsigned int)mp->virt+(unsigned int)mp->bus)

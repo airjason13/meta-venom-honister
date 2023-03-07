@@ -408,9 +408,9 @@ int framergb32_to_ledargb32(AVFrame *pFrame, struct cabinet_params *params, int 
 		buf[i] =(char)((int)buf[i]*frame_brightness/(frame_br_divisor*100));
 		buf[i] = g_GammaLut[buf[i]];
 	}
-    
-    /*for(int j = 0;j < offset; j=j+4 ){
-        *(ulrgbdata[j] + params->port_id) = ((buf[1]*256) << 24) | ((buf[2]*256) << 16) | (buf[3]*256);
+    //log_debug("offset = %d\n", offset);
+    /*for(int j = 0;j < offset/8; j++ ){
+        *(ulrgbdata[j] + params->port_id) = ((buf[j+1]*256) << 24) | ((buf[j+2]*256) << 16) | (buf[j+3]*256);
     }*/
 	
 	return 0;
@@ -736,8 +736,11 @@ int framergb32_to_ledargb64(AVFrame *pFrame, struct cabinet_params *params, int 
 		buf[i] = g_GammaLut[buf[i]];
 	}
     
-    for(int j = 0;j < offset; j=j+4 ){
-        *(ulrgbdata[j] + params->port_id) = ((buf[1]*256) << 24) | ((buf[2]*256) << 16) | (buf[3]*256);
+    for(int j = 0;j < offset/4; j++ ){
+        *(unsigned long *)(ulrgbdata[j] + params->port_id) = 
+                        (((unsigned long)buf[4*j + 2]*256) << 32) | 
+                        (((unsigned long)buf[4*j + 1]*256) << 16) | 
+                        ((unsigned long)buf[4*j + 0]*256);
     }
 	
 	return 0;

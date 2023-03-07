@@ -17,7 +17,7 @@ void close_mbox(int fd){
 
 void disp_vc_msg(VC_MSG *msgp){
 	int i;
-	printf("VC msg len=%X, req=%X, tag=%X, dlen=%x, data",
+	log_debug("VC msg len=%X, req=%X, tag=%X, dlen=%x, data",
 			       msgp->len, msgp->req, msgp->tag, msgp->blen, msgp->dlen);
 	for(i = 0; i < msgp->blen/4;i ++){
 		printf("%08X ", msgp->uints[i]);
@@ -36,14 +36,11 @@ unsigned int msg_mbox(int fd, VC_MSG *msgp){
 	msgp->len = (msgp->blen +6) *4;
 	msgp->req = 0;
 	if(ioctl(fd, _IOWR(100, 0, void*), msgp) < 0){
-		//printf("msgp->req = %x\n", msgp->req);
-		//printf("VC IOCTL failed\n");
+		log_debug("VC IOCTL failed\n");
 	}else if ((msgp->req&0x80000000) == 0){
-		//printf("msgp->req = %x\n", msgp->req);
-		//printf("VC IOCTL error\n");
+		log_debug("VC IOCTL error\n");
 	}else if (msgp->req == 0x80000001){
-		//printf("msgp->req = %x\n", msgp->req);
-		//printf("VC IOCTL partial error\n");
+	    log_debug("VC IOCTL partial error\n");
 	}else
 		ret = msgp->uints[0];
 
@@ -81,7 +78,7 @@ unsigned int free_vc_mem(int fd, int h){
 void *map_uncached_mem(MEM_MAP *mp, int size){
 	void *ret;
 	mp->size = PAGE_ROUNDUP(size);
-    printf("mp->size = 0x%08x\n", mp->size);
+    log_debug("mp->size = 0x%08x\n", mp->size);
 	mp->fd = open_mbox();
 #if 0
 	ret = (mp->h = alloc_vc_mem(mp->fd, mp->size, DMA_MEM_FLAGS)) > 0 &&
@@ -89,20 +86,20 @@ void *map_uncached_mem(MEM_MAP *mp, int size){
 		(mp->virt = map_segment(BUS_PHYS_ADDR(mp->bus), mp->size)) != 0
 		? mp->virt : 0;
 #else
-    printf("ready to alloc vc mem!\n");
+    log_debug("ready to alloc vc mem!\n");
 	mp->h = alloc_vc_mem(mp->fd, mp->size, DMA_MEM_FLAGS);
     if(mp->h <= 0){
-        printf("alloc vc mem failed!\n");
+        log_fatal("alloc vc mem failed!\n");
         return NULL;
     }
     mp->bus = lock_vc_mem(mp->fd, mp->h);
     if(mp->bus == 0){
-        printf("lock vc mem failed!\n");
+        log_fatal("lock vc mem failed!\n");
         return NULL;
     }
 	mp->virt = map_segment(BUS_PHYS_ADDR(mp->bus), mp->size);
     if(mp->virt == 0){
-        printf("mmap failed!\n");
+        log_fatal("mmap failed!\n");
         return 0;
     }
     
@@ -111,9 +108,9 @@ void *map_uncached_mem(MEM_MAP *mp, int size){
     
 #endif
 	mp->phys = BUS_PHYS_ADDR(mp->bus);
-    printf("map_uncached_mem!\n");
-	printf("1. mp->bus = %p\n", mp->bus);
-	printf("2. mp->virt = %p\n", mp->virt);
+    log_debug("map_uncached_mem!\n");
+	log_debug("1. mp->bus = %p\n", mp->bus);
+	log_debug("2. mp->virt = %p\n", mp->virt);
 #if 0
     mp->virt = (void*)((unsigned int)(mp->virt)&(~0xf0000000));
 #else// work but not stable
@@ -122,6 +119,6 @@ void *map_uncached_mem(MEM_MAP *mp, int size){
 	mp->virt = (unsigned long)mp->virt & 0x7fffffffff;
 #endif
 	//printf("mp->virt value : 0x%08x\n", *(unsigned long*)mp->virt);
-	printf("VC mem handle : %u, phys %p, virt %p\n", mp->h, mp->bus, mp->virt);
+	log_debug("VC mem handle : %u, phys %p, virt %p\n", mp->h, mp->bus, mp->virt);
 	return (ret);
 }

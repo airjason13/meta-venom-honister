@@ -13,6 +13,7 @@
 #include <errno.h>
 #include "rpi_smi_defs.h"
 #include "rpi_mem_j.h"
+#include "utildbg.h"
 
 
 #define BITS_PER_PIXEL_24    0

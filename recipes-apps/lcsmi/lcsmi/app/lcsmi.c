@@ -1348,7 +1348,7 @@ static void do_exit(VideoState *is)
 
 static void sigterm_handler(int sig)
 {
-    printf("Enter sigterm_handler\n");
+    log_debug("Enter sigterm_handler\n");
     smi_terminate(sig);
     exit(123);
 }
@@ -2270,12 +2270,12 @@ static int video_thread(void *arg)
     // test smi initial buffer   
     int icled_bits_per_pixel = get_icled_bits_per_pixel();
  
-    /*if(icled_bits_per_pixel == BITS_PER_PIXEL_48){
+    if(icled_bits_per_pixel == BITS_PER_PIXEL_48){
         int ret = set_test_buffer_48bit(0x000000000000ffff);
         if(ret < 0){
             log_debug("set_test_buffer error!\n");
         }
-    }*/
+    }
     decoder_trigger = 1;
     for (;;) {
 
@@ -2374,7 +2374,8 @@ static int video_thread(void *arg)
         yuvtorgb_total_time += (unsigned long)(frame_layout_end-frame_layout_start);    
         yuvtorgb_count += 1;
         yuvtorgb_avg_time = yuvtorgb_total_time/yuvtorgb_count;
-        printf("yuvtorgb RGB32 use %d ms, avg_time = %d\n", (unsigned long)(frame_layout_end-frame_layout_start), yuvtorgb_avg_time);
+        log_debug("yuvtorgb RGB32 use %d ms, avg_time = %d\n", (unsigned long)(frame_layout_end-frame_layout_start), yuvtorgb_avg_time);
+#if 0
         // Debug memory
         if(icled_bits_per_pixel == BITS_PER_PIXEL_48){
             for(int j = 0; j < 16; j++){
@@ -2385,9 +2386,10 @@ static int video_thread(void *arg)
                 printf("rgb_data[0][%d] = %x\n", j, rgb_data[0][j]); 
             }
         }
-        /*log_debug("ready to set smi buffer!\n"); 
+#endif
+        //log_debug("ready to set smi buffer!\n"); 
         rpi_set_smi_buffer_48bit(ul_rgb_data);
-        log_debug("end to set smi buffer!\n"); */
+        //log_debug("end to set smi buffer!\n"); 
  
 #if SMI_DECODE_MUTEX
         SDL_LockMutex(is->smi_decode_mutex);
