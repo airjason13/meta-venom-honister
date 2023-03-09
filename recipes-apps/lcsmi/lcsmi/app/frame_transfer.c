@@ -726,9 +726,14 @@ int framergb32_to_ledargb64(AVFrame *pFrame, struct cabinet_params *params, int 
 
 	if(config_err == true){
     	// fill zero to buf while config error
-        log_fatal("config error!\n");
+        log_fatal("cabinet %d config error!\n", params->port_id);
+        free(buf);
+	    free(fake_pixel_buf);
         return 0;
 	}
+    //log_debug("frame_br_divisor = %d\n", frame_br_divisor);
+    log_debug("params->port_id = %d\n", params->port_id);
+    
 	for(i = 0; i < offset; i ++){
 		// frame_brightness : 0~100
 		// frame_br_divisor : 0~100
@@ -738,10 +743,12 @@ int framergb32_to_ledargb64(AVFrame *pFrame, struct cabinet_params *params, int 
     
     for(int j = 0;j < offset/4; j++ ){
         *(unsigned long *)(ulrgbdata[j] + params->port_id) = 
-                        (((unsigned long)buf[4*j + 2]*256) << 32) | 
-                        (((unsigned long)buf[4*j + 1]*256) << 16) | 
-                        ((unsigned long)buf[4*j + 0]*256);
+                        (((unsigned long)buf[4*j + 2]*256) << 32) |  /*Red*/ 
+                        (((unsigned long)buf[4*j + 1]*256) << 16) |  /*Green*/
+                        ((unsigned long)buf[4*j + 0]*256);           /*Blue*/
     }
+    free(buf);
+	free(fake_pixel_buf);
 	
 	return 0;
 }

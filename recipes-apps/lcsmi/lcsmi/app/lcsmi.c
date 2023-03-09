@@ -421,6 +421,9 @@ static const struct TextureFormatEntry {
 ledparams_t led_params;
 int rgb_data[1000][16]; // max 1000 icleds per chan, 16 chans, for rgb32 color format
 unsigned long ul_rgb_data[1000][16]; // max 1000 icleds per chans, 16 chans, for argb64 color format
+bool HDMI_status = false;
+char role[256] = {0};
+
 
 
 #if CONFIG_AVFILTER
@@ -2172,6 +2175,41 @@ unsigned long yuvtorgb_total_time = 0;
 unsigned long yuvtorgb_avg_time = 0;
 unsigned long yuvtorgb_count = 0;
 
+#define FPS_FIFO    "/tmp/fps_fifo"
+
+void fps_counter(void){
+    char buf[16] = {0};
+    char fifo_buf[16] = {0};
+    int fps_fifo_fd;
+    fps_fifo_fd = open(FPS_FIFO, O_RDWR | O_NONBLOCK);
+    if(fps_fifo_fd == -1){
+    }else{
+        sprintf(fifo_buf, "%d", led_fps);
+        write(fps_fifo_fd, fifo_buf, strlen(fifo_buf));
+        close(fps_fifo_fd);
+    }
+    //log_info("aaaled fps = %d\n", led_fps);
+    sprintf(buf, "LED FPS=%d", led_fps);
+    if(strstr(role, "AIO")){
+
+    }else{
+        //refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_FPS, buf, NULL);
+    }
+    led_fps = 0;
+}
+
+void check_hdmi_status(void)
+{
+    bool bret = detect_screen();
+    //log_debug("bret = %d\n", bret);
+    if(bret == true){
+        HDMI_status = true;
+    }else{
+        HDMI_status = false;
+    }
+}
+
+
 unsigned long thread_time_used(){
     struct rusage ru;
     struct timeval t;
@@ -2218,6 +2256,7 @@ static int smi_thread(void *arg)
         //printf("EEE decoder_trigger = %d\n", decoder_trigger); 
         SDL_UnlockMutex(is->smi_decode_mutex);
 #endif        
+        rpi_set_smi_buffer_48bit(ul_rgb_data);
         rpi_start_smi();
         usleep(10);
     }
@@ -2374,7 +2413,7 @@ static int video_thread(void *arg)
         yuvtorgb_total_time += (unsigned long)(frame_layout_end-frame_layout_start);    
         yuvtorgb_count += 1;
         yuvtorgb_avg_time = yuvtorgb_total_time/yuvtorgb_count;
-        log_debug("yuvtorgb RGB32 use %d ms, avg_time = %d\n", (unsigned long)(frame_layout_end-frame_layout_start), yuvtorgb_avg_time);
+        //log_debug("yuvtorgb RGB32 use %d ms, avg_time = %d\n", (unsigned long)(frame_layout_end-frame_layout_start), yuvtorgb_avg_time);
 #if 0
         // Debug memory
         if(icled_bits_per_pixel == BITS_PER_PIXEL_48){
@@ -2388,7 +2427,7 @@ static int video_thread(void *arg)
         }
 #endif
         //log_debug("ready to set smi buffer!\n"); 
-        rpi_set_smi_buffer_48bit(ul_rgb_data);
+        //rpi_set_smi_buffer_48bit(ul_rgb_data);
         //log_debug("end to set smi buffer!\n"); 
  
 #if SMI_DECODE_MUTEX
@@ -2456,7 +2495,11 @@ static int video_thread(void *arg)
 #endif
             duration = (frame_rate.num && frame_rate.den ? av_q2d((AVRational){frame_rate.den, frame_rate.num}) : 0);
             pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);
-            ret = queue_picture(is, frame, pts, duration, frame->pkt_pos, is->viddec.pkt_serial);
+            if(HDMI_status == true){
+                ret = queue_picture(is, frame, pts, duration, frame->pkt_pos, is->viddec.pkt_serial);
+            }else{
+            
+            }
             av_frame_unref(frame);
 #if CONFIG_AVFILTER
             if (is->videoq.serial != is->viddec.pkt_serial)
@@ -2995,6 +3038,40 @@ static int is_realtime(AVFormatContext *s)
     return 0;
 }
 
+/*Jason add av_read_frame interrupt callback function*/
+int i_timeout_count = 0;
+int i_read_start = 0;
+int timeout_count_threshold = 3;
+struct  timeval pre_time;
+int interruptCallback(void *arg){
+    VideoState *is = arg;
+    struct  timeval now;
+    unsigned long diff;
+    //log_debug("********%s*********\n", __func__);
+    if((pre_time.tv_sec == 0)&&(pre_time.tv_usec == 0)){
+        //log_debug("initial time ");
+        gettimeofday(&pre_time,NULL);
+    }else{
+        gettimeofday(&now,NULL);
+        diff = 1000000 * (now.tv_sec-pre_time.tv_sec)+ now.tv_usec-pre_time.tv_usec;
+        //log_debug("diff = %ld\n", diff);
+        gettimeofday(&pre_time,NULL);
+        if(i_read_start > 0){
+            if(diff > 100000){
+                i_timeout_count ++;
+                //log_debug("g i_timeout_count = %ld\n", i_timeout_count);
+                if(i_timeout_count > timeout_count_threshold){
+                    i_timeout_count = 0;
+                    //packet_queue_put_nullpacket(&is->videoq, is->video_stream);  //insert null video packet to enable the decoder drain mode
+                }
+            }else{
+                i_timeout_count = 0; 
+            }
+        }
+    }
+    return 0;
+}
+
 /* this thread gets the stream from the disk or the network */
 static int read_thread(void *arg)
 {
@@ -3037,6 +3114,12 @@ static int read_thread(void *arg)
         av_dict_set(&format_opts, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE);
         scan_all_pmts_set = 1;
     }
+    
+    //av_dict_set(&format_opts, "rw_timeout", "3000000", 0);
+    /*+++++++++++Jason test av_read_frame timeout interrupt+++++++++++*/
+    ic->interrupt_callback.opaque = (void*)is;
+    ic->interrupt_callback.callback = interruptCallback; 
+    /*-----------Jason test av_read_frame timeout interrupt-----------*/
     err = avformat_open_input(&ic, is->filename, is->iformat, &format_opts);
     if (err < 0) {
         print_error(is->filename, err);
@@ -3482,9 +3565,14 @@ static void refresh_loop_wait_event(VideoState *is, SDL_Event *event) {
             SDL_ShowCursor(0);
             cursor_hidden = 1;
         }
+#if 1
         if (remaining_time > 0.0)
             av_usleep((int64_t)(remaining_time * 1000000.0));
         remaining_time = REFRESH_RATE;
+#else
+        remaining_time = 0.0; // Jason for no sync, frame direct out
+        
+#endif
         if (is->show_mode != SHOW_MODE_NONE && (!is->paused || is->force_refresh))
             video_refresh(is, &remaining_time);
         SDL_PumpEvents();
@@ -3923,6 +4011,44 @@ void show_help_default(const char *opt, const char *arg)
            );
 }
 
+
+
+void alive_report_test(char *server_ip, char *buf)
+{
+	//log_info("buf = %s\n", buf);
+	char send_buf[512] = {0};
+	sprintf(send_buf, "version:%s,fps:%d", LEDCLIENT_VERSION, led_fps);
+	send_alive_report(server_ip, CLIENT_ALIVEREPORT_PORT, send_buf);
+        
+    //check reboot cmd 
+    if(strstr(buf, "reboot")){
+        //got reboot cmd
+        usleep(2000);
+        system("reboot");
+    }
+}
+
+int get_machine_role(char *role_tmp)
+{
+    FILE *role_config;
+    //char role[256];
+    int iret = 0;
+    role_config = fopen("/home/root/led_role.conf", "rw");
+    if(role_config == NULL){
+        log_debug("open config file error!\n");
+        return -ENOENT;
+    }
+    iret = fscanf(role_config, "%s", role_tmp);
+    if(iret < 0){
+        log_debug("read role config file error!\n");
+        return -EIO;
+    } 
+    log_debug("role = %s\n", role_tmp);
+
+    return 0;
+}
+
+
 /* Called from the main */
 int main(int argc, char **argv)
 {
@@ -3940,8 +4066,16 @@ int main(int argc, char **argv)
     init_frame_contrast();
     log_debug("init frame_gamma");
     init_frame_gamma();
+    
+    set_frame_br_divisor_value(1);
 
-
+    /*start fps counter timer*/
+    //timer_t fps_counter_tid = jset_timer(1, 0, 1, 0, &(fps_counter), 99);
+    //log_info("fps_counter_tid = %d\n", fps_counter_tid);
+    
+    /*check hdmi status*/
+    //timer_t detect_screen_tid = jset_timer(1, 0, 3, 0, &(check_hdmi_status), 99);
+    
     init_dynload();
 
     for(int i = 0; i < LED_PANELS; i ++){
@@ -3962,6 +4096,30 @@ int main(int argc, char **argv)
                     led_params.cab_params[i].layout_type);
 
     }
+
+    /*initial udpmr test*/
+    /*initial callback test*/
+    int ret = register_udpmr_callback(CALLBACK_GET_VERSION, &get_version);
+    if(ret != 0){
+	log_error("callback register failed!\n");
+    }else{
+	log_info("callback register ok!\n");
+    }
+    /*initial udpmr test*/
+    led_params.udpmr_tid = udpmr_init("239.11.11.11", 9898);
+
+    /*initial udp cmd callback test*/
+    ret = set_udp_cmd_callbacks();
+    if(ret < 0){
+	log_fatal("cmd callbacks setup failed!\n");
+	exit(0);
+    }
+    /*initial udp cmd test*/
+    led_params.udp_cmd_tid = udp_cmd_init(11335);
+
+    /*initial udpbr test*/
+    register_udpbr_callback(UDPBR_CALLBACK_SERVER_ALIVE_REPORT, alive_report_test);
+    led_params.udpbr_tid = udpbr_init(11334);
 
     
     //48bits

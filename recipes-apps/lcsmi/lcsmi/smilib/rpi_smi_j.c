@@ -11,7 +11,8 @@
 #define SHOW_DEBUG_MEM	false//true
 
 #define APA104_SMI_TIMING 	10, 15, 30, 15
-#define AOS_SMI_TIMING 	    8, 10, 28, 10
+//#define AOS_SMI_TIMING 	    8, 10, 28, 10
+#define AOS_SMI_TIMING 	    10, 10, 28, 10
 
 #define LED_D0_PIN	8
 #define LED_NCHANS	16//8
@@ -179,7 +180,9 @@ void rgb_txdata(int *rgbs, TXDATA_T *txd){
 void ul_rgb_txdata(unsigned long *ulrgbs, TXDATA_T *txd){
 	unsigned long i, n, msk;
 	for (n=0; n<LED_NBITS_48; n++){
-		msk = n==0? 0x800000000000: n==16 ? 0x80000000 : n==32 ? 0x8000 : msk>>1;
+		//msk = n==0? 0x800000000000: n==16 ? 0x80000000 : n==32 ? 0x8000 : msk>>1;
+		//msk = n==0? 0x8000: n==16 ? 0x800000000000 : n==32 ? 0x80000000 : msk>>1;  //b->g->r
+		msk = n==0? 0x80000000: n==16 ? 0x8000 : n==32 ? 0x800000000000 : msk>>1;  //b->g->r
 		txd[0] = (TXDATA_T)0xffff;
 		txd[1] = txd[2] = 0;
 		for (i = 0; i < LED_NCHANS; i++){
@@ -663,7 +666,6 @@ int rpi_start_smi(void){
         log_fatal("smi_quit!\n");
         return -1;
     }
-    log_debug("rpi_start_smi!\n");
     rpi_start_dma(&vc_mem);
 	smi_l->len = 0;
         
