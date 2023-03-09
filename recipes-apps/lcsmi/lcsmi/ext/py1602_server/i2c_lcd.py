@@ -75,7 +75,7 @@ class I2CLCDSocketServer:
 if __name__ == '__main__':
     LCD1602.init(0x27, 1)   # init(slave address, background light)
     LCD1602.write(0, 0, 'Hi....')
-    LCD1602.write(1, 1, '1602LCD standby')
+    LCD1602.write(1, 1, 'LCSMI Boot Up!')
     time.sleep(2)
     signal.signal(signal.SIGINT, signal_handler)
     global i2c_lcd_server
