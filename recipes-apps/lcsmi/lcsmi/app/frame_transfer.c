@@ -732,7 +732,7 @@ int framergb32_to_ledargb64(AVFrame *pFrame, struct cabinet_params *params, int 
         return 0;
 	}
     //log_debug("frame_br_divisor = %d\n", frame_br_divisor);
-    log_debug("params->port_id = %d\n", params->port_id);
+    //log_debug("params->port_id = %d\n", params->port_id);
     
 	for(i = 0; i < offset; i ++){
 		// frame_brightness : 0~100

@@ -1748,8 +1748,8 @@ display:
                 av_diff = get_master_clock(is) - get_clock(&is->vidclk);
             else if (is->audio_st)
                 av_diff = get_master_clock(is) - get_clock(&is->audclk);
-
-            /*av_bprint_init(&buf, 0, AV_BPRINT_SIZE_AUTOMATIC);
+#if 1 //disable original message
+            av_bprint_init(&buf, 0, AV_BPRINT_SIZE_AUTOMATIC);
             av_bprintf(&buf,
                       "%7.2f %s:%7.3f fd=%4d aq=%5dKB vq=%5dKB sq=%5dB f=%"PRId64"/%"PRId64"   \r",
                       get_master_clock(is),
@@ -1768,8 +1768,8 @@ display:
                 av_log(NULL, AV_LOG_INFO, "%s", buf.str);
 
             fflush(stderr);
-            av_bprint_finalize(&buf, NULL);*/
-
+            av_bprint_finalize(&buf, NULL);
+#endif
             last_time = cur_time;
         }
     }
@@ -2193,7 +2193,7 @@ void fps_counter(void){
     if(strstr(role, "AIO")){
 
     }else{
-        //refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_FPS, buf, NULL);
+        refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_FPS, buf, NULL);
     }
     led_fps = 0;
 }
@@ -2230,7 +2230,7 @@ static int smi_thread(void *arg)
 #if SMI_DECODE_MUTEX
         SDL_LockMutex(is->smi_decode_mutex);
         if(smi_trigger == 0){
-            usleep(10);
+            usleep(3);
             decoder_trigger = 1;
             SDL_UnlockMutex(is->smi_decode_mutex);
             continue;
@@ -2258,7 +2258,7 @@ static int smi_thread(void *arg)
 #endif        
         rpi_set_smi_buffer_48bit(ul_rgb_data);
         rpi_start_smi();
-        usleep(10);
+        //usleep(10);
     }
 }
 
@@ -2276,6 +2276,7 @@ static int video_thread(void *arg)
     int ret;
     AVRational tb = is->video_st->time_base;
     AVRational frame_rate = av_guess_frame_rate(is->ic, is->video_st, NULL);
+    char lcd_content_buf[16];    
 
 #if CONFIG_AVFILTER
     AVFilterGraph *graph = NULL;
@@ -2352,8 +2353,8 @@ static int video_thread(void *arg)
                 log_error("sws_ctx initial failed!\n");
             }
             //refresh resolution in lcd content
-            //sprintf(lcd_content_buf, "%dx%d", is->viddec.avctx->width, is->viddec.avctx->height);
-            //refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_FPS, NULL, lcd_content_buf);
+            sprintf(lcd_content_buf, "%dx%d", is->viddec.avctx->width, is->viddec.avctx->height);
+            refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_FPS, NULL, lcd_content_buf);
         }else{
             //Convert the image from its native format to RGB
             //log_debug("ready to scale\n");
@@ -2384,7 +2385,7 @@ static int video_thread(void *arg)
                     log_info("sws_ctx re-initial ok!\n");
                 }
                 //refresh resolution in lcd content
-                //refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_FPS, NULL, lcd_content_buf);
+                refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_FPS, NULL, lcd_content_buf);
             }
 #if WRITE_FRAME_TO_DISK       // Save the frame to disk
             int i = 0;
@@ -2396,7 +2397,7 @@ static int video_thread(void *arg)
 #endif
         }
         
-        unsigned long frame_layout_start = thread_time_used();
+        //unsigned long frame_layout_start = thread_time_used();
         
         //got RGB32 Frame, ready to generate cabinet layout buffer
         //for(int k = 0; k < 80; k ++){
@@ -2409,10 +2410,10 @@ static int video_thread(void *arg)
                 //printf("A ul_rgb_data[0][%d] = %ld\n", i, ul_rgb_data[0][i]); 
             }
         //}
-        unsigned long frame_layout_end = thread_time_used();
+        /*unsigned long frame_layout_end = thread_time_used();
         yuvtorgb_total_time += (unsigned long)(frame_layout_end-frame_layout_start);    
         yuvtorgb_count += 1;
-        yuvtorgb_avg_time = yuvtorgb_total_time/yuvtorgb_count;
+        yuvtorgb_avg_time = yuvtorgb_total_time/yuvtorgb_count;*/
         //log_debug("yuvtorgb RGB32 use %d ms, avg_time = %d\n", (unsigned long)(frame_layout_end-frame_layout_start), yuvtorgb_avg_time);
 #if 0
         // Debug memory
@@ -2426,6 +2427,7 @@ static int video_thread(void *arg)
             }
         }
 #endif
+        led_fps += 1;
         //log_debug("ready to set smi buffer!\n"); 
         //rpi_set_smi_buffer_48bit(ul_rgb_data);
         //log_debug("end to set smi buffer!\n"); 
@@ -4069,15 +4071,34 @@ int main(int argc, char **argv)
     
     set_frame_br_divisor_value(1);
 
+    //set gpio 26 as out 
+    if(access("/sys/class/gpio/gpio26/direction", F_OK) != 0){
+        system("echo 26 > /sys/class/gpio/export");
+    }
+    system("echo out > /sys/class/gpio/gpio26/direction");
+
     /*start fps counter timer*/
-    //timer_t fps_counter_tid = jset_timer(1, 0, 1, 0, &(fps_counter), 99);
-    //log_info("fps_counter_tid = %d\n", fps_counter_tid);
+    timer_t fps_counter_tid = jset_timer(1, 0, 1, 0, &(fps_counter), 99);
+    log_info("fps_counter_tid = %d\n", fps_counter_tid);
     
     /*check hdmi status*/
     //timer_t detect_screen_tid = jset_timer(1, 0, 3, 0, &(check_hdmi_status), 99);
     
     init_dynload();
-
+   
+    get_machine_role(role);
+    log_debug("role = %s\n", role); 
+    /*init lcd content*/
+    if(strstr(role, "AIO")){
+        set_lcd_active(false); 
+    }else{
+        set_lcd_active(true);
+        init_lcd_content(LEDCLIENT_VERSION, "LCSMI");
+        insert_lcd_content("LED FPS=", "LED Res=", TAG_LCD_INFO, SUB_TAG_FPS);
+        lcd_start_routine();	
+    }
+	
+    
     for(int i = 0; i < LED_PANELS; i ++){
         int ret = cabinet_params_init(i, &led_params.cab_params[i]);
         if( ret < 0){

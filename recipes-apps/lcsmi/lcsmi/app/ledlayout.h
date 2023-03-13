@@ -47,6 +47,7 @@ typedef enum{
 #define LED_WIDTH		        40
 #define LED_HEIGHT		        24
 #define LED_COLOR_RGB_CHANNELS	3
+#define LED_COLOR_ARGB_CHANNELS	4
 
 
 //int led_fps = 0;

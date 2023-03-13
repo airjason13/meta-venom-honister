@@ -16,10 +16,6 @@ int set_lcd_active(bool enable)
 
 int lcd_send_command(int x, int y, char* cmd)
 {
-#if 1
-    return 0;
-#else
-#endif
 	int fd;
 	struct sockaddr_un addr;
 	int ret;
@@ -37,7 +33,7 @@ int lcd_send_command(int x, int y, char* cmd)
 		ok = 0;
 	}
 	//original marked
-	if( ok ){
+	/*if( ok ){
 		memset(&addr, 0, sizeof(addr));
 		addr.sun_family = AF_UNIX;
 		strcpy(addr.sun_path, CLIENT_SOCK_FILE);
@@ -46,7 +42,7 @@ int lcd_send_command(int x, int y, char* cmd)
 			log_error("socket bind fail!\n");
 			ok = 0;
 		}
-	}
+	}*/
 	if (ok) {
 		memset(&addr, 0, sizeof(addr));
 		addr.sun_family = AF_UNIX;
@@ -70,7 +66,7 @@ int lcd_send_command(int x, int y, char* cmd)
 		close(fd);
 	}
 
-	unlink (CLIENT_SOCK_FILE);
+	//unlink (CLIENT_SOCK_FILE);
 	if ( ok ){
 		return 0;
 	}else{
