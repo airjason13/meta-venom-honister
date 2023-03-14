@@ -43,24 +43,27 @@ class I2CLCDSocketServer:
         data.append(tmp_1)
         print("len(data) = ", len(data))
         while True:
-            connection, client_address = self.sock.accept()
-            data_ = connection.recv(1024)
-            print(f"recv data from client '{client_address}': {data_.decode()}")
-            recv_str = data_.decode()
-            recv_str_list = recv_str.split(':')
-            # print("recv_str_list:", recv_str_list)
-            # print("int(recv_str_list[1]) = ", int(recv_str_list[1]))
-            data[int(recv_str_list[1])]['x'] = recv_str_list[0]
-            data[int(recv_str_list[1])]['str'] = recv_str_list[2]
-            # print("data[0] = ", data[0])
-            # print("data[1] = ", data[1])
+            try:
+                connection, client_address = self.sock.accept()
+                data_ = connection.recv(1024)
+                print(f"recv data from client '{client_address}': {data_.decode()}")
+                recv_str = data_.decode()
+                recv_str_list = recv_str.split(':')
+                # print("recv_str_list:", recv_str_list)
+                # print("int(recv_str_list[1]) = ", int(recv_str_list[1]))
+                data[int(recv_str_list[1])]['x'] = recv_str_list[0]
+                data[int(recv_str_list[1])]['str'] = recv_str_list[2]
+                # print("data[0] = ", data[0])
+                # print("data[1] = ", data[1])
 
-            # connection.sendall("hello client".encode())
-            LCD1602.init(0x27, 1)   # init(slave address, background light)
-            # LCD1602.clear()
-            # LCD1602.write(int(recv_str_list[0]), int(recv_str_list[1]),  "                ")
-            LCD1602.write(int(data[0].get("x")), 0, data[0].get("str").rstrip('\x00'))
-            LCD1602.write(int(data[1].get("x")), 1, data[1].get("str").rstrip('\x00'))
+                # connection.sendall("hello client".encode())
+                LCD1602.init(0x27, 1)   # init(slave address, background light)
+                # LCD1602.clear()
+                # LCD1602.write(int(recv_str_list[0]), int(recv_str_list[1]),  "                ")
+                LCD1602.write(int(data[0].get("x")), 0, data[0].get("str").rstrip('\x00'))
+                LCD1602.write(int(data[1].get("x")), 1, data[1].get("str").rstrip('\x00'))
+            except Exception as e:
+                print(e)
 
 
     def __del__(self):

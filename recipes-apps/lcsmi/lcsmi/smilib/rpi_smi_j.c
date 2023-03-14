@@ -12,7 +12,10 @@
 
 #define APA104_SMI_TIMING 	10, 15, 30, 15
 //#define AOS_SMI_TIMING 	    8, 10, 28, 10
-#define AOS_SMI_TIMING 	    10, 10, 28, 10
+//#define AOS_SMI_TIMING 	    10, 10, 28, 10 //333ns 666ns
+//#define AOS_SMI_TIMING 	    10, 10, 25, 10 //290ns 600ns
+//#define AOS_SMI_TIMING 	    10, 10, 23, 10 //290ns 560ns
+#define AOS_SMI_TIMING 	    10, 10, 21, 10 //292ns 542ns
 
 #define LED_D0_PIN	8
 #define LED_NCHANS	16//8
@@ -154,11 +157,15 @@ TXDATA_T tx_test_data[tx_test_len];
 
 
 TXDATA_T *txdata;
-TXDATA_T tx_buffer_24bit[TX_BUFF_LEN_24BIT(CHAN_MAXLEDS)];
-TXDATA_T tx_buffer_48bit[TX_BUFF_LEN_48BIT(CHAN_MAXLEDS)];
+int tx_buf_w_index = 0;
+int tx_buf_r_index = 0;
+#define tx_buf_max_index  1
+TXDATA_T tx_buffer_24bit[tx_buf_max_index][TX_BUFF_LEN_24BIT(CHAN_MAXLEDS)];
+TXDATA_T tx_buffer_48bit[tx_buf_max_index][TX_BUFF_LEN_48BIT(CHAN_MAXLEDS)];
 
 int smi_start = 0;
 pthread_mutex_t smi_lock;
+pthread_mutex_t mem_lock;
 int smi_quit = 0;
 
 void rgb_txdata(int *rgbs, TXDATA_T *txd){
@@ -479,6 +486,7 @@ void smi_terminate(int sig){
 	log_debug("closing---end\n");
     pthread_mutex_unlock(&smi_lock);
     pthread_mutex_destroy(&smi_lock);
+    pthread_mutex_destroy(&mem_lock);
     exit(0);
 }
 
@@ -494,6 +502,10 @@ int get_icled_bits_per_pixel(void){
 int init_rpi_smi(int led_timing_type, int bits_per_pixel){
     if(pthread_mutex_init(&smi_lock, NULL) != 0){
         log_fatal("\nmutex smi_lock init failed!\n");
+        exit(0);
+    }
+    if(pthread_mutex_init(&mem_lock, NULL) != 0){
+        log_fatal("\nmutex mem_lock init failed!\n");
         exit(0);
     }
 	map_devices(); 
@@ -556,15 +568,20 @@ int rpi_set_smi_buffer_48bit(unsigned long ulrgbdata[1000][16]){
     if(i_icled_bits_per_pixel != BITS_PER_PIXEL_48){
         return -EINVAL;
     }
+    pthread_mutex_lock(&mem_lock);
     if(i_icled_bits_per_pixel == BITS_PER_PIXEL_48){
 	    for(int n = 0; n < chan_ledcount; n++){
-		    ul_rgb_txdata(ulrgbdata[n], &tx_buffer_48bit[LED_TX_OSET_48BIT(n)]);
+		    ul_rgb_txdata(ulrgbdata[n], &tx_buffer_48bit[tx_buf_w_index][LED_TX_OSET_48BIT(n)]);
 	    }
-#if LED_NCHAN <= 8
-	    swap_bytes(tx_buffer_48bit, TX_BUFF_SIZE_8CHAN_48BIT(chan_ledcount));
-#endif
-	    memcpy(txdata, tx_buffer_48bit, TX_BUFF_SIZE_16CHAN_48BIT(chan_ledcount));
+        tx_buf_r_index = tx_buf_w_index;
+        tx_buf_w_index += 1;
+        if(tx_buf_w_index >= tx_buf_max_index){
+            tx_buf_w_index = 0;
+        }
+        //log_debug("tx_buf_w_index = %d\n", tx_buf_w_index);
+	    //memcpy(txdata, tx_buffer_48bit[tx_buf_w_index], TX_BUFF_SIZE_16CHAN_48BIT(chan_ledcount));
     }
+    pthread_mutex_unlock(&mem_lock);
     return 0;
 }
 
@@ -584,12 +601,16 @@ int set_test_buffer_48bit(unsigned long color){
 	}
     if(i_icled_bits_per_pixel == BITS_PER_PIXEL_48){
 	    for(int n = 0; n < chan_ledcount; n++){
-		    ul_rgb_txdata(test_ul_rgb_data[n], &tx_buffer_48bit[LED_TX_OSET_48BIT(n)]);
+		    ul_rgb_txdata(test_ul_rgb_data[n], &tx_buffer_48bit[tx_buf_w_index][LED_TX_OSET_48BIT(n)]);
 	    }
         /*printf("txdata = %p\n", txdata);
         printf("tx_buffer_48bit  = %p\n", tx_buffer_48bit);
         printf("TX_BUFF_SIZE_16CHAN_48BIT(chan_ledcount)  = %p\n", 
                     TX_BUFF_SIZE_16CHAN_48BIT(chan_ledcount));*/
+        tx_buf_w_index += 1;
+        if(tx_buf_w_index >= tx_buf_max_index){
+            tx_buf_w_index = 0;
+        }
 	    memcpy(txdata, tx_buffer_48bit, TX_BUFF_SIZE_16CHAN_48BIT(chan_ledcount));
     }
     return 0;
@@ -661,6 +682,9 @@ int rpi_test_smi_rgb_buffer(void){
 }
 
 int rpi_start_smi(void){
+    pthread_mutex_lock(&mem_lock);
+	memcpy(txdata, tx_buffer_48bit[tx_buf_r_index], TX_BUFF_SIZE_16CHAN_48BIT(chan_ledcount));
+    pthread_mutex_unlock(&mem_lock);
     pthread_mutex_lock(&smi_lock);
     if(smi_quit == 1){
         log_fatal("smi_quit!\n");

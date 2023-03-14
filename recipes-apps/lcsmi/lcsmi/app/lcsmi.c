@@ -2226,17 +2226,25 @@ static int smi_thread(void *arg)
     int smi_go_trigger = 0;
     for(;;){
         
-        usleep(10);
+        usleep(1);
+        /*if(smi_trigger == 0){
+            continue;
+        }*/
 #if SMI_DECODE_MUTEX
         SDL_LockMutex(is->smi_decode_mutex);
         if(smi_trigger == 0){
-            usleep(3);
+            usleep(1);
             decoder_trigger = 1;
             SDL_UnlockMutex(is->smi_decode_mutex);
             continue;
         }
         //printf("ready to shoot smi!\n");
         SDL_UnlockMutex(is->smi_decode_mutex);
+#else
+        if(smi_trigger == 0){
+            continue;
+        }
+    
 #endif
         //test smi
         //printf("start smi!\n");
@@ -2256,7 +2264,7 @@ static int smi_thread(void *arg)
         //printf("EEE decoder_trigger = %d\n", decoder_trigger); 
         SDL_UnlockMutex(is->smi_decode_mutex);
 #endif        
-        rpi_set_smi_buffer_48bit(ul_rgb_data);
+        //rpi_set_smi_buffer_48bit(ul_rgb_data);
         rpi_start_smi();
         //usleep(10);
     }
@@ -2431,6 +2439,8 @@ static int video_thread(void *arg)
         //log_debug("ready to set smi buffer!\n"); 
         //rpi_set_smi_buffer_48bit(ul_rgb_data);
         //log_debug("end to set smi buffer!\n"); 
+        rpi_set_smi_buffer_48bit(ul_rgb_data);
+        smi_trigger = 1;
  
 #if SMI_DECODE_MUTEX
         SDL_LockMutex(is->smi_decode_mutex);
@@ -2438,6 +2448,9 @@ static int video_thread(void *arg)
         decoder_trigger = 0;
         smi_trigger = 1;
         SDL_UnlockMutex(is->smi_decode_mutex);
+#else
+        smi_trigger = 1;
+    
 #endif
 #if CONFIG_AVFILTER
         if (   last_w != frame->width
