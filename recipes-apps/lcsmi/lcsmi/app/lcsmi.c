@@ -4165,6 +4165,17 @@ int main(int argc, char **argv)
         exit(0);
     }
 
+
+    /*get ip*/
+    char ip[16];
+    ret = get_ip_of_interface("br0", ip);
+    log_debug("br0 ip:%s\n", ip);
+    char ip_data[16]={0}, id_data[16] = {0};
+    sprintf(ip_data, "%s", ip);
+    sprintf(id_data, "ID=NC");
+    insert_lcd_content(ip_data, "ID=", TAG_LCD_INFO, SUB_TAG_IP_ID);
+
+
     av_log_set_flags(AV_LOG_SKIP_REPEATED);
     parse_loglevel(argc, argv, options);
 

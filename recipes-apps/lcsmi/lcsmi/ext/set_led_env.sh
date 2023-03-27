@@ -188,7 +188,10 @@ elif [[ $ROLE == *$SERVER_TAG* ]];then
     setup_eth0_static.sh &
     run-filemanager.sh &
     launch_pyLedServer.sh &
-    write_tc358743_edid.sh & 
+    write_tc358743_edid.sh &
+    pactl set-port-latency-offset alsa_card.platform-bcm2835_audio.2 analog-output-headphones 15000
+    pulseaudio -k
+    pulseaudio -D
     if [[ $ROLE == *$RA_TAG* ]];then
         ra_client.py &
         check_server_peripheral_devices.sh &

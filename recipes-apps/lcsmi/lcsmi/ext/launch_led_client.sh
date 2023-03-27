@@ -2,7 +2,7 @@
 IP_ARM='192.168.0.3'
 IP_X86='192.168.0.2'
 no_ip_count=0
-no_ip_count_max=15
+no_ip_count_max=10
 ledclient_res=0
 python3 /home/root/i2c_lcd_server/lcd_show.py 0:0:LEDCLIENT
 python3 /home/root/i2c_lcd_server/lcd_show.py 0:1:CONNECTING
@@ -22,7 +22,7 @@ do
 
 		echo "Abr0 ip:"$br0_ip >> /home/root/.ledclient_network.log
 		sleep 1
-		ledclient -fflags nobuffer udp://239.11.11.11:15000 > /dev/null
+		lcsmi -fflags nobuffer udp://239.11.11.11:15000 > /dev/null
 		ledclient_res=$?			
 		echo "ledclient result :"$ledclient_res
 		echo "ledclient result :"$ledclient_res >> /home/root/.ledclient_network.log
