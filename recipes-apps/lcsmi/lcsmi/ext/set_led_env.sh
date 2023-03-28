@@ -192,6 +192,7 @@ elif [[ $ROLE == *$SERVER_TAG* ]];then
     pactl set-port-latency-offset alsa_card.platform-bcm2835_audio.2 analog-output-headphones 15000
     pulseaudio -k
     pulseaudio -D
+    pactl set-default-sink alsa_output.platform-bcm2835_audio.stereo-fallback.2
     if [[ $ROLE == *$RA_TAG* ]];then
         ra_client.py &
         check_server_peripheral_devices.sh &

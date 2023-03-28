@@ -2246,14 +2246,6 @@ static int smi_thread(void *arg)
         }
     
 #endif
-        //test smi
-        //printf("start smi!\n");
-        /*if(icled_bits_per_pixel == BITS_PER_PIXEL_48){
-            int ret = set_test_buffer_48bit(0x000000000000ffff);
-            if(ret < 0){
-                log_debug("set_test_buffer error!\n");
-            }
-        }*/
         
         //rpi_start_smi();
 #if SMI_DECODE_MUTEX
@@ -2330,14 +2322,14 @@ static int video_thread(void *arg)
 #if SMI_DECODE_MUTEX
         SDL_LockMutex(is->smi_decode_mutex);
         if(decoder_trigger != 1){
-            usleep(10);
+            usleep(1);
             SDL_UnlockMutex(is->smi_decode_mutex);
-            usleep(10);
+            usleep(1);
             continue;
         }
         
         SDL_UnlockMutex(is->smi_decode_mutex);
-        usleep(10);
+        //usleep(10);
 #endif
         // test schedule with gpio waveform
         system("echo 1 > /sys/class/gpio/gpio26/value");
@@ -2366,7 +2358,7 @@ static int video_thread(void *arg)
         }else{
             //Convert the image from its native format to RGB
             //log_debug("ready to scale\n");
-#if 0 //time profile fo swscale
+#if 0//time profile fo swscale
             unsigned long start = thread_time_used();
             
             int scale_ret = sws_scale(sws_ctx, (uint8_t const *)frame->data, frame->linesize, 0, is->viddec.avctx->height, frameRGB->data, frameRGB->linesize);    
@@ -2440,7 +2432,6 @@ static int video_thread(void *arg)
         //rpi_set_smi_buffer_48bit(ul_rgb_data);
         //log_debug("end to set smi buffer!\n"); 
         rpi_set_smi_buffer_48bit(ul_rgb_data);
-        smi_trigger = 1;
  
 #if SMI_DECODE_MUTEX
         SDL_LockMutex(is->smi_decode_mutex);
@@ -2452,6 +2443,7 @@ static int video_thread(void *arg)
         smi_trigger = 1;
     
 #endif
+#if 0
 #if CONFIG_AVFILTER
         if (   last_w != frame->width
             || last_h != frame->height
@@ -2508,6 +2500,7 @@ static int video_thread(void *arg)
                 is->frame_last_filter_delay = 0;
             tb = av_buffersink_get_time_base(filt_out);
 #endif
+#endif
             duration = (frame_rate.num && frame_rate.den ? av_q2d((AVRational){frame_rate.den, frame_rate.num}) : 0);
             pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);
             if(HDMI_status == true){
@@ -2516,12 +2509,13 @@ static int video_thread(void *arg)
             
             }
             av_frame_unref(frame);
+#if 0
 #if CONFIG_AVFILTER
             if (is->videoq.serial != is->viddec.pkt_serial)
                 break;
         }
 #endif
-
+#endif
         if (ret < 0)
             goto the_end;
     }
