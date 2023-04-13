@@ -2346,6 +2346,8 @@ static int video_thread(void *arg)
         }
         
         if(sws_ctx == NULL){
+            // test flush packets while first frame out
+            packet_queue_flush(&is->videoq);
             sws_ctx = sws_getContext(is->viddec.avctx->width, is->viddec.avctx->height, is->viddec.avctx->pix_fmt,
                                         is->viddec.avctx->width, is->viddec.avctx->height, swscale_pix_fmt, SWS_BILINEAR, NULL, NULL, NULL);
             log_debug("sws_ctx create!\n");
