@@ -3701,10 +3701,15 @@ static void refresh_loop_wait_event(VideoState *is, SDL_Event *event) {
             SDL_ShowCursor(0);
             cursor_hidden = 1;
         }
-		remaining_time = 0.0;//Jason for no sync, frame direct out
-        /*if (remaining_time > 0.0)
+#if 1
+		//remaining_time = 0.0;//Jason for no sync, frame direct out
+        if (remaining_time > 0.0)
             av_usleep((int64_t)(remaining_time * 1000000.0));
-        remaining_time = REFRESH_RATE;*/
+        remaining_time = REFRESH_RATE;
+#else
+		remaining_time = 0.0;//Jason for no sync, frame direct out
+    
+#endif
         if (is->show_mode != SHOW_MODE_NONE && (!is->paused || is->force_refresh))
             video_refresh(is, &remaining_time);
         SDL_PumpEvents();
