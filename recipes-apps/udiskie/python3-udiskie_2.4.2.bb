@@ -10,12 +10,10 @@ SRC_URI[md5sum] = "cec25c498f66251562936a3862cdf54e"
 SRC_URI[sha256sum] = "1f87ab59cb112915be044fc2ae0b0000a48189af54353793b896ec6c289a0f7c"
 
 S = "${WORKDIR}/udiskie-2.4.2"
-DEPENDS += "\
-          gettext \
-            "
+# DEPENDS += "gettext-native"
 RDEPENDS_${PN} = "python3-pyyaml python3-docopt python3-pygobject"
 
-inherit setuptools3
+inherit setuptools3 gettext
 
 FILES:${PN} += " /usr/share/zsh/ \
                 /usr/share/zsh/site-functions/ \

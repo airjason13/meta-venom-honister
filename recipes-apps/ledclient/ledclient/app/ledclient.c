@@ -2448,6 +2448,10 @@ static int video_thread(void *arg)
     	//log_debug("is->viddec.avctx->width = %d\n", is->viddec.avctx->width);
     	//log_debug("is->viddec.avctx->height = %d\n", is->viddec.avctx->height);
         if(sws_ctx == NULL){
+            // +++++add packet_queue_flush+++++
+            packet_queue_flush(&is->videoq);
+            // -----add packet_queue_flush-----
+            
             sws_ctx = sws_getContext(is->viddec.avctx->width, is->viddec.avctx->height, is->viddec.avctx->pix_fmt, 
                                         is->viddec.avctx->width, is->viddec.avctx->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
 			if(sws_ctx == NULL){

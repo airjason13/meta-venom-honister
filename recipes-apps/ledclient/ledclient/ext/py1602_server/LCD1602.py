@@ -4,8 +4,8 @@ import time
 import smbus
 
 # SMI GPIO need to change i2c bus
-# BUS = smbus.SMBus(5)
-BUS = smbus.SMBus(0)
+# BUS = smbus.SMBus(0)
+BUS = smbus.SMBus(5)
 
 def write_word(addr, data):
     global BLEN
