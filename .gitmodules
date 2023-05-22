@@ -8,3 +8,9 @@
 [submodule "recipes-apps/ledserver/ledserver/pyLed_Server"]
 	path = recipes-apps/ledserver/ledserver/pyLed_Server
 	url = https://github.com/airjason13/pyLed_Server.git
+[submodule "recipes-apps/libyuv/libyuv/libyuv"]
+	path = recipes-apps/libyuv/libyuv/libyuv
+	url = https://chromium.googlesource.com/libyuv/libyuv
+[submodule "recipes-apps/flask-filemanager/flask-filemanager/flask-filemanager/flask-fileexplorer"]
+	path = recipes-apps/flask-filemanager/flask-filemanager/flask-filemanager/flask-fileexplorer
+	url = https://github.com/reallyrehan/flask-fileexplorer.git
