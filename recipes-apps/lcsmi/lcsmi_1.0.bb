@@ -48,6 +48,7 @@ do_install() {
     install -m 755 ext/gen_mac_with_sn.py ${D}/${bindir}
     install -m 755 ext/set_br.sh ${D}/${bindir}
     install -m 755 ext/usb-reset ${D}/${bindir}
+    install -m 755 ext/jreboot.sh ${D}/${bindir}
     install -m 755 ext/set_automount.sh ${D}/${bindir}
     install -m 755 ext/set_panel_autohide.sh ${D}/${bindir}
     install -m 755 ext/setup_hotspot.sh ${D}/${bindir}

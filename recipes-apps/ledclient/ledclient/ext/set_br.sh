@@ -6,7 +6,7 @@ COUNT=0
 python3 /home/root/i2c_lcd_server/lcd_show.py 0:0:LEDCLIENT
 python3 /home/root/i2c_lcd_server/lcd_show.py 0:1:SETUP_ENV_2_1
 
-while [ $COUNT -le $COUNT ]
+while [ $COUNT -le $COUNT_MAX ]
 do
     # The usb power on/off seq does not match microsnow eth hub,
     # only davicom udb dongle could work.

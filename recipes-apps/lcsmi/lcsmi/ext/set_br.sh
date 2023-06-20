@@ -1,35 +1,46 @@
 #!/bin/sh
 
-COUNT_MAX=30
+COUNT_MAX=5
 COUNT=0
 
 python3 /home/root/i2c_lcd_server/lcd_show.py 0:0:LEDCLIENT
 python3 /home/root/i2c_lcd_server/lcd_show.py 0:1:SETUP_ENV_2_1
 
-while [ $COUNT -le $COUNT ]
+
+#if [ -e /sys/class/net/enp1s0u1u1 ];then
+#    echo "got usbtoeth"
+#elif [ -e /sys/class/net/enp1s0u1u1u4 ];then
+#    echo "got usbtoeth"
+#else
+#    reboot
+#fi 
+
+while [ $COUNT -le $COUNT_MAX ]
 do
     # The usb power on/off seq does not match microsnow eth hub,
     # only davicom udb dongle could work.
     # Sometimes the microsnow eth hub could not send the TX packet after power seq 
 	if [ -e /sys/class/net/enp1s0u1u1 ];then
 	    echo "power off usb hub"
-	    uhubctl -l 1-1 -p 3 -a 0
+	    uhubctl -l 1-1 -p 3 -a 0 -r 10
 	    echo "power on usb hub A"
-	    sleep 2
+	    sleep 1
 	    uhubctl -l 1-1 -p 3 -a 1
-	    sleep 4
+	    sleep 1
             sync
 	    echo "power seq end"
 	elif [ -e /sys/class/net/enp1s0u1u1u4 ];then
 	    echo "power off usb hub"
+	    echo 0 > sudo tee /sys/bus/usb/devices/1-1/authorized
+	    #sleep 1
         # if only power off the hub 1-1 port 1, the power will be immediately on, 
         # so we power off the hub 1-1
-	    uhubctl -l 1-1 -a 0
+	    uhubctl -l 1-1 -a 0 -r 100
 	    echo "power on usb hub A"
-	    sleep 4
+	    sleep 1
 	    uhubctl -l 1-1 -a 1
-	    sleep 4
-            sync
+	    sleep 2
+        sync
 	    echo "power seq end"
         fi
 	(( COUNT ++ ))
@@ -44,20 +55,35 @@ do
 		echo "no usb2eth" >> /home/root/br_tmp.txt
 		# test @1215
 	    	echo "power off usb hub"
+	    	echo 0 > sudo tee /sys/bus/usb/devices/1-1/authorized
+		    #sleep 1
         	# if only power off the hub 1-1 port 1, the power will be immediately on, 
         	# so we power off the hub 1-1
-	    	uhubctl -l 1-1 -a 0
+	    	uhubctl -l 1-1 -a 0 -r 100
 	    	echo "power on usb hub A"
-	   	sleep 4
+	   	    sleep 1
 	    	uhubctl -l 1-1 -a 1
-	    	sleep 4
-            	sync
+	    	sleep 2
+            sync
 	    	echo "power seq end"
 	fi
 	echo "COUNT:$COUNT" >> /home/root/br_tmp.txt
 	python3 /home/root/i2c_lcd_server/lcd_show.py 0:0:LEDCLIENT
 	python3 /home/root/i2c_lcd_server/lcd_show.py 0:1:SETUP_ENV_2_1_$COUNT
 done
+
+
+if [ -e /sys/class/net/enp1s0u1u1 ];then
+    echo "got usbtoeth"
+elif [ -e /sys/class/net/enp1s0u1u1u4 ];then
+    echo "got usbtoeth"
+else
+    python3 /home/root/i2c_lcd_server/lcd_show.py 0:0:LEDCLIENT
+    python3 /home/root/i2c_lcd_server/lcd_show.py 0:1:NO_USB2ETH
+    sleep 1
+    sudo sync && sudo reboot -f
+fi
+
 echo "find usb2eth" >> /home/root/br_tmp.txt
 
 python3 /home/root/i2c_lcd_server/lcd_show.py 0:0:LEDCLIENT

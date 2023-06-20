@@ -423,7 +423,7 @@ int rgb_data[1000][16]; // max 1000 icleds per chan, 16 chans, for rgb32 color f
 unsigned long ul_rgb_data[1000][16]; // max 1000 icleds per chans, 16 chans, for argb64 color format
 bool HDMI_status = false;
 char role[256] = {0};
-
+bool reboot_flag = false;
 
 
 #if CONFIG_AVFILTER
@@ -2246,7 +2246,11 @@ static int smi_thread(void *arg)
         }
     
 #endif
-        
+        if(reboot_flag == true){
+            system("pkill -f launch_led_client.sh");
+            system("jreboot.sh");
+            exit(0);
+        } 
         //rpi_start_smi();
 #if SMI_DECODE_MUTEX
         SDL_LockMutex(is->smi_decode_mutex);
@@ -4035,7 +4039,8 @@ void alive_report_test(char *server_ip, char *buf)
     if(strstr(buf, "reboot")){
         //got reboot cmd
         usleep(2000);
-        system("reboot");
+        reboot_flag = true;
+        //system("jreboot.sh");
     }
 }
 
