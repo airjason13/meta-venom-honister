@@ -14,3 +14,6 @@
 [submodule "recipes-apps/flask-filemanager/flask-filemanager/flask-filemanager/flask-fileexplorer"]
 	path = recipes-apps/flask-filemanager/flask-filemanager/flask-filemanager/flask-fileexplorer
 	url = https://github.com/reallyrehan/flask-fileexplorer.git
+[submodule "recipes-apps/smitrigger/smitrigger"]
+	path = recipes-apps/smitrigger/smitrigger
+	url = https://github.com/airjason13/smi_trigger.git
