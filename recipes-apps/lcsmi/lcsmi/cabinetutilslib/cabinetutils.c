@@ -50,6 +50,37 @@ void write_brightness_config_file(int value){
 	system("sync"); 
 }
 
+
+void write_icled_type_config_file(char *type){
+	char config_file_uri[256];
+	FILE *config_file;
+	char cmd[256];
+	sprintf(cmd, "mkdir -p %s", cabinet_params_config_folder);
+	system(cmd);
+	sprintf(config_file_uri, "%s", icled_type_config_file);
+    log_debug("config_file_uri = %s", config_file_uri);
+	config_file = fopen(config_file_uri, "w");
+	fprintf(config_file, "icled_type %s\n", type);
+	fclose(config_file);		
+	system("sync"); 
+}
+
+
+void write_icled_current_gain_config_file(int rgain, int ggain, int bgain){
+	char config_file_uri[256];
+	FILE *config_file;
+	char cmd[256];
+	sprintf(cmd, "mkdir -p %s", cabinet_params_config_folder);
+	system(cmd);
+	sprintf(config_file_uri, "%s", icled_current_gain_config_file);
+    log_debug("config_file_uri = %s", config_file_uri);
+    log_debug("rgain : %d, ggain = %d, bgain = %d\n", rgain, ggain, bgain);
+	config_file = fopen(config_file_uri, "w");
+	fprintf(config_file, "red_gain %d\ngreen_gain %d\nblue_gain %d\n", rgain, ggain, bgain);
+	fclose(config_file);		
+	system("sync"); 
+}
+
 void write_contrast_config_file(int value){
 	char config_file_uri[256];
 	FILE *config_file;
@@ -101,6 +132,46 @@ int get_brightness_from_config(void){
 	fscanf(config_file, "%s %d\n", tagbuf, &value);	
     log_debug("frame brightness : %d", value);
     return value;
+}
+
+int get_icled_type_from_config(char *icled_type){
+	char config_file_uri[256];
+	FILE *config_file;
+    char tagbuf[256];
+	sprintf(config_file_uri, "%s", icled_type_config_file);
+	log_debug("config_file_uri : %s\n", config_file_uri);
+	if( access( config_file_uri, F_OK ) == 0 ) {
+    	// file exists
+	} else {
+    	// file doesn't exist
+		log_info("icled_type config file missing, generate one!\n");
+        write_icled_type_config_file("AOS");
+	}     
+	config_file = fopen(config_file_uri, "r");
+	fscanf(config_file, "%s %s\n", tagbuf, icled_type);	
+    log_debug("icled_type : %s", icled_type);
+    return 0;
+}
+
+int get_icled_current_gain_from_config(int *rgain, int *ggain, int *bgain){
+	char config_file_uri[256];
+	FILE *config_file;
+    char tagbuf[256];
+	sprintf(config_file_uri, "%s", icled_current_gain_config_file);
+	log_debug("config_file_uri : %s\n", config_file_uri);
+	if( access( config_file_uri, F_OK ) == 0 ) {
+    	// file exists
+	} else {
+    	// file doesn't exist
+		log_info("icled_current_gain config file missing, generate one!\n");
+        write_icled_current_gain_config_file(icled_red_current_gain_default, 
+                                                icled_green_current_gain_default, 
+                                                icled_blue_current_gain_default);
+	}     
+	config_file = fopen(config_file_uri, "r");
+	fscanf(config_file, "%s %d\n%s %d\n%s %d\n", tagbuf, rgain, tagbuf, ggain, tagbuf, bgain);	
+    log_debug("rgain : %d, ggain = %d, bgain = %d\n", *rgain, *ggain, *bgain);
+    return 0;
 }
 
 int get_contrast_from_config(void){

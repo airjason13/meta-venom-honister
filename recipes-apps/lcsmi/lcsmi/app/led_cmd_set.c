@@ -151,6 +151,31 @@ int get_cabinet_params(char *data, char *reply_buf){
 	return strlen(reply_buf);	
 }
 
+int get_icled_type(char *data, char *reply_buf){
+    log_debug("data = %s\n", data);
+	int seq_id = 0;
+	char cmd[256];
+	char param[256];
+	sscanf(data, "cmd_seq_id:%d;cmd:%[1-9a-z|^_];param:%s", &seq_id, &cmd, &param);
+	sprintf(reply_buf,"cmd_seq_id:%d;cmd:%s;reply:%s", seq_id, cmd, LEDCLIENT_VERSION);
+    log_debug("reply buf = %s\n", reply_buf);
+	 	
+    return strlen(reply_buf);
+}
+
+int get_icled_current_gain(char *data, char *reply_buf){
+    log_debug("data = %s\n", data);
+	int seq_id = 0;
+	char cmd[256];
+	char param[256];
+	sscanf(data, "cmd_seq_id:%d;cmd:%[1-9a-z|^_];param:%s", &seq_id, &cmd, &param);
+	sprintf(reply_buf,"cmd_seq_id:%d;cmd:%s;reply:%s", seq_id, cmd, LEDCLIENT_VERSION);
+    log_debug("reply buf = %s\n", reply_buf);
+	 	
+    return strlen(reply_buf);
+}
+
+
 int set_led_size(char *data, char *reply_buf){
      log_debug("data = %s\n", data);
 	 int seq_id = 0;
@@ -375,6 +400,30 @@ int set_client_id(char *data, char *reply_buf){
     return strlen(reply_buf);
 }
 
+int set_icled_type(char *data, char *reply_buf){
+	log_debug("data = %s\n", data);
+	int seq_id = 0;
+	char cmd[1024];
+	char param[1024];
+	sscanf(data, "cmd_seq_id:%d;cmd:%[1-9a-z|^_];param:%s", &seq_id, &cmd, &param);
+   
+    sprintf(reply_buf,"cmd_seq_id:%d;cmd=%s;reply:%s", seq_id, cmd, REPLY_OK_TAG);
+    log_debug("reply_buf = %s\n", reply_buf);
+    return strlen(reply_buf); 
+}
+
+int set_icled_current_gain(char *data, char *reply_buf){
+	log_debug("data = %s\n", data);
+	int seq_id = 0;
+	char cmd[1024];
+	char param[1024];
+	sscanf(data, "cmd_seq_id:%d;cmd:%[1-9a-z|^_];param:%s", &seq_id, &cmd, &param);
+   
+    sprintf(reply_buf,"cmd_seq_id:%d;cmd=%s;reply:%s", seq_id, cmd, REPLY_OK_TAG);
+    log_debug("reply_buf = %s\n", reply_buf);
+    return strlen(reply_buf); 
+}
+
 int get_client_id(char *data, char *reply_buf){
 	log_debug("data = %s\n", data);
 	int seq_id = 0;
@@ -548,6 +597,33 @@ int set_udp_cmd_callbacks(void){
 		return ret;
     }
 
+    /*get set_icled_type callback*/
+    ret = register_udp_cmd_callback(CMD_CALLBACK_GET_ICLED_TYPE, &get_icled_type);
+    if(ret != 0){
+        log_error("callback register failed!\n");
+		return ret;
+    }
+    
+    /*get set_icled_type callback*/
+    ret = register_udp_cmd_callback(CMD_CALLBACK_SET_ICLED_TYPE, &set_icled_type);
+    if(ret != 0){
+        log_error("callback register failed!\n");
+		return ret;
+    }
+
+    /*get set_icled_rgb_current_gain callback*/
+    ret = register_udp_cmd_callback(CMD_CALLBACK_GET_ICLED_CURRENT_GAIN, &get_icled_current_gain);
+    if(ret != 0){
+        log_error("callback register failed!\n");
+		return ret;
+    }
+
+    /*get set_icled_rgb_current_gain callback*/
+    ret = register_udp_cmd_callback(CMD_CALLBACK_SET_ICLED_CURRENT_GAIN, &set_icled_current_gain);
+    if(ret != 0){
+        log_error("callback register failed!\n");
+		return ret;
+    }
     /*get set_start_test callback*/
     ret = register_udp_cmd_callback(CMD_CALLBACK_SET_START_TEST, &set_start_test);
     if(ret != 0){
@@ -561,6 +637,8 @@ int set_udp_cmd_callbacks(void){
         log_error("callback register failed!\n");
 		return ret;
     }   
-	
+
+
+    	
 	return 0;
 }

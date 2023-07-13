@@ -17,55 +17,63 @@ typedef int (*cmd_callback_t)(char *, char *);
 
 
 //CMD ID
-#define CMD_CALLBACK_START				    0
-#define CMD_CALLBACK_GET_VERSION 		    0
-#define CMD_CALLBACK_GET_PICO_NUM 		    1
-#define CMD_CALLBACK_GET_CABINET_PARAMS	    2
-#define CMD_CALLBACK_GET_FRAME_BRIGHTNESS   3
-#define CMD_CALLBACK_GET_FRAME_BR_DIVISOR   4
-#define CMD_CALLBACK_GET_FRAME_CONTRAST     5
-#define CMD_CALLBACK_GET_FRAME_GAMMA        6
-#define CMD_CALLBACK_GET_PIXEL_INTERVAL     7
-#define CMD_CALLBACK_GET_CLIENT_ID          8
-#define CMD_CALLBACK_GET_FUNCTION_MAX       8
+#define CMD_CALLBACK_START				            0
+#define CMD_CALLBACK_GET_VERSION 		            0
+#define CMD_CALLBACK_GET_PICO_NUM 		            1
+#define CMD_CALLBACK_GET_CABINET_PARAMS	            2
+#define CMD_CALLBACK_GET_FRAME_BRIGHTNESS           3
+#define CMD_CALLBACK_GET_FRAME_BR_DIVISOR           4
+#define CMD_CALLBACK_GET_FRAME_CONTRAST             5
+#define CMD_CALLBACK_GET_FRAME_GAMMA                6
+#define CMD_CALLBACK_GET_PIXEL_INTERVAL             7
+#define CMD_CALLBACK_GET_CLIENT_ID                  8
+#define CMD_CALLBACK_GET_ICLED_TYPE                 9
+#define CMD_CALLBACK_GET_ICLED_CURRENT_GAIN     10
+#define CMD_CALLBACK_GET_FUNCTION_MAX               10
 
-#define CMD_CALLBACK_SET_LED_SIZE		    CMD_CALLBACK_GET_FUNCTION_MAX + 1 //5
-#define CMD_CALLBACK_SET_CABINET_SIZE	    CMD_CALLBACK_GET_FUNCTION_MAX + 2 //6
-#define CMD_CALLBACK_SET_CABINET_PARAMS	    CMD_CALLBACK_GET_FUNCTION_MAX + 3 //7
-#define CMD_CALLBACK_SET_FRAME_BRIGHTNESS   CMD_CALLBACK_GET_FUNCTION_MAX + 4 //8
-#define CMD_CALLBACK_SET_FRAME_BR_DIVISOR   CMD_CALLBACK_GET_FUNCTION_MAX + 5 //9
-#define CMD_CALLBACK_SET_FRAME_CONTRAST     CMD_CALLBACK_GET_FUNCTION_MAX + 6 //9
-#define CMD_CALLBACK_SET_FRAME_GAMMA        CMD_CALLBACK_GET_FUNCTION_MAX + 7 //10
-#define CMD_CALLBACK_SET_PIXEL_INTERVAL     CMD_CALLBACK_GET_FUNCTION_MAX + 8 //11
-#define CMD_CALLBACK_SET_CLIENT_ID          CMD_CALLBACK_GET_FUNCTION_MAX + 9 //12
-#define CMD_CALLBACK_SET_START_TEST         CMD_CALLBACK_GET_FUNCTION_MAX + 10 //13
-#define CMD_CALLBACK_SPEC_TEST			    CMD_CALLBACK_GET_FUNCTION_MAX + 11 //14
+#define CMD_CALLBACK_SET_LED_SIZE		            CMD_CALLBACK_GET_FUNCTION_MAX + 1 //11
+#define CMD_CALLBACK_SET_CABINET_SIZE	            CMD_CALLBACK_GET_FUNCTION_MAX + 2 //12
+#define CMD_CALLBACK_SET_CABINET_PARAMS	            CMD_CALLBACK_GET_FUNCTION_MAX + 3 //13
+#define CMD_CALLBACK_SET_FRAME_BRIGHTNESS           CMD_CALLBACK_GET_FUNCTION_MAX + 4 //14
+#define CMD_CALLBACK_SET_FRAME_BR_DIVISOR           CMD_CALLBACK_GET_FUNCTION_MAX + 5 //15
+#define CMD_CALLBACK_SET_FRAME_CONTRAST             CMD_CALLBACK_GET_FUNCTION_MAX + 6 //16
+#define CMD_CALLBACK_SET_FRAME_GAMMA                CMD_CALLBACK_GET_FUNCTION_MAX + 7 //17
+#define CMD_CALLBACK_SET_PIXEL_INTERVAL             CMD_CALLBACK_GET_FUNCTION_MAX + 8 //18
+#define CMD_CALLBACK_SET_CLIENT_ID                  CMD_CALLBACK_GET_FUNCTION_MAX + 9 //19
+#define CMD_CALLBACK_SET_ICLED_TYPE                 CMD_CALLBACK_GET_FUNCTION_MAX + 10 //20
+#define CMD_CALLBACK_SET_ICLED_CURRENT_GAIN     CMD_CALLBACK_GET_FUNCTION_MAX + 11 //20
+#define CMD_CALLBACK_SET_START_TEST         CMD_CALLBACK_GET_FUNCTION_MAX + 12 //13
+#define CMD_CALLBACK_SPEC_TEST			    CMD_CALLBACK_GET_FUNCTION_MAX + 13 //14
 
 #define CMD_CALLBACK_MAX				CMD_CALLBACK_SPEC_TEST
 #define CMD_CALLBACK_SIZE				CMD_CALLBACK_MAX + 1
 
 //CMD_NAME_TAG
-#define CMD_TAG_GET_VERSION				"get_version"
-#define CMD_TAG_GET_PICO_NUM			"get_pico_num"
-#define CMD_TAG_GET_CABINET_PARAMS		"get_cabinet_params"
-#define CMD_TAG_GET_FRAME_BRIGHTNESS    "get_frame_brightness"
-#define CMD_TAG_GET_FRAME_BR_DIVISOR    "get_frame_br_divisor"
-#define CMD_TAG_GET_FRAME_CONTRAST      "get_frame_contrast"
-#define CMD_TAG_GET_FRAME_GAMMA         "get_frame_gamma"
-#define CMD_TAG_GET_PIXEL_INTERVAL      "get_pixel_interval"
-#define CMD_TAG_GET_CLIENT_ID           "get_client_id"
+#define CMD_TAG_GET_VERSION				            "get_version"
+#define CMD_TAG_GET_PICO_NUM			            "get_pico_num"
+#define CMD_TAG_GET_CABINET_PARAMS		            "get_cabinet_params"
+#define CMD_TAG_GET_FRAME_BRIGHTNESS                "get_frame_brightness"
+#define CMD_TAG_GET_FRAME_BR_DIVISOR                "get_frame_br_divisor"
+#define CMD_TAG_GET_FRAME_CONTRAST                  "get_frame_contrast"
+#define CMD_TAG_GET_FRAME_GAMMA                     "get_frame_gamma"
+#define CMD_TAG_GET_PIXEL_INTERVAL                  "get_pixel_interval"
+#define CMD_TAG_GET_CLIENT_ID                       "get_client_id"
+#define CMD_TAG_GET_ICLED_TYPE                      "get_icled_type"
+#define CMD_TAG_GET_ICLED_CURRENT_GAIN              "get_icled_current_gain"
 
-#define CMD_TAG_SET_LED_SIZE			"set_led_size"
-#define CMD_TAG_SET_CABINET_SIZE		"set_cabinet_size"
-#define CMD_TAG_SET_CABINET_PARAMS		"set_cabinet_params"
-#define CMD_TAG_SET_FRAME_BRIGHTNESS    "set_frame_brightness"
-#define CMD_TAG_SET_FRAME_BR_DIVISOR    "set_frame_br_divisor"
-#define CMD_TAG_SET_FRAME_CONTRAST      "set_frame_contrast"
-#define CMD_TAG_SET_FRAME_GAMMA         "set_frame_gamma"
-#define CMD_TAG_SET_PIXEL_INTERVAL      "set_pixel_interval"
-#define CMD_TAG_SET_CLIENT_ID           "set_client_id"
-#define CMD_TAG_SET_START_TEST          "set_test_color"
-#define CMD_TAG_SPEC_TEST				"spec_test"
+#define CMD_TAG_SET_LED_SIZE			            "set_led_size"
+#define CMD_TAG_SET_CABINET_SIZE		            "set_cabinet_size"
+#define CMD_TAG_SET_CABINET_PARAMS		            "set_cabinet_params"
+#define CMD_TAG_SET_FRAME_BRIGHTNESS                "set_frame_brightness"
+#define CMD_TAG_SET_FRAME_BR_DIVISOR                "set_frame_br_divisor"
+#define CMD_TAG_SET_FRAME_CONTRAST                  "set_frame_contrast"
+#define CMD_TAG_SET_FRAME_GAMMA                     "set_frame_gamma"
+#define CMD_TAG_SET_PIXEL_INTERVAL                  "set_pixel_interval"
+#define CMD_TAG_SET_CLIENT_ID                       "set_client_id"
+#define CMD_TAG_SET_ICLED_TYPE                      "set_icled_type"
+#define CMD_TAG_SET_ICLED_CURRENT_GAIN              "set_icled_current_gain"
+#define CMD_TAG_SET_START_TEST                      "set_test_color"
+#define CMD_TAG_SPEC_TEST				            "spec_test"
 
 
 #define MAX_CMD_NAME					64

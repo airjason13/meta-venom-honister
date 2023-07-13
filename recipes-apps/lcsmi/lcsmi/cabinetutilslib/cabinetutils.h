@@ -13,6 +13,13 @@
 #define brightness_config_file "/home/root/.cabinets_params/.brightness_config"
 #define contrast_config_file "/home/root/.cabinets_params/.contrast_config"
 #define gamma_config_file "/home/root/.cabinets_params/.gamma_config"
+#define icled_type_config_file "/home/root/.cabinets_params/.icled_type_config"
+#define icled_current_gain_config_file "/home/root/.cabinets_params/.icled_current_gain_config"
+
+
+#define icled_red_current_gain_default      3
+#define icled_green_current_gain_default    3
+#define icled_blue_current_gain_default     3
 
 typedef struct cabinet_params{
 	unsigned int port_id; 

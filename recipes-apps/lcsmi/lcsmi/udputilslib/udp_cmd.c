@@ -14,6 +14,8 @@ char CMD_NAME_TAG[CMD_CALLBACK_MAX][MAX_CMD_NAME] = {
      CMD_TAG_GET_FRAME_GAMMA,
      CMD_TAG_GET_PIXEL_INTERVAL,
      CMD_TAG_GET_CLIENT_ID,
+     CMD_TAG_GET_ICLED_TYPE,
+     CMD_TAG_GET_ICLED_CURRENT_GAIN,
 	 CMD_TAG_SET_LED_SIZE,
 	 CMD_TAG_SET_CABINET_SIZE,
 	 CMD_TAG_SET_CABINET_PARAMS,
@@ -23,6 +25,8 @@ char CMD_NAME_TAG[CMD_CALLBACK_MAX][MAX_CMD_NAME] = {
      CMD_TAG_SET_FRAME_GAMMA,
      CMD_TAG_SET_PIXEL_INTERVAL,
      CMD_TAG_SET_CLIENT_ID,
+     CMD_TAG_SET_ICLED_TYPE,
+     CMD_TAG_SET_ICLED_CURRENT_GAIN,
      CMD_TAG_SET_START_TEST,
 	 CMD_TAG_SPEC_TEST,
 };
@@ -69,7 +73,6 @@ void *udp_cmd_thread(void *data){
     addr.sin_port = htons(ucps->port);
 
     // bind to receive address
-    //
     if (bind(fd, (struct sockaddr*) &addr, sizeof(addr)) < 0) {
         perror("bind");
         return;

@@ -4070,11 +4070,19 @@ int main(int argc, char **argv)
 {
     int flags;
     VideoState *is;
+    char icled_type[256] = "";
+    int red_current_gain, green_current_gain, blue_current_gain;
 
     int enable_log_file = log_init(true, LOG_PREFIX_ID);
     if(enable_log_file != 0){
         log_fatal("ERROR!Can't enable log file\n");
     }
+
+    get_icled_type_from_config(icled_type);
+    log_debug("icled_type = %s\n", icled_type);
+
+    get_icled_current_gain_from_config(&red_current_gain, &green_current_gain, &blue_current_gain);
+    log_debug("rgain = %d, ggain = %d, bgain = %d\n", red_current_gain, green_current_gain, blue_current_gain);
 
     log_debug("init frame_brightness");
     init_frame_brightness();
@@ -4118,7 +4126,7 @@ int main(int argc, char **argv)
         if( ret < 0){
             continue;
         }
-        log_debug("led_params.cab_params : 0x%x\n", led_params.cab_params[i]);
+        /*log_debug("led_params.cab_params : 0x%x\n", led_params.cab_params[i]);
         log_debug("led_params.cab_params[%d].cabinet_width = %d", i,
                     led_params.cab_params[i].cabinet_width);
         log_debug("led_params.cab_params[%d].cabinet_height = %d", i,
@@ -4128,7 +4136,7 @@ int main(int argc, char **argv)
         log_debug("led_params.cab_params[%d].start_y = %d", i,
                     led_params.cab_params[i].start_y);
         log_debug("led_params.cab_params[%d].layout_type = %d", i,
-                    led_params.cab_params[i].layout_type);
+                    led_params.cab_params[i].layout_type);*/
 
     }
 
