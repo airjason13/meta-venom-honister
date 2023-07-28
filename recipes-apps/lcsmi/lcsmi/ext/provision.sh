@@ -9,7 +9,7 @@ MACHINE_TYPE_FILE="/tmp/piusb/machine_type"
 if [ -f "$PROVISION_FILE" ];then
    echo "provisioned" 
 else
-    fdisk-mmcblk0p2.sh
+    # fdisk-mmcblk0p2.sh #do not expand
     while read line; do
         if [[ $line == *"raspberry4"* ]];then
             sed  -i "s|raspberrypi4-64|${HOSTNAME_PREFIX}|"   /etc/hostname  

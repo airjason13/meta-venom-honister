@@ -7,6 +7,14 @@ SERVER_TAG='Server'
 AIO_TAG='AIO'
 PLAYER_TAG='Player'
 TESTER_TAG='Tester'
+
+#fsck.vfat -a /dev/mmcblk0p1
+dosfsck -w -r -l -a -v -t /dev/mmcblk0p1
+
+tune2fs -c 1 /dev/mmcblk0p2
+
+fstrim --fstab --verbose
+
 #for auto-mount test
 udiskie &
 

@@ -14,6 +14,10 @@
 #define IP_BUF_SIZE				64
 
 typedef int (*cmd_callback_t)(char *, char *);
+typedef int (*check_icled_type_diff_callback_t)(char *);
+
+#define TAG_ICLED_TYPE_AOS                          "AOS"
+#define TAG_ICLED_TYPE_ANAPEX                       "ANAPEX"
 
 
 //CMD ID

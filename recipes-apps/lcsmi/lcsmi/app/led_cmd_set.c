@@ -123,19 +123,19 @@ int get_pico_num(char *data, char *reply_buf){
 }
 
 int get_cabinet_params(char *data, char *reply_buf){
-    log_debug("data = %s\n", data);
+    //log_debug("data = %s\n", data);
 	int seq_id = 0;
 	char cmd[256];
 	char param[256];
 	char tmp[256];
 	int port_id;
 	sscanf(data, "cmd_seq_id:%d;cmd:%[1-9a-z|^_];param:%s", &seq_id, &cmd, &param);
-	log_debug("seq_id = %d\n", seq_id);
-	log_debug("cmd = %s\n", cmd);
-	log_debug("param : %s\n", param);
+	//log_debug("seq_id = %d\n", seq_id);
+	//log_debug("cmd = %s\n", cmd);
+	//log_debug("param : %s\n", param);
 	sscanf(param, "%[0-9a-z|^_]:%d", &tmp, &port_id);
 	
-	log_debug("port_id = %d\n", port_id);
+	//log_debug("port_id = %d\n", port_id);
 
 	int cabinet_width = led_params.cab_params[port_id].cabinet_width;
 	int cabinet_height = led_params.cab_params[port_id].cabinet_height;
@@ -157,6 +157,7 @@ int get_icled_type(char *data, char *reply_buf){
 	char cmd[256];
 	char param[256];
 	sscanf(data, "cmd_seq_id:%d;cmd:%[1-9a-z|^_];param:%s", &seq_id, &cmd, &param);
+    //need to be implement
 	sprintf(reply_buf,"cmd_seq_id:%d;cmd:%s;reply:%s", seq_id, cmd, LEDCLIENT_VERSION);
     log_debug("reply buf = %s\n", reply_buf);
 	 	
@@ -406,7 +407,15 @@ int set_icled_type(char *data, char *reply_buf){
 	char cmd[1024];
 	char param[1024];
 	sscanf(data, "cmd_seq_id:%d;cmd:%[1-9a-z|^_];param:%s", &seq_id, &cmd, &param);
-   
+    if(!strcmp(param, TAG_ICLED_TYPE_AOS) && !strcmp(param, TAG_ICLED_TYPE_ANAPEX)){
+        sprintf(reply_buf,"cmd_seq_id:%d;cmd=%s;reply:%s", seq_id, cmd, REPLY_NG_TAG);
+        log_debug("reply_buf = %s\n", reply_buf);
+        return strlen(reply_buf); 
+
+    }
+    // write icled_type_config
+    write_icled_type_config_file(param);  
+ 
     sprintf(reply_buf,"cmd_seq_id:%d;cmd=%s;reply:%s", seq_id, cmd, REPLY_OK_TAG);
     log_debug("reply_buf = %s\n", reply_buf);
     return strlen(reply_buf); 

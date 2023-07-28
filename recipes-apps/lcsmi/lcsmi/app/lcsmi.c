@@ -419,11 +419,12 @@ static const struct TextureFormatEntry {
 };
 
 ledparams_t led_params;
-int rgb_data[1000][16]; // max 1000 icleds per chan, 16 chans, for rgb32 color format
+unsigned int rgb_data[1000][16]; // max 1000 icleds per chan, 16 chans, for rgb32 color format
 unsigned long ul_rgb_data[1000][16]; // max 1000 icleds per chans, 16 chans, for argb64 color format
 bool HDMI_status = false;
 char role[256] = {0};
 bool reboot_flag = false;
+char icled_type[256] = "";
 
 
 #if CONFIG_AVFILTER
@@ -2223,6 +2224,7 @@ static int smi_thread(void *arg)
 {
     VideoState *is = arg;
     int icled_bits_per_pixel = get_icled_bits_per_pixel();
+    int i_icled_timing_type = get_icled_timing_type();
     int smi_go_trigger = 0;
     for(;;){
         
@@ -2261,7 +2263,7 @@ static int smi_thread(void *arg)
         SDL_UnlockMutex(is->smi_decode_mutex);
 #endif        
         //rpi_set_smi_buffer_48bit(ul_rgb_data);
-        rpi_start_smi();
+        rpi_start_smi(icled_bits_per_pixel, false, i_icled_timing_type);
         //usleep(10);
     }
 }
@@ -2315,9 +2317,16 @@ static int video_thread(void *arg)
     int icled_bits_per_pixel = get_icled_bits_per_pixel();
  
     if(icled_bits_per_pixel == BITS_PER_PIXEL_48){
+        log_debug("smi 48bit\n");
         int ret = set_test_buffer_48bit(0x000000000000ffff);
         if(ret < 0){
             log_debug("set_test_buffer error!\n");
+        }
+    }else if(icled_bits_per_pixel == BITS_PER_PIXEL_24){
+        log_debug("smi 24bit\n");
+        int ret = set_test_buffer_24bit(0x000000ff);
+        if(ret < 0){
+            log_debug("set_test_buffer error\n");
         }
     }
     decoder_trigger = 1;
@@ -2421,23 +2430,15 @@ static int video_thread(void *arg)
         yuvtorgb_count += 1;
         yuvtorgb_avg_time = yuvtorgb_total_time/yuvtorgb_count;*/
         //log_debug("yuvtorgb RGB32 use %d ms, avg_time = %d\n", (unsigned long)(frame_layout_end-frame_layout_start), yuvtorgb_avg_time);
-#if 0
-        // Debug memory
-        if(icled_bits_per_pixel == BITS_PER_PIXEL_48){
-            for(int j = 0; j < 16; j++){
-                printf("ul_rgb_data[0][%d] = %lx\n", j, ul_rgb_data[0][j]); 
-            }
-        }else if(icled_bits_per_pixel == BITS_PER_PIXEL_24){
-            for(int j = 0; j < 16; j++){
-                printf("rgb_data[0][%d] = %x\n", j, rgb_data[0][j]); 
-            }
-        }
-#endif
         led_fps += 1;
-        //log_debug("ready to set smi buffer!\n"); 
-        //rpi_set_smi_buffer_48bit(ul_rgb_data);
-        //log_debug("end to set smi buffer!\n"); 
-        rpi_set_smi_buffer_48bit(ul_rgb_data);
+        log_debug("rpi_set_smi_buffer!\n");
+        if(icled_bits_per_pixel == BITS_PER_PIXEL_48){
+            rpi_set_smi_buffer_48bit(ul_rgb_data);
+        }else if(icled_bits_per_pixel == BITS_PER_PIXEL_24){
+            rpi_set_smi_buffer_24bit(rgb_data);
+        }else{
+            log_fatal("unknow icled_bits_per_pixel : %d", icled_bits_per_pixel);
+        }
  
 #if SMI_DECODE_MUTEX
         SDL_LockMutex(is->smi_decode_mutex);
@@ -4064,13 +4065,24 @@ int get_machine_role(char *role_tmp)
     return 0;
 }
 
+int check_icled_type_different(char *msgbuf)
+{
+    log_info("msgbuf :%s, icled_type :%s\n", msgbuf, icled_type);
+    if(strstr(msgbuf, icled_type)){
+        log_info("icled_type looks the same with cmd!\n");
+    }else{
+        log_info("icled_type looks diff with cmd!\n");
+        exit(0);
+    }
+    return 0;
+}
 
 /* Called from the main */
 int main(int argc, char **argv)
 {
     int flags;
     VideoState *is;
-    char icled_type[256] = "";
+    //char icled_type[256] = "";
     int red_current_gain, green_current_gain, blue_current_gain;
 
     int enable_log_file = log_init(true, LOG_PREFIX_ID);
@@ -4140,13 +4152,16 @@ int main(int argc, char **argv)
 
     }
 
+    /* register check_icled_type_diff first*/
+    register_check_icled_type_diff(&check_icled_type_different);
+
     /*initial udpmr test*/
     /*initial callback test*/
     int ret = register_udpmr_callback(CALLBACK_GET_VERSION, &get_version);
     if(ret != 0){
-	log_error("callback register failed!\n");
+	    log_error("callback register failed!\n");
     }else{
-	log_info("callback register ok!\n");
+	    log_info("callback register ok!\n");
     }
     /*initial udpmr test*/
     led_params.udpmr_tid = udpmr_init("239.11.11.11", 9898);
@@ -4164,11 +4179,15 @@ int main(int argc, char **argv)
     register_udpbr_callback(UDPBR_CALLBACK_SERVER_ALIVE_REPORT, alive_report_test);
     led_params.udpbr_tid = udpbr_init(11334);
 
-    
-    //48bits
-    int smi_ret = init_rpi_smi(ICLED_SMI_TIMING_TYPE_AOS, BITS_PER_PIXEL_48);
-    //24bits 
-    //int smi_ret = init_rpi_smi(ICLED_SMI_TIMING_TYPE_AOS, BITS_PER_PIXEL_24);
+    /* initial smi for AOS/ANAPEX */
+    int smi_ret = -1;
+    if(strstr(icled_type, "AOS")){
+        //48bits
+        smi_ret = init_rpi_smi(ICLED_SMI_TIMING_TYPE_AOS, BITS_PER_PIXEL_48, false);
+    }else if(strstr(icled_type, "ANAPEX")){
+        //24bits 
+        smi_ret = init_rpi_smi(ICLED_SMI_TIMING_TYPE_APA104, BITS_PER_PIXEL_24, false);
+    }
     if(smi_ret < 0){
         smi_terminate(0);
         exit(0);
