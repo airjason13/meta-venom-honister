@@ -96,8 +96,8 @@ int framergb32_to_ledargb32(AVFrame *pFrame, struct cabinet_params *params, int 
 	int start_x = params->start_x;
 	int start_y = params->start_y;
 	unsigned int buf_size = (width*height*channel_count);
-	//unsigned char *buf = malloc(buf_size);
-	unsigned char *buf = rgbdata;
+	unsigned char *buf = malloc(buf_size);
+	//unsigned char *buf = rgbdata;
 	int y = 0,x = 0;
 	int i = 0;
 	int write_len = 0;
@@ -407,11 +407,26 @@ int framergb32_to_ledargb32(AVFrame *pFrame, struct cabinet_params *params, int 
 		// frame_br_divisor : 0~100
 		buf[i] =(char)((int)buf[i]*frame_brightness/(frame_br_divisor*100));
 		buf[i] = g_GammaLut[buf[i]];
+		//buf[i] = 0xff;
+        //log_debug("test 0xff offset = %d\n", offset);
 	}
     //log_debug("offset = %d\n", offset);
-    /*for(int j = 0;j < offset/8; j++ ){
-        *(ulrgbdata[j] + params->port_id) = ((buf[j+1]*256) << 24) | ((buf[j+2]*256) << 16) | (buf[j+3]*256);
-    }*/
+    for(int j = 0;j < offset/4; j++ ){
+#if 1
+        *(unsigned int *)(rgbdata[j] + params->port_id) = 
+                            ((unsigned char)(buf[4*j + 1]) << 16) | /*green*/
+                            ((unsigned char)(buf[4*j + 2]) << 8) |/*red*/
+                            ((unsigned char)buf[4*j+ 0]) << 0;          /*blue*/
+#else
+        *(unsigned int *)(rgbdata[j] + params->port_id) = 
+                            ((unsigned char)(0x00) << 16) | /*green*/
+                            ((unsigned char)(0xff) << 8) |/*red*/
+                            ((unsigned char)(0x00)) << 0;          /*blue*/
+    
+#endif
+    }
+    free(buf);
+	free(fake_pixel_buf);
 	
 	return 0;
 }

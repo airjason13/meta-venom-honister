@@ -425,7 +425,8 @@ bool HDMI_status = false;
 char role[256] = {0};
 bool reboot_flag = false;
 char icled_type[256] = "";
-
+int red_current_gain, green_current_gain, blue_current_gain;
+int set_current_gain_count = -1;
 
 #if CONFIG_AVFILTER
 static int opt_add_vfilter(void *optctx, const char *opt, const char *arg)
@@ -2219,6 +2220,26 @@ unsigned long thread_time_used(){
     return (unsigned long)t.tv_sec*1000 + t.tv_usec/1000;
 }
 
+int set_current_gain_buffer(int i_bpp, int rgain, int ggain, int bgain)
+{
+    int m = 0;
+    int n = 0;
+    if(i_bpp == BITS_PER_PIXEL_24){
+        unsigned int ui_rgb_gain = rgain << 16 | ggain << 8 | bgain << 0;
+        for(m = 0; m < 15; m ++){
+            for(n = 0; n < 999; n ++){
+                rgb_data[n][m] = ui_rgb_gain;
+            }
+        }
+    }else if(i_bpp == BITS_PER_PIXEL_48){
+        log_error("not implemented yet!\n");
+        return -1;
+    }else{
+        log_error("unknown bpp!\n");
+        return -1;
+    }
+    return 0;
+}
 
 static int smi_thread(void *arg)
 {
@@ -2258,13 +2279,23 @@ static int smi_thread(void *arg)
         SDL_LockMutex(is->smi_decode_mutex);
         decoder_trigger = 1;
         smi_trigger = 0;        
-        //printf("EEE smi_trigger = %d\n", smi_trigger); 
-        //printf("EEE decoder_trigger = %d\n", decoder_trigger); 
+        if(set_current_gain_count > 0){
+            set_current_gain_count --;
+        }
         SDL_UnlockMutex(is->smi_decode_mutex);
-#endif        
-        //rpi_set_smi_buffer_48bit(ul_rgb_data);
+#endif   
+             
+#if 1 
+        if(set_current_gain_count > 0){
+            log_debug("__________________set current gain!______________\n");       
+            rpi_start_smi(icled_bits_per_pixel, true, i_icled_timing_type); 
+        }else{
+            rpi_start_smi(icled_bits_per_pixel, false, i_icled_timing_type);
+        }
+#else
         rpi_start_smi(icled_bits_per_pixel, false, i_icled_timing_type);
-        //usleep(10);
+            
+#endif
     }
 }
 
@@ -2320,18 +2351,17 @@ static int video_thread(void *arg)
         log_debug("smi 48bit\n");
         int ret = set_test_buffer_48bit(0x000000000000ffff);
         if(ret < 0){
-            log_debug("set_test_buffer error!\n");
+            log_fatal("set_test_buffer error!\n");
         }
     }else if(icled_bits_per_pixel == BITS_PER_PIXEL_24){
         log_debug("smi 24bit\n");
         int ret = set_test_buffer_24bit(0x000000ff);
         if(ret < 0){
-            log_debug("set_test_buffer error\n");
+            log_fatal("set_test_buffer error\n");
         }
     }
     decoder_trigger = 1;
     for (;;) {
-
 #if SMI_DECODE_MUTEX
         SDL_LockMutex(is->smi_decode_mutex);
         if(decoder_trigger != 1){
@@ -2350,6 +2380,7 @@ static int video_thread(void *arg)
         if (ret < 0)
             goto the_end;
         if (!ret){
+            log_debug("get_video_frame ret < 0\n");
 #if SMI_DECODE_MUTEX
             SDL_LockMutex(is->smi_decode_mutex);
             decoder_trigger = 1;
@@ -2400,6 +2431,7 @@ static int video_thread(void *arg)
                     log_info("sws_ctx re-initial ok!\n");
                 }
                 //refresh resolution in lcd content
+                sprintf(lcd_content_buf, "%dx%d", is->viddec.avctx->width, is->viddec.avctx->height);
                 refresh_lcd_content(TAG_LCD_INFO, SUB_TAG_FPS, NULL, lcd_content_buf);
             }
 #if WRITE_FRAME_TO_DISK       // Save the frame to disk
@@ -2415,7 +2447,16 @@ static int video_thread(void *arg)
         //unsigned long frame_layout_start = thread_time_used();
         
         //got RGB32 Frame, ready to generate cabinet layout buffer
-        //for(int k = 0; k < 80; k ++){
+        if(set_current_gain_count > 0){
+                if(icled_bits_per_pixel == BITS_PER_PIXEL_48){
+                    log_debug("current_gain not support 48bit!\n");
+                    //framergb32_to_ledargb64(frameRGB, &(led_params.cab_params[i]), 4, is->viddec.avctx->width, is->viddec.avctx->height, ul_rgb_data);
+                }else if(icled_bits_per_pixel == BITS_PER_PIXEL_24){
+                    log_debug("+++++++++++++set current gain buffer+++++++++++++++++\n");
+                    set_current_gain_buffer(icled_bits_per_pixel, red_current_gain, green_current_gain, blue_current_gain);
+                }
+        }else{
+            log_debug("--------------normal rgb frame------------------------\n");
             for(int i = 0; i < LED_PANELS; i++){
                 if(icled_bits_per_pixel == BITS_PER_PIXEL_48){
                     framergb32_to_ledargb64(frameRGB, &(led_params.cab_params[i]), 4, is->viddec.avctx->width, is->viddec.avctx->height, ul_rgb_data);
@@ -2424,7 +2465,12 @@ static int video_thread(void *arg)
                 }
                 //printf("A ul_rgb_data[0][%d] = %ld\n", i, ul_rgb_data[0][i]); 
             }
-        //}
+            /*for(int p = 0; p < 1000; p ++){
+                for(int r = 0; r < 16; r++){
+                    rgb_data[p][r] = 0x0000ff00;//0x40404040;
+                }
+            }*/
+        }
         /*unsigned long frame_layout_end = thread_time_used();
         yuvtorgb_total_time += (unsigned long)(frame_layout_end-frame_layout_start);    
         yuvtorgb_count += 1;
@@ -2432,12 +2478,22 @@ static int video_thread(void *arg)
         //log_debug("yuvtorgb RGB32 use %d ms, avg_time = %d\n", (unsigned long)(frame_layout_end-frame_layout_start), yuvtorgb_avg_time);
         led_fps += 1;
         log_debug("rpi_set_smi_buffer!\n");
-        if(icled_bits_per_pixel == BITS_PER_PIXEL_48){
-            rpi_set_smi_buffer_48bit(ul_rgb_data);
-        }else if(icled_bits_per_pixel == BITS_PER_PIXEL_24){
-            rpi_set_smi_buffer_24bit(rgb_data);
+        if(set_current_gain_count > 0){
+            if(icled_bits_per_pixel == BITS_PER_PIXEL_48){
+                rpi_set_smi_buffer_48bit(ul_rgb_data);
+            }else if(icled_bits_per_pixel == BITS_PER_PIXEL_24){
+                rpi_set_smi_buffer_24bit(rgb_data);
+            }else{
+                log_fatal("unknow icled_bits_per_pixel : %d", icled_bits_per_pixel);
+            } 
         }else{
-            log_fatal("unknow icled_bits_per_pixel : %d", icled_bits_per_pixel);
+            if(icled_bits_per_pixel == BITS_PER_PIXEL_48){
+                rpi_set_smi_buffer_48bit(ul_rgb_data);
+            }else if(icled_bits_per_pixel == BITS_PER_PIXEL_24){
+                rpi_set_smi_buffer_24bit(rgb_data);
+            }else{
+                log_fatal("unknow icled_bits_per_pixel : %d", icled_bits_per_pixel);
+            }
         }
  
 #if SMI_DECODE_MUTEX
@@ -4077,13 +4133,43 @@ int check_icled_type_different(char *msgbuf)
     return 0;
 }
 
+int check_icled_current_gain_different(char *msgbuf){
+    log_info("msgbuf :%s\n", msgbuf);
+    int seq_id = 0;
+    char cmd[64];
+    char param[1024];
+    int rgain, ggain, bgain;
+    int i_icled_timing_type = get_icled_timing_type();
+    int icled_bits_per_pixel = get_icled_bits_per_pixel();
+    sscanf(msgbuf, "cmd_seq_id:%d;cmd:%[1-9a-z|^_];param:%s", &seq_id, &cmd, &param);
+    log_debug("param : %s", param);
+    sscanf(param, "rgain=%d,ggain=%d,bgain=%d", &rgain, &ggain, &bgain);
+    log_debug("rgain = %d, ggain = %d, bgain = %d\n", rgain, ggain, bgain);
+    if((rgain != red_current_gain)||(ggain != green_current_gain)||(bgain != blue_current_gain)){   
+        red_current_gain = rgain;
+        green_current_gain = ggain;
+        blue_current_gain = bgain;
+        log_debug("let's set current gain!\n");
+        //set_current_gain_count = 5;
+        /*for(int i=0; i < 4; i ++){
+            set_current_gain_buffer(icled_bits_per_pixel, red_current_gain, green_current_gain, blue_current_gain);
+            /*usleep(50000);    
+            rpi_start_smi(icled_bits_per_pixel, true, i_icled_timing_type); 
+            usleep(50000);    
+            set_current_gain_buffer(icled_bits_per_pixel, 0, 0, 0);
+        }*/
+        set_current_gain_count = 5;
+    }
+    return 0;
+}
+
 /* Called from the main */
 int main(int argc, char **argv)
 {
     int flags;
     VideoState *is;
     //char icled_type[256] = "";
-    int red_current_gain, green_current_gain, blue_current_gain;
+    //int red_current_gain, green_current_gain, blue_current_gain;
 
     int enable_log_file = log_init(true, LOG_PREFIX_ID);
     if(enable_log_file != 0){
@@ -4154,6 +4240,7 @@ int main(int argc, char **argv)
 
     /* register check_icled_type_diff first*/
     register_check_icled_type_diff(&check_icled_type_different);
+    register_check_icled_current_gain_diff(&check_icled_current_gain_different);
 
     /*initial udpmr test*/
     /*initial callback test*/
@@ -4186,7 +4273,8 @@ int main(int argc, char **argv)
         smi_ret = init_rpi_smi(ICLED_SMI_TIMING_TYPE_AOS, BITS_PER_PIXEL_48, false);
     }else if(strstr(icled_type, "ANAPEX")){
         //24bits 
-        smi_ret = init_rpi_smi(ICLED_SMI_TIMING_TYPE_APA104, BITS_PER_PIXEL_24, false);
+        //smi_ret = init_rpi_smi(ICLED_SMI_TIMING_TYPE_APA104, BITS_PER_PIXEL_24, false);
+        smi_ret = init_rpi_smi(ICLED_SMI_TIMING_TYPE_APA104, BITS_PER_PIXEL_24, true);
     }
     if(smi_ret < 0){
         smi_terminate(0);

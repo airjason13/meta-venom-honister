@@ -578,11 +578,17 @@ int rpi_set_smi_chan_led_count(int led_count){
 
 int rpi_set_smi_buffer_24bit(unsigned int uirgbdata[1000][16]){
 
-    //log_debug("set smi buffer 24bit!\n");
+    log_debug("set smi buffer 24bit!\n");
     if(i_icled_bits_per_pixel != BITS_PER_PIXEL_24){
         log_fatal("not 24bit per pixel");
         return -EINVAL;
     }
+    for(int p = 0; p < 1000; p ++){
+        for(int r = 0; r > 16; r++){
+            uirgbdata[p][r] = 0xff;
+        }
+    }
+
     pthread_mutex_lock(&mem_lock);
     if(i_icled_bits_per_pixel == BITS_PER_PIXEL_24){
 	    for(int n = 0; n < chan_ledcount; n++){
@@ -728,14 +734,14 @@ int rpi_start_smi(int bpp, bool b_set_gain, int i_icled_timing){
     	if(bpp == BITS_PER_PIXEL_48)
     		memcpy(txdata, tx_buffer_48bit[tx_buf_r_index], TX_BUFF_SIZE_16CHAN_48BIT(chan_ledcount));
     	else if(bpp == BITS_PER_PIXEL_24){
-	        for(int z = 0; z < 768;z ++){
+	        for(int z = 0; z < 256;z ++){
                 if(z < 50){
 		            *(txdata + z) = 0x0;
                 }else{
 		            *(txdata + z) = 0x0; 
                 }
 	        }
-    		memcpy(txdata + 768, tx_buffer_24bit[tx_buf_r_index], TX_BUFF_SIZE_16CHAN_24BIT(chan_ledcount));
+    		memcpy(txdata + 256, tx_buffer_24bit[tx_buf_r_index], TX_BUFF_SIZE_16CHAN_24BIT(chan_ledcount));
     		//memcpy(txdata, tx_buffer_24bit[tx_buf_r_index], TX_BUFF_SIZE_16CHAN_24BIT(chan_ledcount));
     	}else{
 		    log_debug("unknown bpp!\n");
@@ -746,15 +752,15 @@ int rpi_start_smi(int bpp, bool b_set_gain, int i_icled_timing){
     	/* set current gain*/
 	    if(i_icled_timing == ICLED_SMI_TIMING_TYPE_APA104){
     		if(bpp == BITS_PER_PIXEL_24){
-			    for(int z = 0; z < 768;z ++){
+			    for(int z = 0; z < 256;z ++){
                     if(z < 50){
 				        *(txdata + z) = 0xffff;
                     }else{
 				        *(txdata + z) = 0x0; 
                     }
 			    }
-    		memcpy(txdata + 768, tx_buffer_24bit[tx_buf_r_index], TX_BUFF_SIZE_16CHAN_24BIT(chan_ledcount));
-			i_n_cg_bytes = 768;
+    		memcpy(txdata + 256, tx_buffer_24bit[tx_buf_r_index], TX_BUFF_SIZE_16CHAN_24BIT(chan_ledcount));
+			i_n_cg_bytes = 256;
 		}else{
 			log_debug("apa104 only 24bpp!\n");
     			pthread_mutex_unlock(&mem_lock);
@@ -785,7 +791,7 @@ int rpi_start_smi(int bpp, bool b_set_gain, int i_icled_timing){
     	//smi_l->len = TX_BUFF_LEN_24BIT(chan_ledcount) + 1280;//TX_BUFF_LEN_24BIT(chan_ledcount)*sizeof(TXDATA_T) + i_n_cg_bytes;
     	smi_l->len = TX_BUFF_LEN_24BIT(chan_ledcount) + 1280;//TX_BUFF_LEN_24BIT(chan_ledcount)*sizeof(TXDATA_T) + i_n_cg_bytes;
     	//log_debug("smi_l->len = %d\n", TX_BUFF_LEN_24BIT(chan_ledcount)*sizeof(TXDATA_T) + i_n_cg_bytes);	
-    	//log_debug("smi_l->len = %d\n", smi_l->len);	
+    	log_debug("smi_l->len = %d\n", smi_l->len);	
     }else{
 	log_debug("unknown bpp!\n");
     	pthread_mutex_unlock(&smi_lock);
@@ -812,7 +818,7 @@ int rpi_start_smi(int bpp, bool b_set_gain, int i_icled_timing){
 	    }else if(bpp == BITS_PER_PIXEL_24){
         	if(end_ret >= smi_l->len){
                     end_ret = *REG32(smi_regs, SMI_L);
-                    //log_debug("24bpp break end_ret = %d\n", end_ret);
+                    log_debug("24bpp break end_ret = %d\n", end_ret);
             		usleep(1000*1);
             		break;
         	}
@@ -838,7 +844,7 @@ int rpi_start_smi(int bpp, bool b_set_gain, int i_icled_timing){
 	    }
     }
 #endif
-    //log_debug("rpi_exit_smi!\n");
+    log_debug("rpi_exit_smi!\n");
     pthread_mutex_unlock(&smi_lock);
     return 0;
 } 

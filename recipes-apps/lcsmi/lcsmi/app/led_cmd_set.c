@@ -170,6 +170,7 @@ int get_icled_current_gain(char *data, char *reply_buf){
 	char cmd[256];
 	char param[256];
 	sscanf(data, "cmd_seq_id:%d;cmd:%[1-9a-z|^_];param:%s", &seq_id, &cmd, &param);
+    //not implemented yet
 	sprintf(reply_buf,"cmd_seq_id:%d;cmd:%s;reply:%s", seq_id, cmd, LEDCLIENT_VERSION);
     log_debug("reply buf = %s\n", reply_buf);
 	 	
@@ -426,8 +427,12 @@ int set_icled_current_gain(char *data, char *reply_buf){
 	int seq_id = 0;
 	char cmd[1024];
 	char param[1024];
+    int rgain, ggain, bgain;
+    
 	sscanf(data, "cmd_seq_id:%d;cmd:%[1-9a-z|^_];param:%s", &seq_id, &cmd, &param);
-   
+    sscanf(param, "rgain=%d,ggain=%d,bgain=%d", &rgain, &ggain, &bgain);
+    log_debug("rgain = %d, ggain = %d, bgain = %d\n", rgain, ggain, bgain);
+    write_icled_current_gain_config_file(rgain, ggain, bgain); 
     sprintf(reply_buf,"cmd_seq_id:%d;cmd=%s;reply:%s", seq_id, cmd, REPLY_OK_TAG);
     log_debug("reply_buf = %s\n", reply_buf);
     return strlen(reply_buf); 

@@ -32,6 +32,7 @@ char CMD_NAME_TAG[CMD_CALLBACK_MAX][MAX_CMD_NAME] = {
 };
 
 int (*check_icled_type_diff_callback)(char *);
+int (*check_icled_current_gain_diff_callback)(char *);
 
 int register_udp_cmd_callback(unsigned int func_num, cmd_callback_t callback){
 	//log_debug("enter %s\n", __func__);
@@ -54,6 +55,14 @@ int register_check_icled_type_diff(check_icled_type_diff_callback_t callback){
     check_icled_type_diff_callback = callback;
     return 0;
     
+}
+
+int register_check_icled_current_gain_diff(check_icled_current_gain_diff_callback_t callback){
+    log_info("%s\n", __func__);
+    if(callback == NULL)
+        return -1;
+    check_icled_current_gain_diff_callback = callback;
+    return 0;
 }
 
 void *udp_cmd_thread(void *data){
@@ -127,6 +136,11 @@ void *udp_cmd_thread(void *data){
             log_info("need to check icled type is different or not!\n");
             check_icled_type_diff_callback(msgbuf);
         }
+        if(strstr(msgbuf, CMD_TAG_SET_ICLED_CURRENT_GAIN)){
+            log_info("need to check icled current gain is different or not!\n");
+            check_icled_current_gain_diff_callback(msgbuf); 
+        }
+    
 		usleep(3000);
      }
 	 close(fd);
