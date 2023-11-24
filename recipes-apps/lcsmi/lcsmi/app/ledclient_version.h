@@ -2,6 +2,6 @@
 #define _VERSION_H_
 
 //G2 for 16 ports with SMI
-#define LEDCLIENT_VERSION	"LC_G2_230728_D1"
+#define LEDCLIENT_VERSION	"LC_G3_231115_D1"
 
 #endif

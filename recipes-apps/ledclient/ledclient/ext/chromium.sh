@@ -8,5 +8,11 @@ echo $STRING_TO_ENCODE
 URL_EXTEND=$(echo -n $STRING_TO_ENCODE | base64)
 echo $URL_EXTEND
 APP_URL=https://icast.tw/icast/educ/#$URL_EXTEND
+
+sleep 1
+pkill -f kill_server_by_time.sh
+sync
+kill_server_by_time.sh &
+
 echo $APP_URL
-sudo chromium --test-type --no-sandbox --enable-gpu-rasterization --disable-pings --enable-remote-extensions --force-renderer-accessibility --disable-quic --enable-tcp-fast-open --enable-features=VaapiVideoDecoder --enable-accelerated-video-decode --ignore-gpu-blacklist --autoplay-policy=no-user-gesture-required --window-size=640,480 --window-position=10,10 --app=$APP_URL
+sudo chromium --test-type --no-sandbox --force-dark-mode --enable-gpu-rasterization --disable-pings --enable-remote-extensions --force-renderer-accessibility --disable-quic --enable-tcp-fast-open --enable-features=VaapiVideoDecoder --enable-accelerated-video-decode --ignore-gpu-blacklist --autoplay-policy=no-user-gesture-required --window-size=640,480 --window-position=10,10 --app=$APP_URL

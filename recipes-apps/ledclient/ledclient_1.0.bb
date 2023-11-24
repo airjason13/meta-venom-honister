@@ -55,6 +55,8 @@ do_install() {
     install -m 755 ext/configure_hotspot_alfa.sh ${D}/${bindir}
     install -m 755 ext/setup_hotspot_tester.sh ${D}/${bindir}
     install -m 755 ext/b_measure_temp.sh ${D}/${bindir}
+    install -m 755 ext/kill_server_by_time.sh ${D}/${bindir}
+    install -m 755 ext/check_eth_dongle.sh ${D}/${bindir}
     install -m 755 ext/ra_client.py ${D}/${bindir}
     install -m 755 ext/ra_zmq_send.py ${D}/${bindir}
     install -m 755 ext/write_tc358743_edid.sh ${D}/${bindir}

@@ -8,6 +8,10 @@ sdptool add SP
 #setup bt sp server
 python2 /usr/bin/rfcomm-server-sdp.py &
 
+#check_eth_dongle.sh &
+
+export DISPLAY=:0
+xrandr --output HDMI-1 --mode "1920x1080"
 
 cd /home/root/pyLedServer
 while :
