@@ -716,11 +716,12 @@ int rpi_test_smi_rgb_buffer(void){
 
 //int rpi_start_smi(void){
 int rpi_start_smi(int bpp, bool b_set_gain, int i_icled_timing){
-    log_debug("===============================b_set_gain = %d==============================\n", b_set_gain);
+    //log_debug("===============================b_set_gain = %d==============================\n", b_set_gain);
     int i_n_cg_bytes = 0;/* number of curren gain signal bytes, include reset*/
     char tmp = 0;
+    int target_count = 0;
     //log_debug("size: %d\n", (CHAN_MAXLEDS));
-    log_debug("txdata: 0x%x\n", txdata);
+    //log_debug("txdata: 0x%x\n", txdata);
     //log_debug("TX_BUFF_LEN_24BIT(chan_ledcount) + 1280 : 0x%x\n", TX_BUFF_LEN_24BIT(chan_ledcount) + 1280);
     //memcpy(txdata, &tmp, (TX_BUFF_LEN_24BIT(chan_ledcount) + 184)/4);
     pthread_mutex_lock(&mem_lock);
@@ -779,7 +780,7 @@ int rpi_start_smi(int bpp, bool b_set_gain, int i_icled_timing){
     if(bpp == BITS_PER_PIXEL_48){
         //should be nsamp
     	smi_l->len = TX_BUFF_LEN_48BIT(chan_ledcount);
-    	log_debug("smi_l->len = %d\n", TX_BUFF_LEN_48BIT(chan_ledcount)*sizeof(TXDATA_T) + i_n_cg_bytes);	
+    	//log_debug("smi_l->len = %d\n", TX_BUFF_LEN_48BIT(chan_ledcount)*sizeof(TXDATA_T) + i_n_cg_bytes);	
     }else if(bpp == BITS_PER_PIXEL_24){
         //should be nsamp
     	//smi_l->len = TX_BUFF_LEN_24BIT(chan_ledcount) + 1280;//TX_BUFF_LEN_24BIT(chan_ledcount)*sizeof(TXDATA_T) + i_n_cg_bytes;
@@ -791,6 +792,8 @@ int rpi_start_smi(int bpp, bool b_set_gain, int i_icled_timing){
     	pthread_mutex_unlock(&smi_lock);
 	return -1;
     }
+    //log_debug("before trigger smi_l->len = %d\n", smi_l->len);
+    target_count = smi_l->len;
     start_smi(&vc_mem);
     int i = 0;    
     while(1){
@@ -801,16 +804,18 @@ int rpi_start_smi(int bpp, bool b_set_gain, int i_icled_timing){
         }
         usleep(1000*10);
         unsigned int end_ret = *REG32(smi_regs, SMI_L);
-        log_debug("end_ret = %d\n", end_ret);
+        //log_debug("end_ret = %d, smi_l->len = %d\n", end_ret, smi_l->len);
     	if(bpp == BITS_PER_PIXEL_48){
-        	if(end_ret >= smi_l->len ){
+        	//if(end_ret >= smi_l->len ){
+        	if(end_ret >= target_count ){
                     end_ret = *REG32(smi_regs, SMI_L);
-                    log_debug("48bpp break end_ret = %d\n", end_ret);
+                    //log_debug("48bpp break end_ret = %d\n", end_ret);
             		usleep(1000*1);
             		break;
         	}
 	    }else if(bpp == BITS_PER_PIXEL_24){
-        	if(end_ret >= smi_l->len){
+        	//if(end_ret >= smi_l->len){
+        	if(end_ret >= target_count){
                     end_ret = *REG32(smi_regs, SMI_L);
                     //log_debug("24bpp break end_ret = %d\n", end_ret);
             		usleep(1000*1);

@@ -2449,14 +2449,14 @@ static int video_thread(void *arg)
         //got RGB32 Frame, ready to generate cabinet layout buffer
         if(set_current_gain_count > 0){
                 if(icled_bits_per_pixel == BITS_PER_PIXEL_48){
-                    log_debug("current_gain not support 48bit!\n");
+                    //log_debug("current_gain not support 48bit!\n");
                     //framergb32_to_ledargb64(frameRGB, &(led_params.cab_params[i]), 4, is->viddec.avctx->width, is->viddec.avctx->height, ul_rgb_data);
                 }else if(icled_bits_per_pixel == BITS_PER_PIXEL_24){
-                    log_debug("+++++++++++++set current gain buffer+++++++++++++++++\n");
+                    //log_debug("+++++++++++++set current gain buffer+++++++++++++++++\n");
                     set_current_gain_buffer(icled_bits_per_pixel, red_current_gain, green_current_gain, blue_current_gain);
                 }
         }else{
-            log_debug("--------------normal rgb frame------------------------\n");
+            //log_debug("--------------normal rgb frame------------------------\n");
             for(int i = 0; i < LED_PANELS; i++){
                 if(icled_bits_per_pixel == BITS_PER_PIXEL_48){
                     framergb32_to_ledargb64(frameRGB, &(led_params.cab_params[i]), 4, is->viddec.avctx->width, is->viddec.avctx->height, ul_rgb_data);
@@ -2477,7 +2477,7 @@ static int video_thread(void *arg)
         yuvtorgb_avg_time = yuvtorgb_total_time/yuvtorgb_count;*/
         //log_debug("yuvtorgb RGB32 use %d ms, avg_time = %d\n", (unsigned long)(frame_layout_end-frame_layout_start), yuvtorgb_avg_time);
         led_fps += 1;
-        log_debug("rpi_set_smi_buffer!\n");
+        //log_debug("rpi_set_smi_buffer!\n");
         if(set_current_gain_count > 0){
             if(icled_bits_per_pixel == BITS_PER_PIXEL_48){
                 rpi_set_smi_buffer_48bit(ul_rgb_data);
