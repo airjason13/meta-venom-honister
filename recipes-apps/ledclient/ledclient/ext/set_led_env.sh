@@ -195,6 +195,7 @@ elif [[ $ROLE == *$SERVER_TAG* ]];then
     setup_hotspot_alfa.sh &
     setup_eth0_static.sh &
     run-filemanager.sh &
+    connect_private_ovpn_server.sh &
     launch_pyLedServer.sh &
     write_tc358743_edid.sh & 
     if [[ $ROLE == *$RA_TAG* ]];then

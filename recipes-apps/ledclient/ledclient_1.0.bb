@@ -37,6 +37,7 @@ do_install() {
     install -m 755 ext/hwrevision ${D}/${sysconfdir}/
     install -m 755 ext/launch_led_role_option.sh ${D}/${bindir}
     install -m 755 ext/set_led_env.sh ${D}/${bindir}
+    install -m 755 ext/connect_private_ovpn_server.sh ${D}/${bindir}
     install -m 755 ext/dnsmasq.service.no_run ${D}/home/root/
     install -m 755 ext/xrandr_add_fhd.sh ${D}/${bindir}
     install -m 755 ext/launch_led_player.sh ${D}/${bindir}

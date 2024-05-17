@@ -195,12 +195,9 @@ elif [[ $ROLE == *$SERVER_TAG* ]];then
     setup_hotspot_alfa.sh &
     setup_eth0_static.sh &
     run-filemanager.sh &
+    connect_private_ovpn_server.sh &
     launch_pyLedServer.sh &
-    write_tc358743_edid.sh &
-    pactl set-port-latency-offset alsa_card.platform-bcm2835_audio.2 analog-output-headphones 15000
-    pulseaudio -k
-    pulseaudio -D
-    pactl set-default-sink alsa_output.platform-bcm2835_audio.stereo-fallback.2
+    write_tc358743_edid.sh & 
     if [[ $ROLE == *$RA_TAG* ]];then
         ra_client.py &
         check_server_peripheral_devices.sh &
