@@ -2226,7 +2226,7 @@ int set_current_gain_buffer(int i_bpp, int rgain, int ggain, int bgain)
     int n = 0;
     if(i_bpp == BITS_PER_PIXEL_24){
         unsigned int ui_rgb_gain = rgain << 16 | ggain << 8 | bgain << 0;
-        for(m = 0; m < 15; m ++){
+        for(m = 0; m <= 15; m ++){
             for(n = 0; n < 999; n ++){
                 rgb_data[n][m] = ui_rgb_gain;
             }
