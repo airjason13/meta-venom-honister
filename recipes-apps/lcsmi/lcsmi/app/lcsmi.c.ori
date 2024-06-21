@@ -427,9 +427,6 @@ bool reboot_flag = false;
 char icled_type[256] = "";
 int red_current_gain, green_current_gain, blue_current_gain;
 int set_current_gain_count = -1;
-int max_current_gain_count = 20;
-int max_blank_gain_count = 10;
-
 
 #if CONFIG_AVFILTER
 static int opt_add_vfilter(void *optctx, const char *opt, const char *arg)
@@ -2309,11 +2306,9 @@ static int smi_thread(void *arg)
         SDL_UnlockMutex(is->smi_decode_mutex);
 #endif   
              
-#if 1
-
-        //if(set_current_gain_count > 0){
-        if((set_current_gain_count < max_blank_gain_count) && (set_current_gain_count > 0)){
-            log_debug("__________________set current gain, count : %d!______________\n", set_current_gain_count);       
+#if 1 
+        if(set_current_gain_count > 0){
+            log_debug("__________________set current gain!______________\n");       
             rpi_start_smi(icled_bits_per_pixel, true, i_icled_timing_type); 
         }else{
             rpi_start_smi(icled_bits_per_pixel, false, i_icled_timing_type);
@@ -2479,11 +2474,12 @@ static int video_thread(void *arg)
                     //framergb32_to_ledargb64(frameRGB, &(led_params.cab_params[i]), 4, is->viddec.avctx->width, is->viddec.avctx->height, ul_rgb_data);
                 }else if(icled_bits_per_pixel == BITS_PER_PIXEL_24){
                     //log_debug("+++++++++++++set current gain buffer+++++++++++++++++\n");
-		    if(set_current_gain_count > max_blank_gain_count){
+		    /*if(set_current_gain_count < 960){
                     	set_blank_buffer(icled_bits_per_pixel, red_current_gain, green_current_gain, blue_current_gain); 
 		    }else{
                     	set_current_gain_buffer(icled_bits_per_pixel, red_current_gain, green_current_gain, blue_current_gain);
-		    }
+		    }*/
+                    set_current_gain_buffer(icled_bits_per_pixel, red_current_gain, green_current_gain, blue_current_gain);
                 }
         }else{
             //log_debug("--------------normal rgb frame------------------------\n");
@@ -4188,7 +4184,7 @@ int check_icled_current_gain_different(char *msgbuf){
             usleep(50000);    
             set_current_gain_buffer(icled_bits_per_pixel, 0, 0, 0);
         }*/
-        set_current_gain_count = max_current_gain_count;
+        set_current_gain_count = 5;
     }
     return 0;
 }
@@ -4211,9 +4207,6 @@ int main(int argc, char **argv)
 
     get_icled_current_gain_from_config(&red_current_gain, &green_current_gain, &blue_current_gain);
     log_debug("rgain = %d, ggain = %d, bgain = %d\n", red_current_gain, green_current_gain, blue_current_gain);
-
-    set_current_gain_count = max_current_gain_count;
-    //set_current_gain_count = ;  //Jason @0620
 
     log_debug("init frame_brightness");
     init_frame_brightness();
