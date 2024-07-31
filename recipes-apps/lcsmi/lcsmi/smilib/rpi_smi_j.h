@@ -21,6 +21,7 @@
 
 #define ICLED_SMI_TIMING_TYPE_APA104    0
 #define ICLED_SMI_TIMING_TYPE_AOS       1
+#define ICLED_SMI_TIMING_TYPE_ANAPEXM  	2
 
 
 int get_icled_timing_type(void);

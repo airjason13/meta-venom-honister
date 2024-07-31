@@ -18,7 +18,8 @@ typedef int (*check_icled_type_diff_callback_t)(char *);
 typedef int (*check_icled_current_gain_diff_callback_t)(char *);
 
 #define TAG_ICLED_TYPE_AOS                          "AOS"
-#define TAG_ICLED_TYPE_ANAPEX                       "ANAPEX"
+#define TAG_ICLED_TYPE_ANAPEXL                       "ANAPEXL"
+#define TAG_ICLED_TYPE_ANAPEXM                      "ANAPEXM"
 
 
 //CMD ID

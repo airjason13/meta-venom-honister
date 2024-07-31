@@ -2228,7 +2228,8 @@ int set_blank_buffer(int i_bpp, int rgain, int ggain, int bgain)
     int m = 0;
     int n = 0;
     if(i_bpp == BITS_PER_PIXEL_24){
-        unsigned int ui_rgb_gain = rgain << 16 | ggain << 8 | bgain << 0;
+        //unsigned int ui_rgb_gain = rgain << 16 | ggain << 8 | bgain << 0;
+        unsigned int ui_rgb_gain = ggain << 16 | rgain << 8 | bgain << 0;
         for(m = 0; m <= 15; m ++){
             for(n = 0; n < 999; n ++){
                 rgb_data[n][m] = 0;
@@ -2249,7 +2250,8 @@ int set_current_gain_buffer(int i_bpp, int rgain, int ggain, int bgain)
     int m = 0;
     int n = 0;
     if(i_bpp == BITS_PER_PIXEL_24){
-        unsigned int ui_rgb_gain = rgain << 16 | ggain << 8 | bgain << 0;
+        //unsigned int ui_rgb_gain = rgain << 16 | ggain << 8 | bgain << 0;
+        unsigned int ui_rgb_gain = ggain << 16 | rgain << 8 | bgain << 0;
         for(m = 0; m <= 15; m ++){
             for(n = 0; n < 999; n ++){
                 rgb_data[n][m] = ui_rgb_gain;
@@ -4304,10 +4306,14 @@ int main(int argc, char **argv)
     if(strstr(icled_type, "AOS")){
         //48bits
         smi_ret = init_rpi_smi(ICLED_SMI_TIMING_TYPE_AOS, BITS_PER_PIXEL_48, false);
-    }else if(strstr(icled_type, "ANAPEX")){
+    }else if(strstr(icled_type, "ANAPEX_L")){
         //24bits 
-        //smi_ret = init_rpi_smi(ICLED_SMI_TIMING_TYPE_APA104, BITS_PER_PIXEL_24, false);
         smi_ret = init_rpi_smi(ICLED_SMI_TIMING_TYPE_APA104, BITS_PER_PIXEL_24, true);
+        log_debug("ICLed type is ANAPEX_L");
+    }else if(strstr(icled_type, "ANAPEX_M")){
+        //24bits 
+        smi_ret = init_rpi_smi(ICLED_SMI_TIMING_TYPE_ANAPEXM, BITS_PER_PIXEL_24, true);
+        log_debug("ICLed type is ANAPEX_M");
     }
     if(smi_ret < 0){
         smi_terminate(0);

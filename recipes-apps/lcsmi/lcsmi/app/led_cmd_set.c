@@ -408,7 +408,9 @@ int set_icled_type(char *data, char *reply_buf){
 	char cmd[1024];
 	char param[1024];
 	sscanf(data, "cmd_seq_id:%d;cmd:%[1-9a-z|^_];param:%s", &seq_id, &cmd, &param);
-    if(!strcmp(param, TAG_ICLED_TYPE_AOS) && !strcmp(param, TAG_ICLED_TYPE_ANAPEX)){
+    if(!strcmp(param, TAG_ICLED_TYPE_AOS) 
+        && !strcmp(param, TAG_ICLED_TYPE_ANAPEXL)
+        && !strcmp(param, TAG_ICLED_TYPE_ANAPEXM)){
         sprintf(reply_buf,"cmd_seq_id:%d;cmd=%s;reply:%s", seq_id, cmd, REPLY_NG_TAG);
         log_debug("reply_buf = %s\n", reply_buf);
         return strlen(reply_buf); 
